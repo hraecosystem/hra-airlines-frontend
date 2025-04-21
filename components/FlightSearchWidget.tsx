@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import api from "@/lib/api";
 import AutoCompleteInput from "./AutoCompleteInput";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -51,7 +51,7 @@ export default function FlightSearchWidget() {
         infants,
       };
 
-      const res = await axios.post("http://localhost:5000/api/v1/flights/search", payload);
+      const res = await api.post("/flights/search", payload);
       localStorage.setItem("searchResults", JSON.stringify(res.data.data));
       router.push("/search-results");
     } catch (err) {
