@@ -1,10 +1,11 @@
+// app/booking/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import Select from "react-select";
 import countryList from "react-select-country-list";
-import { motion } from "framer-motion";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
@@ -53,68 +54,68 @@ export default function BookingPage() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
 
-  // Redirect to login if not authenticated
+  // Redirect if not logged in
   useEffect(() => {
     if (!authLoading && !user) {
       router.replace("/auth/login?redirect=/booking");
     }
   }, [authLoading, user, router]);
 
-  // Initial revalidate & passenger setup
+  // Initial load: grab fare + session + build passengers
   useEffect(() => {
     (async () => {
       try {
         const rawFare = localStorage.getItem("selectedFare");
         const rawSession = localStorage.getItem("flightSessionId");
-        if (!rawFare || !rawSession) throw new Error("No flight selected.");
-
+        if (!rawFare || !rawSession) {
+          throw new Error("No flight selected.");
+        }
+        const parsed = JSON.parse(rawFare);
+        setFare(parsed);
         setSessionId(rawSession);
 
-        const res = await api.post("/flights/revalidate", {
-          session_id: rawSession,
-          fare_source_code: JSON.parse(rawFare).AirItineraryFareInfo.FareSourceCode,
-        });
-        const result = res.data.data?.AirRevalidateResponse?.AirRevalidateResult;
-        if (!result || !result.IsValid) {
-          throw new Error("Fare is no longer valid. Please search again.");
-        }
+        // detect passport requirement
+        const passportFlag =
+          parsed.AirItineraryFareInfo?.IsPassportMandatory ??
+          parsed.IsPassportMandatory;
+        setNeedsPassport(
+          passportFlag === true ||
+            String(passportFlag).toLowerCase() === "true"
+        );
 
-        const itinData = result.FareItineraries?.FareItinerary;
-        const itin = Array.isArray(itinData) ? itinData[0] : itinData;
-        if (!itin) throw new Error("Invalid itinerary.");
-
-        setFare(itin);
-        setNeedsPassport(Boolean(result.IsPassportMandatory));
-
-        const qty = (code: string) =>
-          itin.AirItineraryFareInfo.FareBreakdown.find(
+        // qty function
+        const qtyOf = (code: string) =>
+          parsed.AirItineraryFareInfo.FareBreakdown.find(
             (b: any) => b.PassengerTypeQuantity.Code === code
           )?.PassengerTypeQuantity.Quantity || 0;
 
+        // build passenger array
         setPassengers([
-          ...Array(qty("ADT")).fill(null).map(() => makePassenger("Mr")),
-          ...Array(qty("CHD")).fill(null).map(() => makePassenger("Master")),
-          ...Array(qty("INF")).fill(null).map(() => makePassenger("Baby")),
+          ...Array(qtyOf("ADT")).fill(null).map(() => makePassenger("Mr")),
+          ...Array(qtyOf("CHD")).fill(null).map(() => makePassenger("Master")),
+          ...Array(qtyOf("INF")).fill(null).map(() => makePassenger("Baby")),
         ]);
 
+        // prefill contact
         const prof = await api.get("/profile");
         setEmail(prof.data.user.email || "");
         setPhone(prof.data.user.phone || "");
       } catch (e: any) {
-        setError(e.message);
+        setError(e.message || "Failed to load booking details.");
       } finally {
         setLoading(false);
       }
     })();
 
-    // auto-expire session
+    // auto-expire
     const timer = setTimeout(() => {
       alert("⏰ Session expired. Please search again.");
       router.push("/search-results");
     }, 15 * 60 * 1000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [router]);
 
+  // passenger field updater
   const updatePassenger = <K extends keyof Passenger>(
     idx: number,
     key: K,
@@ -123,20 +124,27 @@ export default function BookingPage() {
     setPassengers((prev) => {
       const next = [...prev];
       next[idx] = { ...next[idx], [key]: value };
-      if (key === "nationality" && needsPassport && !next[idx].passportIssueCountry) {
+      if (
+        key === "nationality" &&
+        needsPassport &&
+        !next[idx].passportIssueCountry
+      ) {
         next[idx].passportIssueCountry = value as CountryOption;
       }
       return next;
     });
   };
 
+  // validate contact + pax
   const validate = () => {
     const errs: Record<string, boolean> = {};
     let ok = true;
+
     if (!email.trim() || !phone.trim()) {
       setError("Email and phone are required.");
       ok = false;
     }
+
     passengers.forEach((p, i) => {
       const base = `pax-${i}-`;
       if (!p.firstName) (errs[base + "firstName"] = true), (ok = false);
@@ -145,16 +153,24 @@ export default function BookingPage() {
       if (!p.nationality) (errs[base + "nationality"] = true), (ok = false);
       if (needsPassport) {
         if (!p.passportNo) (errs[base + "passportNo"] = true), (ok = false);
-        if (!p.passportIssueCountry) (errs[base + "passportIssueCountry"] = true), (ok = false);
-        if (!p.passportIssueDate) (errs[base + "passportIssueDate"] = true), (ok = false);
-        if (!p.passportExpiryDate) (errs[base + "passportExpiryDate"] = true), (ok = false);
+        if (!p.passportIssueCountry)
+          (errs[base + "passportIssueCountry"] = true),
+            (ok = false);
+        if (!p.passportIssueDate)
+          (errs[base + "passportIssueDate"] = true),
+            (ok = false);
+        if (!p.passportExpiryDate)
+          (errs[base + "passportExpiryDate"] = true),
+            (ok = false);
       }
     });
+
     setFieldErrors(errs);
     if (!ok) setError("Please fix the highlighted fields.");
     return ok;
   };
 
+  // pack passenger arrays into payload shape
   const pack = (arr: Passenger[]) => ({
     title: arr.map((p) => p.title),
     firstName: arr.map((p) => p.firstName.trim()),
@@ -167,35 +183,40 @@ export default function BookingPage() {
     passportExpiryDate: arr.map((p) => p.passportExpiryDate),
   });
 
+  // -- HANDLE SUBMIT ---------------------------------------------------------
   const handleSubmit = async () => {
     setError("");
     if (!validate() || !fare) return;
     setSubmitting(true);
 
     try {
-      // revalidate before booking
+      // 1) revalidate
       const rev = await api.post("/flights/revalidate", {
         session_id: sessionId,
         fare_source_code: fare.AirItineraryFareInfo.FareSourceCode,
       });
-      const valid = rev.data.data?.AirRevalidateResponse?.AirRevalidateResult?.IsValid;
-      if (!valid) {
-        setError("Fare expired. Please search again.");
-        return;
+      const isValid =
+        rev.data?.data?.AirRevalidateResponse?.AirRevalidateResult?.IsValid;
+      if (!isValid) {
+        alert("Fare expired. Please search again.");
+        return router.push("/search-results");
       }
 
-      // split pax
-      const adults = passengers.filter((p) => ["Mr", "Mrs", "Miss"].includes(p.title));
+      // 2) split pax types
+      const adults = passengers.filter((p) =>
+        ["Mr", "Mrs", "Miss"].includes(p.title)
+      );
       const childs = passengers.filter((p) => p.title === "Master");
       const infs = passengers.filter((p) => p.title === "Baby");
 
+      // 3) build booking payload
       const payload = {
         flightBookingInfo: {
           flight_session_id: sessionId,
           fare_source_code: fare.AirItineraryFareInfo.FareSourceCode,
           IsPassportMandatory: needsPassport.toString(),
-          areaCode: phone.replace(/\D/g, "").slice(0,3) || "971",
-          countryCode: phone.replace(/\D/g, "").slice(0,3) || "971",
+          areaCode: phone.replace(/\D/g, "").slice(0, 3) || "971",
+          countryCode: phone.replace(/\D/g, "").slice(0, 3) || "971",
           fareType: fare.AirItineraryFareInfo.FareType,
         },
         paxInfo: {
@@ -207,24 +228,65 @@ export default function BookingPage() {
         },
       };
 
-      // book
-      const bookRes = await api.post("/flights/book", payload);
-      const result = bookRes.data.BookFlightResponse?.BookFlightResult;
-      if (result?.Success) {
-        router.push("/payment");
-      } else {
-        const msg =
-          result?.Errors?.[0]?.Errors?.ErrorMessage ||
-          result?.Errors?.ErrorMessage ||
-          "Booking failed.";
-        setError(msg);
+      // 4) book
+      const resp = await api.post("/flights/book", payload);
+
+      // unwrap your helper
+      const raw = (resp as any).data ?? resp;
+      console.log("Raw booking response:", raw);
+
+      // ---- NEW: first check your { status:'success', data:{ mongoBookingId } } shape ----
+      if (
+        raw.status === "success" &&
+        raw.data &&
+        typeof raw.data.mongoBookingId === "string"
+      ) {
+        // store it if you like:
+        localStorage.setItem("bookingId", raw.data.mongoBookingId);
+        // then proceed
+        return router.push("/payment");
       }
+
+      // ---- FALLBACK: old BookFlightResponse logic ----
+      const result =
+        raw.BookFlightResponse?.BookFlightResult ??
+        raw.data?.BookFlightResponse?.BookFlightResult;
+
+      if (!result) {
+        setError("Unexpected booking response. Please try again.");
+        return;
+      }
+
+      if (result.Success) {
+        return router.push("/payment");
+      }
+
+      // collect any errors
+      let msg = "Booking failed.";
+      if (typeof result.Errors === "string" && result.Errors) {
+        msg = result.Errors;
+      } else if (Array.isArray(result.Errors) && result.Errors.length) {
+        msg = result.Errors
+          .map((e: any) => e.Errors?.[0]?.ErrorMessage)
+          .filter(Boolean)
+          .join("; ");
+      } else if (result.Errors?.ErrorMessage) {
+        msg = result.Errors.ErrorMessage;
+      }
+      setError(msg);
     } catch (e: any) {
-      setError(e.response?.data?.error?.ErrorMessage || e.message);
+      const msg = e.response?.data?.error?.ErrorMessage || e.message;
+      setError(msg);
+      // if the server suddenly demands passports, show those fields
+      if (msg.toLowerCase().includes("passport")) {
+        setNeedsPassport(true);
+      }
     } finally {
       setSubmitting(false);
     }
   };
+
+  // --------------------------------------------------------------------------
 
   if (authLoading || loading) {
     return (
@@ -242,7 +304,9 @@ export default function BookingPage() {
     <div className="min-h-screen bg-gray-100 py-8 px-4">
       <div className="mx-auto max-w-3xl bg-white rounded-2xl shadow-lg overflow-hidden">
         <header className="bg-pink-50 px-6 py-4">
-          <h1 className="text-2xl font-bold text-pink-700">Booking Details</h1>
+          <h1 className="text-2xl font-bold text-pink-700">
+            Booking Details
+          </h1>
         </header>
         <main className="p-6 space-y-6">
           {error && (
@@ -259,14 +323,16 @@ export default function BookingPage() {
             </div>
           )}
 
-          {/* Contact */}
+          {/* Contact inputs */}
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-gray-700">Email</label>
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setEmail(e.target.value)
+                }
                 className="mt-1 w-full border rounded px-3 py-2"
               />
             </div>
@@ -275,63 +341,85 @@ export default function BookingPage() {
               <input
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setPhone(e.target.value)
+                }
                 className="mt-1 w-full border rounded px-3 py-2"
               />
             </div>
           </div>
 
-          {/* Passengers */}
+          {/* Passenger forms */}
           {passengers.map((p, idx) => {
             const base = `pax-${idx}-`;
             return (
               <div key={idx} className="bg-gray-50 p-4 rounded-lg">
                 <h2 className="font-semibold mb-3">Passenger {idx + 1}</h2>
                 <div className="grid md:grid-cols-4 gap-4">
+                  {/* Title */}
                   <div>
                     <label className="block text-gray-600">Title</label>
                     <select
                       value={p.title}
-                      onChange={(e) => updatePassenger(idx, "title", e.target.value)}
+                      onChange={(
+                        e: React.ChangeEvent<HTMLSelectElement>
+                      ) => updatePassenger(idx, "title", e.target.value)}
                       className="mt-1 w-full border rounded px-2 py-1"
                     >
                       {["Mr", "Mrs", "Miss", "Master", "Baby"].map((t) => (
-                        <option key={t} value={t}>{t}</option>
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
                       ))}
                     </select>
                   </div>
+                  {/* First Name */}
                   <div>
-                    <label className="block text-gray-600">First Name</label>
+                    <label className="block text-gray-600">
+                      First Name
+                    </label>
                     <input
                       value={p.firstName}
-                      onChange={(e) => updatePassenger(idx, "firstName", e.target.value)}
+                      onChange={(
+                        e: React.ChangeEvent<HTMLInputElement>
+                      ) => updatePassenger(idx, "firstName", e.target.value)}
                       className={`mt-1 w-full border rounded px-2 py-1 ${
-                        fieldErrors[base + "firstName"] && "border-red-500"
+                        fieldErrors[base + "firstName"]
+                          ? "border-red-500"
+                          : ""
                       }`}
                     />
                   </div>
+                  {/* Last Name */}
                   <div>
                     <label className="block text-gray-600">Last Name</label>
                     <input
                       value={p.lastName}
-                      onChange={(e) => updatePassenger(idx, "lastName", e.target.value)}
+                      onChange={(
+                        e: React.ChangeEvent<HTMLInputElement>
+                      ) => updatePassenger(idx, "lastName", e.target.value)}
                       className={`mt-1 w-full border rounded px-2 py-1 ${
-                        fieldErrors[base + "lastName"] && "border-red-500"
+                        fieldErrors[base + "lastName"]
+                          ? "border-red-500"
+                          : ""
                       }`}
                     />
                   </div>
+                  {/* DOB */}
                   <div>
                     <label className="block text-gray-600">DOB</label>
                     <input
                       type="date"
                       value={p.dob}
-                      onChange={(e) => updatePassenger(idx, "dob", e.target.value)}
+                      onChange={(
+                        e: React.ChangeEvent<HTMLInputElement>
+                      ) => updatePassenger(idx, "dob", e.target.value)}
                       className={`mt-1 w-full border rounded px-2 py-1 ${
-                        fieldErrors[base + "dob"] && "border-red-500"
+                        fieldErrors[base + "dob"] ? "border-red-500" : ""
                       }`}
                     />
                   </div>
-
+                  {/* Nationality */}
                   <div className="md:col-span-2">
                     <label className="block text-gray-600">Nationality</label>
                     <Select
@@ -344,15 +432,22 @@ export default function BookingPage() {
                     />
                   </div>
 
+                  {/* Passport fields */}
                   {needsPassport && (
                     <>
                       <div>
-                        <label className="block text-gray-600">Passport No.</label>
+                        <label className="block text-gray-600">
+                          Passport No.
+                        </label>
                         <input
                           value={p.passportNo}
-                          onChange={(e) => updatePassenger(idx, "passportNo", e.target.value)}
+                          onChange={(
+                            e: React.ChangeEvent<HTMLInputElement>
+                          ) => updatePassenger(idx, "passportNo", e.target.value)}
                           className={`mt-1 w-full border rounded px-2 py-1 ${
-                            fieldErrors[base + "passportNo"] && "border-red-500"
+                            fieldErrors[base + "passportNo"]
+                              ? "border-red-500"
+                              : ""
                           }`}
                         />
                       </div>
@@ -364,7 +459,11 @@ export default function BookingPage() {
                           options={countryOptions}
                           value={p.passportIssueCountry}
                           onChange={(val) =>
-                            updatePassenger(idx, "passportIssueCountry", val as CountryOption)
+                            updatePassenger(
+                              idx,
+                              "passportIssueCountry",
+                              val as CountryOption
+                            )
                           }
                           className="mt-1"
                         />
@@ -374,20 +473,42 @@ export default function BookingPage() {
                         <input
                           type="date"
                           value={p.passportIssueDate}
-                          onChange={(e) => updatePassenger(idx, "passportIssueDate", e.target.value)}
+                          onChange={(
+                            e: React.ChangeEvent<HTMLInputElement>
+                          ) =>
+                            updatePassenger(
+                              idx,
+                              "passportIssueDate",
+                              e.target.value
+                            )
+                          }
                           className={`mt-1 w-full border rounded px-2 py-1 ${
-                            fieldErrors[base + "passportIssueDate"] && "border-red-500"
+                            fieldErrors[base + "passportIssueDate"]
+                              ? "border-red-500"
+                              : ""
                           }`}
                         />
                       </div>
                       <div>
-                        <label className="block text-gray-600">Expiry Date</label>
+                        <label className="block text-gray-600">
+                          Expiry Date
+                        </label>
                         <input
                           type="date"
                           value={p.passportExpiryDate}
-                          onChange={(e) => updatePassenger(idx, "passportExpiryDate", e.target.value)}
+                          onChange={(
+                            e: React.ChangeEvent<HTMLInputElement>
+                          ) =>
+                            updatePassenger(
+                              idx,
+                              "passportExpiryDate",
+                              e.target.value
+                            )
+                          }
                           className={`mt-1 w-full border rounded px-2 py-1 ${
-                            fieldErrors[base + "passportExpiryDate"] && "border-red-500"
+                            fieldErrors[base + "passportExpiryDate"]
+                              ? "border-red-500"
+                              : ""
                           }`}
                         />
                       </div>
@@ -401,7 +522,11 @@ export default function BookingPage() {
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="w-full bg-pink-600 hover:bg-pink-700 text-white py-3 rounded-lg font-semibold transition disabled:opacity-50"
+            className={`w-full py-3 rounded-lg font-semibold transition ${
+              submitting
+                ? "bg-gray-400 cursor-not-allowed text-gray-700"
+                : "bg-pink-600 hover:bg-pink-700 text-white"
+            }`}
           >
             {submitting ? "Processing…" : "Proceed to Payment"}
           </button>

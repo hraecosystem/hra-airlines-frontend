@@ -1,3 +1,4 @@
+// app/search-results/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -9,6 +10,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface FareItinerary {
   AirItineraryFareInfo: {
+    SessionId?: string;                       // 👈 Trawex actually returns this
     FareSourceCode: string;
     FareType: string;
     IsRefundable: boolean;
@@ -54,7 +56,6 @@ const ITEMS_PER_PAGE = 10;
 
 export default function SearchResultsPage() {
   const router = useRouter();
-
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [results, setResults] = useState<FareItinerary[]>([]);
@@ -70,6 +71,7 @@ export default function SearchResultsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
+  // 1) load
   useEffect(() => {
     try {
       const raw = localStorage.getItem("searchResults");
@@ -88,6 +90,7 @@ export default function SearchResultsPage() {
     }
   }, []);
 
+  // 2) filters
   useEffect(() => {
     let temp = [...results];
     if (filters.airline) {
@@ -133,10 +136,33 @@ export default function SearchResultsPage() {
   }, [filters, results]);
 
   const handleSelectFlight = (fare: FareItinerary) => {
+    // store the fare for booking page
     localStorage.setItem("selectedFare", JSON.stringify(fare));
-    const raw = JSON.parse(localStorage.getItem("searchResults") || "{}");
-    const sessionId = raw?.AirSearchResponse?.session_id;
-    if (sessionId) localStorage.setItem("flightSessionId", sessionId);
+
+    // try to pull SessionId straight off the fare
+    let sessionId = fare.AirItineraryFareInfo.SessionId || "";
+
+    // fallback: maybe it was stored at the root of your original payload
+    if (!sessionId) {
+      const raw = localStorage.getItem("searchResults");
+      if (raw) {
+        const obj = JSON.parse(raw);
+        sessionId =
+          obj.session_id ||
+          obj.SessionId ||
+          obj.data?.session_id ||
+          obj.AirSearchResponse?.session_id ||
+          obj.AirSearchResponse?.SessionId ||
+          "";
+      }
+    }
+
+    if (!sessionId) {
+      alert("⚠️ Could not find a valid session_id. Please search again.");
+      return router.push("/");
+    }
+
+    localStorage.setItem("flightSessionId", sessionId);
     router.push("/booking");
   };
 
@@ -174,12 +200,12 @@ export default function SearchResultsPage() {
     );
   }
 
-  return (
+   return (
     <div className="max-w-7xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-4 gap-8">
       <FiltersSidebar
         filters={filters}
         setFilters={setFilters}
-        airlineOptions={["AI","6E","EK","QF","QR","SV","UL","BA","LH","AF"]}
+        airlineOptions={["AI", "6E", "EK", "QF", "QR", "SV", "UL", "BA", "LH", "AF"]}
       />
 
       <div className="lg:col-span-3 space-y-8">
@@ -271,15 +297,11 @@ export default function SearchResultsPage() {
                     </li>
                     <li>
                       <strong>Refundable:</strong>{" "}
-                      {fare.AirItineraryFareInfo.IsRefundable
-                        ? "Yes"
-                        : "No"}
+                      {fare.AirItineraryFareInfo.IsRefundable ? "Yes" : "No"}
                     </li>
                     <li>
                       <strong>Validating Airline:</strong>{" "}
-                      {
-                        seg.OperatingAirline.Code
-                      }
+                      {seg.OperatingAirline.Code}
                     </li>
                     <li>
                       <strong>Seats Remaining:</strong>{" "}
@@ -290,19 +312,17 @@ export default function SearchResultsPage() {
                     </li>
                     <li>
                       <strong>Booking Class:</strong>{" "}
-                      {
+                      {fare.OriginDestinationOptions[0]
+                        .OriginDestinationOption[0].ResBookDesigText ||
                         fare.OriginDestinationOptions[0]
-                          .OriginDestinationOption[0].ResBookDesigText ||
-                          fare.OriginDestinationOptions[0]
-                            .OriginDestinationOption[0].ResBookDesigCode ||
-                          "—"
-                      }
+                          .OriginDestinationOption[0].ResBookDesigCode ||
+                        "—"}
                     </li>
                   </ul>
                 </motion.div>
               )}
 
-              <button
+<button
                 onClick={() => handleSelectFlight(fare)}
                 className="w-full py-3 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-purple-900 transition"
               >
