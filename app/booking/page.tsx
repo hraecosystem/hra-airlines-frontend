@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Select from "react-select";
 import countryList from "react-select-country-list";
+import { motion } from "framer-motion";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
@@ -52,12 +53,14 @@ export default function BookingPage() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
 
+  // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
       router.replace("/auth/login?redirect=/booking");
     }
   }, [authLoading, user, router]);
 
+  // Initial revalidate & passenger setup
   useEffect(() => {
     (async () => {
       try {
@@ -66,16 +69,18 @@ export default function BookingPage() {
         if (!rawFare || !rawSession) throw new Error("No flight selected.");
 
         setSessionId(rawSession);
-        const { data } = await api.post("/flights/revalidate", {
+
+        const res = await api.post("/flights/revalidate", {
           session_id: rawSession,
           fare_source_code: JSON.parse(rawFare).AirItineraryFareInfo.FareSourceCode,
         });
+        const result = res.data.data?.AirRevalidateResponse?.AirRevalidateResult;
+        if (!result || !result.IsValid) {
+          throw new Error("Fare is no longer valid. Please search again.");
+        }
 
-        const result = data.data.AirRevalidateResponse.AirRevalidateResult;
-        if (!result.IsValid) throw new Error("Fare no longer valid.");
-
-        const itinArr = result.FareItineraries.FareItinerary;
-        const itin = Array.isArray(itinArr) ? itinArr[0] : itinArr;
+        const itinData = result.FareItineraries?.FareItinerary;
+        const itin = Array.isArray(itinData) ? itinData[0] : itinData;
         if (!itin) throw new Error("Invalid itinerary.");
 
         setFare(itin);
@@ -102,15 +107,19 @@ export default function BookingPage() {
       }
     })();
 
+    // auto-expire session
     const timer = setTimeout(() => {
-      alert("⏰ Session expired. Please select your flight again.");
+      alert("⏰ Session expired. Please search again.");
       router.push("/search-results");
     }, 15 * 60 * 1000);
-
     return () => clearTimeout(timer);
   }, []);
 
-  const updatePassenger = <K extends keyof Passenger>(idx: number, key: K, value: Passenger[K]) => {
+  const updatePassenger = <K extends keyof Passenger>(
+    idx: number,
+    key: K,
+    value: Passenger[K]
+  ) => {
     setPassengers((prev) => {
       const next = [...prev];
       next[idx] = { ...next[idx], [key]: value };
@@ -124,27 +133,23 @@ export default function BookingPage() {
   const validate = () => {
     const errs: Record<string, boolean> = {};
     let ok = true;
-
     if (!email.trim() || !phone.trim()) {
       setError("Email and phone are required.");
       ok = false;
     }
-
     passengers.forEach((p, i) => {
-      const prefix = `pax-${i}-`;
-      if (!p.firstName) errs[prefix + "firstName"] = true, ok = false;
-      if (!p.lastName) errs[prefix + "lastName"] = true, ok = false;
-      if (!p.dob) errs[prefix + "dob"] = true, ok = false;
-      if (!p.nationality) errs[prefix + "nationality"] = true, ok = false;
-
+      const base = `pax-${i}-`;
+      if (!p.firstName) (errs[base + "firstName"] = true), (ok = false);
+      if (!p.lastName) (errs[base + "lastName"] = true), (ok = false);
+      if (!p.dob) (errs[base + "dob"] = true), (ok = false);
+      if (!p.nationality) (errs[base + "nationality"] = true), (ok = false);
       if (needsPassport) {
-        if (!p.passportNo) errs[prefix + "passportNo"] = true, ok = false;
-        if (!p.passportIssueCountry) errs[prefix + "passportIssueCountry"] = true, ok = false;
-        if (!p.passportIssueDate) errs[prefix + "passportIssueDate"] = true, ok = false;
-        if (!p.passportExpiryDate) errs[prefix + "passportExpiryDate"] = true, ok = false;
+        if (!p.passportNo) (errs[base + "passportNo"] = true), (ok = false);
+        if (!p.passportIssueCountry) (errs[base + "passportIssueCountry"] = true), (ok = false);
+        if (!p.passportIssueDate) (errs[base + "passportIssueDate"] = true), (ok = false);
+        if (!p.passportExpiryDate) (errs[base + "passportExpiryDate"] = true), (ok = false);
       }
     });
-
     setFieldErrors(errs);
     if (!ok) setError("Please fix the highlighted fields.");
     return ok;
@@ -168,48 +173,54 @@ export default function BookingPage() {
     setSubmitting(true);
 
     try {
-      const reval = await api.post("/flights/revalidate", {
+      // revalidate before booking
+      const rev = await api.post("/flights/revalidate", {
         session_id: sessionId,
         fare_source_code: fare.AirItineraryFareInfo.FareSourceCode,
       });
+      const valid = rev.data.data?.AirRevalidateResponse?.AirRevalidateResult?.IsValid;
+      if (!valid) {
+        setError("Fare expired. Please search again.");
+        return;
+      }
 
-      const valid = reval.data.data.AirRevalidateResponse.AirRevalidateResult.IsValid;
-      if (!valid) throw new Error("Fare has expired. Please select again.");
-
+      // split pax
       const adults = passengers.filter((p) => ["Mr", "Mrs", "Miss"].includes(p.title));
-      const children = passengers.filter((p) => p.title === "Master");
-      const infants = passengers.filter((p) => p.title === "Baby");
+      const childs = passengers.filter((p) => p.title === "Master");
+      const infs = passengers.filter((p) => p.title === "Baby");
 
       const payload = {
         flightBookingInfo: {
           flight_session_id: sessionId,
           fare_source_code: fare.AirItineraryFareInfo.FareSourceCode,
-          fareTotalAmount: fare.TotalFare?.TotalAmount || 0,
-          currency: fare.TotalFare?.Currency || "USD",
-          IsPassportMandatory: needsPassport ? "true" : "false",
-          countryCode: phone.replace(/\D/g, "").slice(0, 3) || "971",
+          IsPassportMandatory: needsPassport.toString(),
+          areaCode: phone.replace(/\D/g, "").slice(0,3) || "971",
+          countryCode: phone.replace(/\D/g, "").slice(0,3) || "971",
           fareType: fare.AirItineraryFareInfo.FareType,
         },
         paxInfo: {
           customerEmail: email.trim(),
           customerPhone: phone.trim(),
-          paxDetails: [{
-            adult: adults.length ? pack(adults) : pack([]),
-            child: children.length ? pack(children) : pack([]),
-            infant: infants.length ? pack(infants) : pack([]),
-          }],
+          paxDetails: [
+            { adult: pack(adults), child: pack(childs), infant: pack(infs) },
+          ],
         },
       };
 
-      await api.post("/flights/book", payload);
-      router.push("/payment");
-    } catch (e: any) {
-      const msg = e.response?.data?.error?.ErrorMessage || e.message || "Booking failed.";
-      if (msg.toLowerCase().includes("fare")) {
-        router.push("/search-results");
+      // book
+      const bookRes = await api.post("/flights/book", payload);
+      const result = bookRes.data.BookFlightResponse?.BookFlightResult;
+      if (result?.Success) {
+        router.push("/payment");
       } else {
+        const msg =
+          result?.Errors?.[0]?.Errors?.ErrorMessage ||
+          result?.Errors?.ErrorMessage ||
+          "Booking failed.";
         setError(msg);
       }
+    } catch (e: any) {
+      setError(e.response?.data?.error?.ErrorMessage || e.message);
     } finally {
       setSubmitting(false);
     }
@@ -218,7 +229,11 @@ export default function BookingPage() {
   if (authLoading || loading) {
     return (
       <div className="h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-pink-600 border-t-transparent"></div>
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+          className="w-12 h-12 border-4 border-pink-600 border-t-transparent rounded-full"
+        />
       </div>
     );
   }
@@ -233,133 +248,153 @@ export default function BookingPage() {
           {error && (
             <div className="bg-red-100 text-red-700 px-4 py-2 rounded">
               {error}
+              {error.includes("search again") && (
+                <button
+                  onClick={() => router.push("/search-results")}
+                  className="ml-4 text-blue-600 underline"
+                >
+                  Back to Search
+                </button>
+              )}
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <label>
-              <span className="text-gray-700">Email</span>
+          {/* Contact */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-gray-700">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full border rounded p-2"
+                className="mt-1 w-full border rounded px-3 py-2"
               />
-            </label>
-            <label>
-              <span className="text-gray-700">Phone</span>
+            </div>
+            <div>
+              <label className="block text-gray-700">Phone</label>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="mt-1 w-full border rounded p-2"
+                className="mt-1 w-full border rounded px-3 py-2"
               />
-            </label>
+            </div>
           </div>
 
+          {/* Passengers */}
           {passengers.map((p, idx) => {
-            const prefix = `pax-${idx}-`;
+            const base = `pax-${idx}-`;
             return (
-              <section key={idx} className="bg-gray-50 p-4 rounded-lg">
+              <div key={idx} className="bg-gray-50 p-4 rounded-lg">
                 <h2 className="font-semibold mb-3">Passenger {idx + 1}</h2>
                 <div className="grid md:grid-cols-4 gap-4">
-                  <label>
-                    <span className="text-gray-600">Title</span>
+                  <div>
+                    <label className="block text-gray-600">Title</label>
                     <select
                       value={p.title}
                       onChange={(e) => updatePassenger(idx, "title", e.target.value)}
-                      className="border rounded p-2 w-full"
+                      className="mt-1 w-full border rounded px-2 py-1"
                     >
                       {["Mr", "Mrs", "Miss", "Master", "Baby"].map((t) => (
                         <option key={t} value={t}>{t}</option>
                       ))}
                     </select>
-                  </label>
-
-                  <label>
-                    <span className="text-gray-600">First Name</span>
+                  </div>
+                  <div>
+                    <label className="block text-gray-600">First Name</label>
                     <input
                       value={p.firstName}
                       onChange={(e) => updatePassenger(idx, "firstName", e.target.value)}
-                      className={`border rounded p-2 w-full ${fieldErrors[prefix + "firstName"] && "border-red-500"}`}
+                      className={`mt-1 w-full border rounded px-2 py-1 ${
+                        fieldErrors[base + "firstName"] && "border-red-500"
+                      }`}
                     />
-                  </label>
-
-                  <label>
-                    <span className="text-gray-600">Last Name</span>
+                  </div>
+                  <div>
+                    <label className="block text-gray-600">Last Name</label>
                     <input
                       value={p.lastName}
                       onChange={(e) => updatePassenger(idx, "lastName", e.target.value)}
-                      className={`border rounded p-2 w-full ${fieldErrors[prefix + "lastName"] && "border-red-500"}`}
+                      className={`mt-1 w-full border rounded px-2 py-1 ${
+                        fieldErrors[base + "lastName"] && "border-red-500"
+                      }`}
                     />
-                  </label>
-
-                  <label>
-                    <span className="text-gray-600">Date of Birth</span>
+                  </div>
+                  <div>
+                    <label className="block text-gray-600">DOB</label>
                     <input
                       type="date"
                       value={p.dob}
                       onChange={(e) => updatePassenger(idx, "dob", e.target.value)}
-                      className={`border rounded p-2 w-full ${fieldErrors[prefix + "dob"] && "border-red-500"}`}
+                      className={`mt-1 w-full border rounded px-2 py-1 ${
+                        fieldErrors[base + "dob"] && "border-red-500"
+                      }`}
                     />
-                  </label>
+                  </div>
 
                   <div className="md:col-span-2">
-                    <span className="text-gray-600">Nationality</span>
+                    <label className="block text-gray-600">Nationality</label>
                     <Select
                       options={countryOptions}
                       value={p.nationality}
-                      onChange={(val) => updatePassenger(idx, "nationality", val as CountryOption)}
-                      classNamePrefix="react-select"
-                      placeholder="Select nationality"
+                      onChange={(val) =>
+                        updatePassenger(idx, "nationality", val as CountryOption)
+                      }
+                      className="mt-1"
                     />
                   </div>
 
                   {needsPassport && (
                     <>
-                      <label>
-                        <span className="text-gray-600">Passport Number</span>
+                      <div>
+                        <label className="block text-gray-600">Passport No.</label>
                         <input
                           value={p.passportNo}
                           onChange={(e) => updatePassenger(idx, "passportNo", e.target.value)}
-                          className={`border rounded p-2 w-full ${fieldErrors[prefix + "passportNo"] && "border-red-500"}`}
+                          className={`mt-1 w-full border rounded px-2 py-1 ${
+                            fieldErrors[base + "passportNo"] && "border-red-500"
+                          }`}
                         />
-                      </label>
-
+                      </div>
                       <div className="md:col-span-2">
-                        <span className="text-gray-600">Passport Issue Country</span>
+                        <label className="block text-gray-600">
+                          Passport Issue Country
+                        </label>
                         <Select
                           options={countryOptions}
                           value={p.passportIssueCountry}
-                          onChange={(val) => updatePassenger(idx, "passportIssueCountry", val as CountryOption)}
-                          classNamePrefix="react-select"
-                          placeholder="Select country"
+                          onChange={(val) =>
+                            updatePassenger(idx, "passportIssueCountry", val as CountryOption)
+                          }
+                          className="mt-1"
                         />
                       </div>
-
-                      <label>
-                        <span className="text-gray-600">Issue Date</span>
+                      <div>
+                        <label className="block text-gray-600">Issue Date</label>
                         <input
                           type="date"
                           value={p.passportIssueDate}
                           onChange={(e) => updatePassenger(idx, "passportIssueDate", e.target.value)}
-                          className={`border rounded p-2 w-full ${fieldErrors[prefix + "passportIssueDate"] && "border-red-500"}`}
+                          className={`mt-1 w-full border rounded px-2 py-1 ${
+                            fieldErrors[base + "passportIssueDate"] && "border-red-500"
+                          }`}
                         />
-                      </label>
-
-                      <label>
-                        <span className="text-gray-600">Expiry Date</span>
+                      </div>
+                      <div>
+                        <label className="block text-gray-600">Expiry Date</label>
                         <input
                           type="date"
                           value={p.passportExpiryDate}
                           onChange={(e) => updatePassenger(idx, "passportExpiryDate", e.target.value)}
-                          className={`border rounded p-2 w-full ${fieldErrors[prefix + "passportExpiryDate"] && "border-red-500"}`}
+                          className={`mt-1 w-full border rounded px-2 py-1 ${
+                            fieldErrors[base + "passportExpiryDate"] && "border-red-500"
+                          }`}
                         />
-                      </label>
+                      </div>
                     </>
                   )}
                 </div>
-              </section>
+              </div>
             );
           })}
 
