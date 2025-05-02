@@ -1,12 +1,6 @@
 // app/payment-cancel/page.tsx
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
-
-// dynamically load the client-only component
-const PaymentCancelContent = dynamic(
-  () => import("@/components/PaymentCancelContent"),
-  { ssr: false }
-);
+import PaymentCancelContent from "@/components/PaymentCancelContent";
 
 export const metadata: Metadata = {
   title: "Payment Cancelled | HRA Airlines",
