@@ -1,3 +1,4 @@
+// components/PaymentSuccessContent.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -18,7 +19,8 @@ export default function PaymentSuccessContent() {
       setStatus("error");
       return;
     }
-    // TODO: verify sessionId with backend for real
+
+    // TODO: call your backend to verify the sessionId if you need to
     setStatus("success");
 
     const timer = setInterval(() => {
@@ -37,17 +39,22 @@ export default function PaymentSuccessContent() {
 
   return (
     <motion.div
+      className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 to-gray-100 p-6"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 to-gray-100 p-6"
     >
       <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-lg text-center">
         {status === "loading" && (
           <>
-            <div className="animate-spin mb-4">
+            <motion.div
+              className="mx-auto mb-4 animate-spin"
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.4 }}
+            >
               <CheckCircle2 className="h-12 w-12 text-green-500 opacity-50" />
-            </div>
+            </motion.div>
             <p className="text-gray-600 mb-2">🔄 Verifying your payment…</p>
             <p className="text-sm text-gray-500">Please wait.</p>
           </>
@@ -55,25 +62,39 @@ export default function PaymentSuccessContent() {
 
         {status === "error" && (
           <>
-            <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+            <motion.div
+              className="mx-auto mb-4"
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.4 }}
+            >
+              <AlertCircle className="h-12 w-12 text-red-600" />
+            </motion.div>
             <h2 className="text-2xl font-bold text-red-700 mb-2">Payment Error</h2>
             <p className="text-gray-600 mb-6">
               We couldn’t verify your payment. Please try again.
             </p>
-            <motion.a
+            <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              href="/payment"
+              onClick={() => router.push("/payment")}
               className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
             >
               Retry Payment
-            </motion.a>
+            </motion.button>
           </>
         )}
 
         {status === "success" && (
           <>
-            <CheckCircle2 className="mx-auto h-12 w-12 text-green-600 mb-4 animate-bounce" />
+            <motion.div
+              className="mx-auto mb-4"
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.4 }}
+            >
+              <CheckCircle2 className="h-12 w-12 text-green-600" />
+            </motion.div>
             <h1 className="text-2xl font-bold text-green-700 mb-2">
               Payment Successful!
             </h1>

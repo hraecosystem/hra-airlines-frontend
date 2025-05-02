@@ -1,180 +1,386 @@
+// components/FlightSearchWidget.tsx
 "use client";
 
-import { useState } from "react";
+import React, { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import api from "@/lib/api";
-import AutoCompleteInput from "./AutoCompleteInput";
+import { motion } from "framer-motion";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { motion } from "framer-motion";
+import AutoCompleteInput from "./AutoCompleteInput";
+import api from "@/lib/api";
+import { toYMD } from "@/utils/date";
+
+type JourneyType = "OneWay" | "Return" | "Circle";
+type CabinClass = "Economy" | "PremiumEconomy" | "Business" | "First";
+
+interface Segment {
+  origin: string;
+  destination: string;
+  date: Date | null;
+}
 
 export default function FlightSearchWidget() {
   const router = useRouter();
-  const [tripType, setTripType] = useState<"OneWay" | "Return">("OneWay");
-  const [origin, setOrigin] = useState("");
-  const [destination, setDestination] = useState("");
-  const [departureDate, setDepartureDate] = useState<Date | null>(null);
+
+  const [tripType, setTripType] = useState<JourneyType>("OneWay");
+  const [segments, setSegments] = useState<Segment[]>([
+    { origin: "", destination: "", date: null },
+  ]);
   const [returnDate, setReturnDate] = useState<Date | null>(null);
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
   const [infants, setInfants] = useState(0);
-  const [cabinClass, setCabinClass] = useState("Economy");
-  const [error, setError] = useState("");
+  const [cabinClass, setCabinClass] = useState<CabinClass>("Economy");
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSearch = async () => {
-    if (!origin || !destination || !departureDate) {
-      setError("Please fill out Origin, Destination, and Departure Date.");
-      return;
+
+
+  const updateLeg = (
+    idx: number,
+    field: keyof Segment,
+    value: string | Date | null
+  ) => {
+    setSegments((prev) =>
+      prev.map((s, i) => (i === idx ? { ...s, [field]: value } : s))
+    );
+  };
+
+  const addLeg = () => {
+    if (segments.length < 5) {
+      setSegments((prev) => [
+        ...prev,
+        { origin: "", destination: "", date: null },
+      ]);
+    }
+  };
+
+  const removeLeg = (idx: number) => {
+    setSegments((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    // 1) nuke any old search/book state
+    localStorage.removeItem("searchResults");
+    localStorage.removeItem("flightSessionId");
+    localStorage.removeItem("selectedFare");
+    localStorage.removeItem("bookingId");
+        
+    // Basic passenger validation
+    if (infants > adults)
+      return setError("Each infant must be accompanied by an adult.");
+    if (adults + children + infants > 9)
+      return setError("You may book up to 9 passengers total.");
+
+    // Build OriginDestinationInfo array
+    const OriginDestinationInfo: any[] = [];
+
+    if (tripType === "Circle") {
+      if (segments.length < 2)
+        return setError("Multi-city trips need at least two legs.");
+      for (let i = 0; i < segments.length; i++) {
+        const { origin, destination, date } = segments[i];
+        if (!origin || !destination || !date)
+          return setError(`Please complete leg #${i + 1}.`);
+        OriginDestinationInfo.push({
+          departureDate: toYMD(date),
+          airportOriginCode: origin.toUpperCase(),
+          airportDestinationCode: destination.toUpperCase(),
+        });
+      }
+    } else {
+      const { origin, destination, date } = segments[0];
+      if (!origin || !destination || !date)
+        return setError(
+          "Origin, destination & departure date are required."
+        );
+      const leg: any = {
+        departureDate: toYMD(date),
+        airportOriginCode: origin.toUpperCase(),
+        airportDestinationCode: destination.toUpperCase(),
+      };
+      if (tripType === "Return") {
+        if (!returnDate)
+          return setError("Return date is required for round-trip.");
+        leg.returnDate = toYMD(returnDate);
+      }
+      OriginDestinationInfo.push(leg);
     }
 
-    try {
-      setLoading(true);
-      const payload = {
-        requiredCurrency: "USD",
-        journeyType: tripType,
-        OriginDestinationInfo: [
-          {
-            departureDate: departureDate.toISOString().split("T")[0],
-            returnDate:
-              tripType === "Return" && returnDate
-                ? returnDate.toISOString().split("T")[0]
-                : undefined,
-            airportOriginCode: origin.toUpperCase(),
-            airportDestinationCode: destination.toUpperCase(),
-          },
-        ],
-        class: cabinClass,
-        airlineCode: "",
-        adults,
-        childs: children,
-        infants,
-      };
+    // Payload
+    const payload = {
+      requiredCurrency: "USD",
+      journeyType: tripType,
+      OriginDestinationInfo,
+      class: cabinClass,
+      adults,
+      childs: children,
+      infants,
+    };
 
-      const res = await api.post("/flights/search", payload);
-      localStorage.setItem("searchResults", JSON.stringify(res.data.data));
+    setLoading(true);
+    try {
+      const resp = await api.post("/flights/search", payload);
+      localStorage.setItem(
+        "searchResults",
+        JSON.stringify(resp.data.data)
+      );
+      localStorage.setItem("searchTimestamp", Date.now().toString());
+
       router.push("/search-results");
-    } catch (err) {
-      console.error("Search Error:", err);
-      setError("Unable to fetch flights. Please try again.");
+    } catch (err: any) {
+      console.error(err);
+      setError(
+        err.response?.data?.message ||
+          err.response?.data?.error?.ErrorMessage ||
+          "Unable to search flights. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  // Shared input classes
+  const inputClass =
+    "w-full px-4 py-2 border border-gray-300 bg-white text-gray-800 rounded-lg focus:ring-2 focus:ring-blue-500";
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 40 }}
+    <motion.form
+      onSubmit={handleSubmit}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="w-full bg-white/85 backdrop-blur-lg border border-white/30 shadow-2xl rounded-2xl p-6 md:p-8 mx-auto"
+      transition={{ duration: 0.4 }}
+      className="mx-auto max-w-3xl space-y-6 rounded-xl bg-white p-6 shadow-lg"
+      aria-busy={loading}
     >
-      <h2 className="text-2xl font-extrabold text-center text-hraDark mb-6">
-        ✈️ Find Your Perfect Flight
+      <h2 className="text-center text-2xl font-bold text-gray-900">
+        Find Your Perfect Flight
       </h2>
 
       {error && (
-        <p className="text-red-600 bg-red-50 px-4 py-2 rounded mb-4 text-sm border border-red-200">
+        <div
+          role="alert"
+          className="rounded bg-red-100 px-4 py-2 text-red-800"
+        >
           {error}
-        </p>
+        </div>
       )}
 
-      <div className="grid md:grid-cols-2 gap-4">
+      {/* Trip & Cabin */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Trip Type</label>
+          <label
+            htmlFor="tripType"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Trip Type
+          </label>
           <select
-            className="w-full p-3 rounded-lg bg-gray-50 border border-gray-400 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm"
+            id="tripType"
             value={tripType}
-            onChange={(e) => setTripType(e.target.value as "OneWay" | "Return")}
+            onChange={(e) => {
+              const v = e.target.value as JourneyType;
+              setTripType(v);
+              setSegments([{ origin: "", destination: "", date: null }]);
+              setReturnDate(null);
+            }}
+            className={inputClass}
           >
-            <option value="OneWay">One Way</option>
-            <option value="Return">Round Trip</option>
+            <option>OneWay</option>
+            <option>Return</option>
+            <option>Circle</option>
           </select>
         </div>
-
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Cabin Class</label>
+          <label
+            htmlFor="cabinClass"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Cabin Class
+          </label>
           <select
-            className="w-full p-3 rounded-lg bg-gray-50 border border-gray-400 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm"
+            id="cabinClass"
             value={cabinClass}
-            onChange={(e) => setCabinClass(e.target.value)}
+            onChange={(e) =>
+              setCabinClass(e.target.value as CabinClass)
+            }
+            className={inputClass}
           >
-            <option value="Economy">Economy</option>
-            <option value="PremiumEconomy">Premium Economy</option>
-            <option value="Business">Business</option>
-            <option value="First">First</option>
+            <option>Economy</option>
+            <option>PremiumEconomy</option>
+            <option>Business</option>
+            <option>First</option>
           </select>
         </div>
-
-        <AutoCompleteInput
-          value={origin}
-          onChange={setOrigin}
-          label="Origin"
-          placeholder="City or Airport Code"
-        />
-        <AutoCompleteInput
-          value={destination}
-          onChange={setDestination}
-          label="Destination"
-          placeholder="City or Airport Code"
-        />
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Departure Date</label>
-          <DatePicker
-            selected={departureDate}
-            onChange={(date) => setDepartureDate(date)}
-            className="w-full p-3 rounded-lg bg-gray-50 border border-gray-400 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm"
-            dateFormat="yyyy-MM-dd"
-            placeholderText="Select departure date"
-          />
-        </div>
-
-        {tripType === "Return" && (
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Return Date</label>
-            <DatePicker
-              selected={returnDate}
-              onChange={(date) => setReturnDate(date)}
-              className="w-full p-3 rounded-lg bg-gray-50 border border-gray-400 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm"
-              dateFormat="yyyy-MM-dd"
-              placeholderText="Select return date"
-            />
-          </div>
-        )}
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mt-4">
-        {[{ label: "Adults", val: adults, set: setAdults, min: 1 },
-          { label: "Children", val: children, set: setChildren, min: 0 },
-          { label: "Infants", val: infants, set: setInfants, min: 0 }
-        ].map((field, i) => (
-          <div key={i}>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">{field.label}</label>
+      {/* Flight Legs */}
+      {tripType === "Circle" ? (
+        <>
+          {segments.map((s, i) => (
+            <div
+              key={i}
+              className="grid grid-cols-1 gap-4 sm:grid-cols-4 items-end"
+            >
+              <AutoCompleteInput
+                label={`Trip ${i + 1} Origin`}
+                value={s.origin}
+                onChange={(v) => updateLeg(i, "origin", v)}
+                inputClassName={inputClass}
+              />
+              <AutoCompleteInput
+                label={`Trip ${i + 1} Destination`}
+                value={s.destination}
+                onChange={(v) => updateLeg(i, "destination", v)}
+                inputClassName={inputClass}
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Date
+                </label>
+                <DatePicker
+                  selected={s.date}
+                  onChange={(d) => updateLeg(i, "date", d)}
+                  dateFormat="yyyy-MM-dd"
+                  minDate={new Date()}
+                  placeholderText="YYYY-MM-DD"
+                  className={inputClass}
+                />
+              </div>
+              {i > 0 && (
+                <button
+                  type="button"
+                  onClick={() => removeLeg(i)}
+                  aria-label={`Remove leg ${i + 1}`}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          ))}
+          {segments.length < 5 && (
+            <button
+              type="button"
+              onClick={addLeg}
+              className="text-blue-600 hover:underline"
+            >
+              + Add another Trip
+            </button>
+          )}
+        </>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <AutoCompleteInput
+              label="Origin"
+              value={segments[0].origin}
+              onChange={(v) => updateLeg(0, "origin", v)}
+              inputClassName={inputClass}
+            />
+            <AutoCompleteInput
+              label="Destination"
+              value={segments[0].destination}
+              onChange={(v) => updateLeg(0, "destination", v)}
+              inputClassName={inputClass}
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Departure Date
+              </label>
+              <DatePicker
+                selected={segments[0].date}
+                onChange={(d) => updateLeg(0, "date", d)}
+                dateFormat="yyyy-MM-dd"
+                minDate={new Date()}
+                placeholderText="YYYY-MM-DD"
+                className={inputClass}
+                required
+              />
+            </div>
+            {tripType === "Return" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Return Date
+                </label>
+                <DatePicker
+                  selected={returnDate}
+                  onChange={setReturnDate}
+                  dateFormat="yyyy-MM-dd"
+                  minDate={segments[0].date || new Date()}
+                  placeholderText="YYYY-MM-DD"
+                  className={inputClass}
+                  required
+                />
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Passengers */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {[
+          {
+            id: "adults",
+            label: "Adults",
+            val: adults,
+            fn: setAdults,
+            min: 1,
+          },
+          {
+            id: "children",
+            label: "Children",
+            val: children,
+            fn: setChildren,
+            min: 0,
+          },
+          {
+            id: "infants",
+            label: "Infants",
+            val: infants,
+            fn: setInfants,
+            min: 0,
+          },
+        ].map(({ id, label, val, fn, min }) => (
+          <div key={id}>
+            <label
+              htmlFor={id}
+              className="block text-sm font-medium text-gray-700"
+            >
+              {label}
+            </label>
             <input
+              id={id}
               type="number"
-              min={field.min}
-              value={field.val}
-              onChange={(e) => field.set(Number(e.target.value))}
-              className="w-full p-3 rounded-lg bg-gray-50 border border-gray-400 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm"
+              min={min}
+              max={9}
+              value={val}
+              onChange={(e) => fn(Number(e.target.value))}
+              className={inputClass}
             />
           </div>
         ))}
       </div>
 
-      <div className="mt-6">
-        <motion.button
-          onClick={handleSearch}
-          whileTap={{ scale: 0.97 }}
-          disabled={loading}
-          className="w-full bg-gradient-to-r from-pink-600 to-purple-600
-                    hover:from-pink-700 hover:to-purple-700
-                    text-white py-3 text-lg font-semibold rounded-xl
-                    transition-all duration-300 disabled:opacity-50"
-        >
-          {loading ? "🔄 Searching…" : "🔍 Search Flights"}
-        </motion.button>
-      </div>
-    </motion.div>
+      {/* Submit */}
+      <motion.button
+        type="submit"
+        disabled={loading}
+        whileTap={{ scale: 0.97 }}
+        className={`w-full rounded-lg py-3 text-white font-semibold transition ${
+          loading
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+        }`}
+      >
+        {loading ? "🔄 Searching…" : "🔍 Search Flights"}
+      </motion.button>
+    </motion.form>
   );
 }

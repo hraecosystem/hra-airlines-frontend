@@ -1,6 +1,7 @@
 // app/destinations/page.tsx
 "use client";
 
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -46,7 +47,7 @@ export default function DestinationsPage() {
           🌍 Explore Destinations
         </h1>
         <p className="text-lg text-gray-600 mb-12">
-          Discover world‑class cities and breathtaking views with HRA Airlines. Tap any card to start your search.
+          Discover world-class cities and breathtaking views with HRA Airlines. Tap any card to start your search.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">

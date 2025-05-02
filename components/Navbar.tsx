@@ -1,3 +1,4 @@
+// components/Navbar.tsx
 "use client";
 
 import Image from "next/image";
@@ -17,26 +18,25 @@ import { useAuth } from "@/context/AuthContext";
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { user, logout } = useAuth();
 
-  const isUserLoggedIn = !!user;
-
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.push("/auth/login");
   };
 
+  // Close dropdown when clicking outside
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
+    const handleClickOutside = (e: MouseEvent) => {
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(e.target as Node)
       ) {
         setIsDropdownOpen(false);
       }
-    }
+    };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -48,81 +48,79 @@ export default function Navbar() {
     { label: "Contact", href: "/contact" },
     { label: "About", href: "/about" },
     { label: "FAQs", href: "/faqs" },
+    { label: "Hotels", href: "https://hra-experience.com", external: true },
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200/30 shadow-sm">
+    <nav className="fixed inset-x-0 top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 relative">
-          {/* Mobile Toggle */}
+        <div className="flex items-center justify-between h-16">
+          {/* Mobile menu button */}
           <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="sm:hidden text-gray-700 hover:text-pink-600 transition"
+            className="sm:hidden p-2 rounded-md text-gray-700 hover:text-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-400"
+            onClick={() => setIsMenuOpen((o) => !o)}
+            aria-label="Toggle menu"
           >
-            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
 
           {/* Logo */}
-          <Link href="/">
+          <Link href="/" className="flex items-center">
             <Image
               src="/logo-hra.png"
               alt="HRA Airlines"
               width={160}
               height={40}
-              className="h-10 w-auto"
               priority
+              className="h-10 w-auto"
             />
           </Link>
 
-          {/* Desktop Nav */}
-          <div className="hidden sm:flex items-center gap-6">
-            {navLinks.map((link) => (
+          {/* Desktop navigation */}
+          <div className="hidden sm:flex sm:items-center sm:space-x-6">
+            {navLinks.map(({ label, href, external }) => (
               <Link
-                key={link.href}
-                href={link.href}
-                className="text-gray-700 hover:text-pink-600 font-medium text-sm transition-colors duration-300"
+                key={href}
+                href={href}
+                target={external ? "_blank" : undefined}
+                rel={external ? "noopener noreferrer" : undefined}
+                className="text-gray-700 hover:text-pink-600 font-medium text-sm transition-colors duration-200"
               >
-                {link.label}
+                {label}
               </Link>
             ))}
-            <Link
-              href="https://hra-experience.com"
-              target="_blank"
-              className="text-gray-700 hover:text-pink-600 font-medium text-sm"
-            >
-              Hotels
-            </Link>
 
-            {isUserLoggedIn ? (
+            {user ? (
               <div className="relative" ref={dropdownRef}>
                 <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-gray-100 transition"
+                  onClick={() => setIsDropdownOpen((o) => !o)}
+                  className="flex items-center space-x-1 px-3 py-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                  aria-label="User menu"
                 >
-                  <User className="w-5 h-5 text-gray-600" />
-                  <ChevronDown className="w-4 h-4 text-gray-600" />
+                  <User size={20} className="text-gray-600" />
+                  <ChevronDown size={16} className="text-gray-600" />
                 </button>
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-md z-50">
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1">
                     <Link
                       href="/profile"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       onClick={() => setIsDropdownOpen(false)}
                     >
-                      <User className="w-4 h-4" /> Profile
+                      <User size={16} className="mr-2" /> Profile
                     </Link>
                     <Link
                       href="/dashboard/bookings"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       onClick={() => setIsDropdownOpen(false)}
                     >
-                      <LayoutDashboard className="w-4 h-4" /> My Bookings
+                      <LayoutDashboard size={16} className="mr-2" /> My Bookings
                     </Link>
                     <button
                       onClick={handleLogout}
-                      className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
+                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
                     >
-                      <LogOut className="w-4 h-4" /> Logout
+                      <LogOut size={16} className="mr-2" /> Logout
                     </button>
                   </div>
                 )}
@@ -130,7 +128,7 @@ export default function Navbar() {
             ) : (
               <Link
                 href="/auth/login"
-                className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors duration-300"
+                className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors duration-200"
               >
                 Sign In
               </Link>
@@ -139,29 +137,24 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile menu panel */}
       {isMenuOpen && (
         <div className="sm:hidden bg-white border-t border-gray-200 shadow-md">
-          <div className="flex flex-col p-4 space-y-4">
-            {navLinks.map((link) => (
+          <div className="px-4 py-3 space-y-4 flex flex-col">
+            {navLinks.map(({ label, href, external }) => (
               <Link
-                key={link.href}
-                href={link.href}
-                className="text-gray-800 hover:text-pink-600 text-base font-medium"
+                key={href}
+                href={href}
+                target={external ? "_blank" : undefined}
+                rel={external ? "noopener noreferrer" : undefined}
+                className="text-gray-800 hover:text-pink-600 font-medium text-base"
                 onClick={() => setIsMenuOpen(false)}
               >
-                {link.label}
+                {label}
               </Link>
             ))}
-            <Link
-              href="https://hra-experience.com"
-              target="_blank"
-              className="text-gray-800 hover:text-pink-600 text-base font-medium"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Hotels
-            </Link>
-            {isUserLoggedIn ? (
+
+            {user ? (
               <>
                 <Link
                   href="/profile"
@@ -182,7 +175,7 @@ export default function Navbar() {
                     handleLogout();
                     setIsMenuOpen(false);
                   }}
-                  className="text-red-600 text-left"
+                  className="text-red-600 text-left font-medium"
                 >
                   Logout
                 </button>
@@ -190,7 +183,8 @@ export default function Navbar() {
             ) : (
               <Link
                 href="/auth/login"
-                className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition"
+                className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors duration-200"
+                onClick={() => setIsMenuOpen(false)}
               >
                 Sign In
               </Link>

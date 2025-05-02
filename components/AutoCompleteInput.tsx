@@ -1,10 +1,18 @@
+// components/AutoCompleteInput.tsx
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import api from "@/lib/api"; // ✅ centralized API instance
+import React, {
+  FC,
+  useState,
+  useEffect,
+  useRef,
+  KeyboardEvent,
+  ChangeEvent,
+} from "react";
 import Fuse from "fuse.js";
+import api from "@/lib/api";
 
-interface Airport {
+export interface Airport {
   AirportCode: string;
   AirportName: string;
   City: string;
@@ -12,138 +20,159 @@ interface Airport {
   Type?: string;
 }
 
-interface AutoCompleteInputProps {
+interface Props {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (v: string) => void;
   placeholder?: string;
   label?: string;
+  inputClassName?: string;
 }
 
-export default function AutoCompleteInput({
+const AutoCompleteInput: FC<Props> = ({
   value,
   onChange,
   placeholder = "",
   label = "",
-}: AutoCompleteInputProps) {
+  inputClassName = "",
+}) => {
+  const [airports, setAirports] = useState<Airport[]>([]);
   const [suggestions, setSuggestions] = useState<Airport[]>([]);
-  const [allAirports, setAllAirports] = useState<Airport[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [open, setOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
-  const [isSelected, setIsSelected] = useState(false);
-  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
+  // initialize ref with null
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // 1) Load airport list once
   useEffect(() => {
-    const cached = sessionStorage.getItem("hra_airports");
-
-    if (cached) {
-      setAllAirports(JSON.parse(cached));
-    } else {
-      api
-        .post("/airports/list")
-        .then((res) => {
-          setAllAirports(res.data);
-          sessionStorage.setItem("hra_airports", JSON.stringify(res.data));
-        })
-        .catch((err) => {
-          console.error("⚠️ Failed to fetch airport list", err);
-        });
-    }
+    (async () => {
+      try {
+        const resp = await api.post<{ data: Airport[] }>("/airports/list", {});
+        setAirports(resp.data.data);
+        sessionStorage.setItem("hra_airports", JSON.stringify(resp.data.data));
+      } catch {
+        const cached = sessionStorage.getItem("hra_airports");
+        if (cached) {
+          setAirports(JSON.parse(cached));
+        }
+      }
+    })();
   }, []);
 
+  // 2) Debounced search via Fuse.js
   useEffect(() => {
-    if (value.trim().length < 2 || isSelected) {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (value.trim().length < 2) {
       setSuggestions([]);
+      setOpen(false);
       return;
     }
-
-    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
-
-    debounceTimeout.current = setTimeout(() => {
-      setIsLoading(true);
-      const fuse = new Fuse(allAirports, {
+    debounceRef.current = setTimeout(() => {
+      const fuse = new Fuse(airports, {
         keys: ["AirportCode", "AirportName", "City", "Country"],
         threshold: 0.3,
       });
-      const result = fuse.search(value).map((r) => r.item);
-      setSuggestions(result);
-      setShowSuggestions(true);
-      setIsLoading(false);
-    }, 300);
+      const results = fuse.search(value).map((r) => r.item);
+      setSuggestions(results);
+      setOpen(results.length > 0);
+      setHighlightedIndex(-1);
+    }, 200);
+  }, [value, airports]);
 
-    return () => {
-      if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+  // 3) Close suggestions on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
     };
-  }, [value, allAirports, isSelected]);
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
-  const handleSelect = (airport: Airport) => {
-    onChange(airport.AirportCode);
-    setSuggestions([]);
-    setShowSuggestions(false);
-    setIsSelected(true);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!suggestions.length) return;
-
+  // 4) Keyboard navigation
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (!open) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setHighlightedIndex((prev) => (prev + 1) % suggestions.length);
-    } else if (e.key === "ArrowUp") {
+      setHighlightedIndex((i) =>
+        i < suggestions.length - 1 ? i + 1 : 0
+      );
+    }
+    if (e.key === "ArrowUp") {
       e.preventDefault();
-      setHighlightedIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length);
-    } else if (e.key === "Enter" && highlightedIndex >= 0) {
+      setHighlightedIndex((i) =>
+        i > 0 ? i - 1 : suggestions.length - 1
+      );
+    }
+    if (e.key === "Enter" && highlightedIndex >= 0) {
       e.preventDefault();
-      handleSelect(suggestions[highlightedIndex]);
+      selectAirport(suggestions[highlightedIndex]);
     }
   };
 
+  const selectAirport = (a: Airport) => {
+    onChange(a.AirportCode);
+    setOpen(false);
+    setSuggestions([]);
+    setHighlightedIndex(-1);
+  };
+
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative">
       {label && (
-        <label className="block text-sm font-semibold text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
           {label}
         </label>
       )}
       <input
         type="text"
+        className={`${inputClassName} bg-white text-gray-800`}
         value={value}
         placeholder={placeholder}
-        onChange={(e) => {
-          setIsSelected(false);
-          onChange(e.target.value);
-        }}
-        onFocus={() => setShowSuggestions(true)}
+        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+          onChange(e.target.value.toUpperCase())
+        }
+        onFocus={() => suggestions.length > 0 && setOpen(true)}
         onKeyDown={handleKeyDown}
-        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-        className="w-full p-3 rounded-lg bg-gray-50 border border-gray-400 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm"
         autoComplete="off"
+        aria-autocomplete="list"
+        aria-expanded={open}
       />
-      {isLoading && (
-        <div className="absolute right-3 top-3 animate-spin border-2 border-gray-300 border-t-gray-600 rounded-full w-4 h-4"></div>
-      )}
-      {showSuggestions && suggestions.length > 0 && (
-        <ul className="absolute z-50 bg-white border border-gray-300 rounded mt-1 w-full max-h-60 overflow-auto shadow-xl">
-          {suggestions.map((airport, idx) => (
+
+      {open && suggestions.length > 0 && (
+        <ul className="absolute inset-x-0 z-50 mt-1 max-h-60 overflow-auto rounded border border-gray-300 bg-white text-black shadow-lg">
+          {suggestions.map((a, idx) => (
             <li
-              key={idx}
-              className={`p-3 cursor-pointer flex items-center justify-between transition-colors duration-150 ${
-                idx === highlightedIndex ? "bg-gray-200" : "hover:bg-gray-100"
-              }`}
-              onMouseDown={() => handleSelect(airport)}
+              key={`${a.AirportCode}-${idx}`}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                selectAirport(a);
+              }}
               onMouseEnter={() => setHighlightedIndex(idx)}
+              className={`flex cursor-pointer items-center justify-between px-4 py-2 ${
+                idx === highlightedIndex
+                  ? "bg-blue-100"
+                  : "hover:bg-gray-100"
+              }`}
             >
-              <div>
-                <span className="font-bold text-gray-800">{airport.AirportCode}</span> – {airport.AirportName}, {airport.City}
-                <div className="text-xs text-gray-500">{airport.Country}</div>
-              </div>
-              <span className="text-xs text-blue-500 font-medium">
-                {airport.Type || "Intl"}
+              <span className="font-semibold">{a.AirportCode}</span>
+              <span className="ml-2 flex-1 truncate">
+                {a.AirportName}, {a.City}
               </span>
+              {a.Type && (
+                <span className="ml-2 text-xs text-gray-500">{a.Type}</span>
+              )}
             </li>
           ))}
         </ul>
       )}
     </div>
   );
-}
+};
+
+export default AutoCompleteInput;

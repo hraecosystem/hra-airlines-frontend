@@ -11,35 +11,45 @@ export default function CancelTicketPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
-  const [bookingId, setBookingId] = useState("");
+  const [uniqueId, setUniqueId] = useState("");
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
-  // Protect route
+  // 1) Redirect if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push(`/auth/login?redirect=/dashboard/bookings/cancel`);
+      router.replace(`/auth/login?redirect=/dashboard/bookings/cancel`);
     }
   }, [authLoading, user, router]);
 
+  // 2) When the user submits the form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const id = bookingId.trim();
-    if (!id) {
-      return setToast({ type: "error", message: "Please enter a valid Booking ID." });
+    const trimmed = uniqueId.trim();
+    if (!trimmed) {
+      return setToast({ type: "error", message: "Please enter a Booking ID." });
     }
-    if (!confirm(`Cancel booking "${id}"?`)) return;
+    // Ask for confirmation
+    if (!window.confirm(`Are you sure you want to cancel booking "${trimmed}"?`)) {
+      return;
+    }
 
     setLoading(true);
     setToast(null);
+
     try {
-      const res = await api.post("/flights/cancel", { uniqueId: id });
-      const msg = res.data.status === "success"
-        ? "✅ Booking cancelled successfully."
-        : "⚠️ Cancellation request submitted.";
+      const res = await api.post("/flights/cancel", { uniqueId: trimmed });
+      const msg =
+        res.data.status === "success"
+          ? "✅ Booking cancelled successfully."
+          : "⚠️ Cancellation request submitted.";
       setToast({ type: "success", message: msg });
-      setBookingId("");
+      setUniqueId("");
     } catch (err: any) {
+      // Try to extract an error message
       const errMsg =
         err.response?.data?.message ||
         err.response?.data?.error?.ErrorMessage ||
@@ -50,6 +60,7 @@ export default function CancelTicketPage() {
     }
   };
 
+  // 3) Render loading / redirect state
   if (authLoading || !user) {
     return (
       <div className="flex h-screen items-center justify-center text-gray-500">
@@ -65,20 +76,23 @@ export default function CancelTicketPage() {
           🛑 Cancel a Booking
         </h1>
         <p className="text-sm text-gray-600 text-center mb-6">
-          Enter your Booking ID below to cancel your flight reservation.
+          Enter your Booking ID below to cancel your reservation.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="booking-id" className="block text-gray-700 font-medium mb-1">
+            <label
+              htmlFor="uniqueId"
+              className="block text-gray-700 font-medium mb-1"
+            >
               Booking ID
             </label>
             <input
-              id="booking-id"
+              id="uniqueId"
               type="text"
-              value={bookingId}
-              onChange={(e) => setBookingId(e.target.value)}
-              placeholder="e.g. TR63202025"
+              value={uniqueId}
+              onChange={(e) => setUniqueId(e.target.value)}
+              placeholder="e.g. MTPNR123456"
               disabled={loading}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm"
             />
@@ -89,9 +103,11 @@ export default function CancelTicketPage() {
             disabled={loading}
             whileTap={{ scale: 0.98 }}
             className={`w-full flex justify-center items-center px-4 py-2 font-semibold text-white rounded-md transition-colors
-              ${loading
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-red-600 hover:bg-red-700"}
+              ${
+                loading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-red-600 hover:bg-red-700"
+              }
             `}
           >
             {loading && (
@@ -120,11 +136,11 @@ export default function CancelTicketPage() {
           </motion.button>
         </form>
 
-        {/* Toast messages */}
+        {/* 4) Toast messages */}
         <AnimatePresence>
           {toast && (
             <motion.div
-              key="toast"
+              key={toast.message}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}

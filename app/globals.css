@@ -1,28 +1,70 @@
 @import "tailwindcss";
 
+/* globals.css */
+
 /* ---------------- Tailwind Directives ---------------- */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ---------------- Global Styles ---------------- */
-body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-  background-color: #f9fafb;
-  color: #1f2937;
-  line-height: 1.5;
+/* ---------------- 1. Box-Sizing & Reset ---------------- */
+html {
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+}
+*, *::before, *::after {
+  box-sizing: inherit;
 }
 
-/* Prevent horizontal scroll (globally safe) */
-html,
-body {
-  overflow-x: hidden;
+/* ---------------- 2. Base Typography & Elements ---------------- */
+@layer base {
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+      'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+    background-color: theme('colors.gray.50');
+    color: theme('colors.gray.900');
+    line-height: theme('lineHeight.relaxed');
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    margin-top: theme('spacing.8');
+    margin-bottom: theme('spacing.4');
+    font-weight: theme('fontWeight.bold');
+    scroll-margin-top: theme('spacing.20');
+  }
+
+  p {
+    margin-bottom: theme('spacing.4');
+  }
+
+  a {
+    color: theme('colors.blue.600');
+    text-decoration: underline;
+    transition: color .2s;
+  }
+  a:hover {
+    color: theme('colors.blue.800');
+  }
+
+  img, video {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  button, input, textarea, select {
+    font: inherit;
+  }
+
+  ::selection {
+    background-color: theme('colors.blue.200');
+    color: theme('colors.gray.900');
+  }
 }
 
-/* ---------------- Scrollbar Customization ---------------- */
+/* ---------------- 3. Scrollbar Hiding ---------------- */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
@@ -31,33 +73,48 @@ body {
   scrollbar-width: none;
 }
 
-/* ---------------- Print Optimization ---------------- */
-@media print {
-  * {
-    background: none !important;
-    color: #000 !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
-  }
+/* ---------------- 4. Prevent Horizontal Overflow ---------------- */
+html, body {
+  overflow-x: hidden;
+}
 
-  button,
-  nav,
-  .no-print,
-  .print-hidden {
-    display: none !important;
-  }
+/* ---------------- 5. Accessible Focus Styles ---------------- */
+:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px theme('colors.blue.400');
+}
 
+/* ---------------- 6. Dark Mode Support ---------------- */
+@media (prefers-color-scheme: dark) {
   body {
+    background-color: theme('colors.gray.900');
+    color: theme('colors.gray.100');
+  }
+  a {
+    color: theme('colors.blue.400');
+  }
+  a:hover {
+    color: theme('colors.blue.200');
+  }
+}
+
+/* ---------------- 7. Print Optimization ---------------- */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
     font-size: 12pt;
     line-height: 1.4;
   }
-
+  nav, button, .no-print, .print-hidden {
+    display: none !important;
+  }
   a::after {
     content: " (" attr(href) ")";
   }
 }
 
-/* ---------------- Custom Animations ---------------- */
+/* ---------------- 8. Custom Animations ---------------- */
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -68,8 +125,6 @@ body {
     transform: translateY(0);
   }
 }
-
 .animate-fade-in {
-  animation: fade-in 0.6s ease-out;
+  animation: fade-in 0.6s ease-out both;
 }
-

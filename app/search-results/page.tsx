@@ -1,195 +1,310 @@
 // app/search-results/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import FiltersSidebar from "@/components/common/FiltersSidebar";
 import Pagination from "@/components/common/Pagination";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import numeral from "numeral";
 
-interface FareItinerary {
-  AirItineraryFareInfo: {
-    SessionId?: string;                       // 👈 Trawex actually returns this
-    FareSourceCode: string;
-    FareType: string;
-    IsRefundable: boolean;
-    ItinTotalFares: {
-      TotalFare: { Amount: string; CurrencyCode: string };
-    };
-    FareBreakdown: Array<{
-      PassengerTypeQuantity: { Code: string; Quantity: number };
-      PassengerFare: { TotalFare: { Amount: string } };
-      Baggage?: string[];
-      CabinBaggage?: string[];
-      MealInfo?: string[];
-    }>;
-  };
-  OriginDestinationOptions: Array<{
-    TotalStops: number;
-    OriginDestinationOption: Array<{
-      FlightSegment: {
-        DepartureAirportLocationCode: string;
-        ArrivalAirportLocationCode: string;
-        DepartureDateTime: string;
-        ArrivalDateTime: string;
-        MarketingAirlineCode: string;
-        MarketingAirlineName?: string;
-        FlightNumber: string;
-        Equipment?: { AirEquipType: string };
-        JourneyDuration: number;
-        CabinClassCode: string;
-        CabinClassText?: string;
-        Eticket: boolean;
-        OperatingAirline: { Code: string; Name: string };
-      };
-      ResBookDesigCode?: string;
-      ResBookDesigText?: string;
-      SeatsRemaining: { Number: number };
-      StopQuantity: number;
-    }>;
-  }>;
-  DirectionInd: string;
+interface FlightSegment {
+  DepartureAirportLocationCode: string;
+  ArrivalAirportLocationCode: string;
+  DepartureDateTime: string;
+  ArrivalDateTime: string;
+  MarketingAirlineCode: string;
+  MarketingAirlineName?: string;
+  FlightNumber: string;
+  Equipment?: { AirEquipType: string };
+  JourneyDuration: number;
+  CabinClassCode: string;
+  CabinClassText?: string;
+  Eticket: boolean;
+  OperatingAirline: { Code: string; Name: string; Equipment?: string; FlightNumber?: string };
 }
 
+interface OriginDestinationOption {
+  TotalStops: number;
+  OriginDestinationOption: Array<{
+    FlightSegment: FlightSegment;
+    ResBookDesigCode?: string;
+    ResBookDesigText?: string;
+    SeatsRemaining: { Number: number; BelowMinimum?: boolean };
+    StopQuantity: number;
+    StopQuantityInfo?: any;
+  }>;
+}
+
+interface PenaltyDetail {
+  Currency: string;
+  RefundAllowed: boolean;
+  RefundPenaltyAmount: string;
+  ChangeAllowed: boolean;
+  ChangePenaltyAmount: string;
+}
+
+interface FareBreakdown {
+  PassengerTypeQuantity: { Code: string; Quantity: number };
+  PassengerFare: {
+    BaseFare: { Amount: string; CurrencyCode: string };
+    EquivFare: { Amount: string; CurrencyCode: string };
+    ServiceTax: { Amount: string; CurrencyCode: string };
+    Surcharges?: { Amount: string; CurrencyCode: string };
+    Taxes?: Array<{ TaxCode: string; Amount: string; CurrencyCode: string }>;
+    TotalFare: { Amount: string; CurrencyCode: string };
+  };
+  Baggage?: string[];
+  CabinBaggage?: string[];
+  MealInfo?: string[];
+  PenaltyDetails?: PenaltyDetail[];
+}
+
+interface ItinTotalFares {
+  BaseFare: { Amount: string; CurrencyCode: string };
+  EquivFare: { Amount: string; CurrencyCode: string };
+  ServiceTax: { Amount: string; CurrencyCode: string };
+  TotalTax: { Amount: string; CurrencyCode: string };
+  TotalFare: { Amount: string; CurrencyCode: string };
+}
+
+interface AirItineraryFareInfo {
+  DivideInPartyIndicator: boolean;
+  FareSourceCode: string;
+  FareType: string;
+  IsRefundable: boolean;
+  ItinTotalFares: ItinTotalFares;
+  FareBreakdown: FareBreakdown[];
+  SplitItinerary?: boolean;
+}
+
+interface FareItinerary {
+  DirectionInd: string;
+  TicketType?: string;
+  IsPassportMandatory?: boolean;
+  SequenceNumber?: string;
+  ValidatingAirlineCode?: string;
+  OriginDestinationOptions: OriginDestinationOption[];
+  AirItineraryFareInfo: AirItineraryFareInfo;
+}
+
+
+
+type Filters = {
+  airline: string;
+  stops: "all" | "0" | "1" | "2+";
+  sortBy: "price-asc" | "price-desc";
+  meals: string[];
+  baggage: string[];
+  priceRange: [number, number];
+};
+
 const ITEMS_PER_PAGE = 10;
+const DEFAULT_PRICE_RANGE: [number, number] = [0, 200000];
 
 export default function SearchResultsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
-  const [results, setResults] = useState<FareItinerary[]>([]);
-  const [filtered, setFiltered] = useState<FareItinerary[]>([]);
-  const [filters, setFilters] = useState({
+  const [errorMsg, setErrorMsg] = useState("");
+  type FI = FareItinerary;  // simple alias is still handy
+
+  const [allItins, setAllItins] = useState<FI[]>([]);
+  const [filtered, setFiltered] = useState<FI[]>([]);
+  
+  const [masterSid, setMasterSid] = useState<string>("");   // ← NEW
+
+  const [filters, setFilters] = useState<Filters>({
     airline: "",
     stops: "all",
-    sortBy: "price",
-    meals: [] as string[],
-    baggage: [] as string[],
-    price: [0, 2000] as [number, number],
+    sortBy: "price-asc",
+    meals: [],
+    baggage: [],
+    priceRange: DEFAULT_PRICE_RANGE,
   });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
-  // 1) load
+  const [currentPage, setCurrentPage] = useState(1);
+  const [expanded, setExpanded] = useState<number | null>(null);
+
+
+  
+  // 1) Load raw payload & extract FareItineraries
   useEffect(() => {
     try {
       const raw = localStorage.getItem("searchResults");
-      if (!raw) throw new Error("No search results found.");
-      const data = JSON.parse(raw);
-      const itineraries =
-        data?.AirSearchResponse?.AirSearchResult?.FareItineraries?.map(
-          (x: any) => x.FareItinerary
-        ) ?? [];
-      setResults(itineraries);
-      setFiltered(itineraries);
+      if (!raw) throw new Error("No search results found. Please search again.");
+      const obj = JSON.parse(raw);
+
+/* 1️⃣ grab the search-level SessionId once */
+ const sid =
+   obj.AirSearchResponse?.session_id ??                // ♦ correct path
+   obj.AirSearchResponse?.AirSearchResult?.SessionId ??// (fallback)
+   obj.session_id ??                                   // (old fallback)
+   "";
+setMasterSid(sid);
+
+
+
+if (sid) {
+    localStorage.setItem("flightSessionId", sid);
+  }
+
+      /* 2️⃣  normalise itineraries */
+      const rawFi  = obj.AirSearchResponse?.AirSearchResult?.FareItineraries;
+      const itins: FI[] = Array.isArray(rawFi)
+        ? rawFi.map((w: any) => w.FareItinerary)
+        : [rawFi.FareItinerary];
+
+      setAllItins(itins);
+      setFiltered(itins);
     } catch (e: any) {
-      setMessage(e.message);
+      setErrorMsg(e.message);
     } finally {
       setLoading(false);
     }
   }, []);
+  
 
-  // 2) filters
+  // 2) Apply filters & sorting whenever filters or allItins change
   useEffect(() => {
-    let temp = [...results];
+    let tmp = [...allItins];
+
+    // airline filter
     if (filters.airline) {
-      temp = temp.filter((f) =>
-        f.OriginDestinationOptions.some((opt) =>
-          opt.OriginDestinationOption.some((seg) =>
-            seg.FlightSegment.MarketingAirlineCode.includes(filters.airline)
+      tmp = tmp.filter((fi) =>
+        fi.OriginDestinationOptions.some((odo) =>
+          odo.OriginDestinationOption.some(
+            (seg) =>
+              seg.FlightSegment.MarketingAirlineCode === filters.airline
           )
         )
       );
     }
+
+    // stops filter
     if (filters.stops !== "all") {
-      const st = parseInt(filters.stops);
-      temp = temp.filter((f) => f.OriginDestinationOptions[0].TotalStops === st);
+      tmp = tmp.filter(
+        (fi) => odoTotalStops(fi) === parseStops(filters.stops)
+      );
     }
+
+    // baggage
     if (filters.baggage.length) {
-      temp = temp.filter((f) =>
-        f.AirItineraryFareInfo.FareBreakdown.some((br) =>
-          filters.baggage.every((b) => br.Baggage?.includes(b))
+      tmp = tmp.filter((fi) =>
+        fi.AirItineraryFareInfo.FareBreakdown.some(
+          (br) =>
+            Array.isArray(br.Baggage) &&
+            filters.baggage.every((b) => br.Baggage!.includes(b))
         )
       );
     }
+
+    // meals
     if (filters.meals.length) {
-      temp = temp.filter((f) =>
-        f.AirItineraryFareInfo.FareBreakdown.some((br) =>
-          filters.meals.every((m) => br.MealInfo?.includes(m))
+      tmp = tmp.filter((fi) =>
+        fi.AirItineraryFareInfo.FareBreakdown.some(
+          (br) =>
+            Array.isArray(br.MealInfo) &&
+            filters.meals.every((m) => br.MealInfo!.includes(m))
         )
       );
     }
-    temp = temp.filter((f) => {
-      const fare = parseFloat(
-        f.AirItineraryFareInfo.ItinTotalFares.TotalFare.Amount
+
+    // priceRange
+    tmp = tmp.filter((fi) => {
+      const amt = parseFloat(
+        fi.AirItineraryFareInfo.ItinTotalFares.TotalFare.Amount
       );
-      return fare >= filters.price[0] && fare <= filters.price[1];
+      return amt >= filters.priceRange[0] && amt <= filters.priceRange[1];
     });
-    temp.sort((a, b) => {
-      const fa = parseFloat(a.AirItineraryFareInfo.ItinTotalFares.TotalFare.Amount);
-      const fb = parseFloat(b.AirItineraryFareInfo.ItinTotalFares.TotalFare.Amount);
-      return filters.sortBy === "price" ? fa - fb : fb - fa;
+
+    // sorting
+    tmp.sort((a, b) => {
+      const pa = parseFloat(a.AirItineraryFareInfo.ItinTotalFares.TotalFare.Amount);
+      const pb = parseFloat(b.AirItineraryFareInfo.ItinTotalFares.TotalFare.Amount);
+      return filters.sortBy === "price-asc" ? pa - pb : pb - pa;
     });
+
     setCurrentPage(1);
-    setFiltered(temp);
-  }, [filters, results]);
+    setFiltered(tmp);
+  }, [filters, allItins]);
 
-  const handleSelectFlight = (fare: FareItinerary) => {
-    // store the fare for booking page
-    localStorage.setItem("selectedFare", JSON.stringify(fare));
+  // Helpers
+  const parseStops = (s: Filters["stops"]) =>
+    s === "0" ? 0 : s === "1" ? 1 : 2;
+  const odoTotalStops = (fi: FareItinerary) =>
+    fi.OriginDestinationOptions[0].TotalStops;
+  const formatMoney = (amt: string, cur: string) =>
+    `${numeral(amt).format("0,0.00")} ${cur}`;
+  const formatDateTime = (iso: string) =>
+    new Date(iso).toLocaleString([], {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
-    // try to pull SessionId straight off the fare
-    let sessionId = fare.AirItineraryFareInfo.SessionId || "";
+    const handleSelect = (fi: FareItinerary) => {
+      /* ──────────────────────────────────────────────────────────────
+       *  Clean the fare before persisting:
+       *    – remove passenger-types whose Quantity === 0
+       *    – coerce IsPassportMandatory to a real boolean
+       * ────────────────────────────────────────────────────────────── */
+      const cleaned: FareItinerary = {
+        ...fi,
+        IsPassportMandatory:
+          fi.IsPassportMandatory === true ||
+          String(fi.IsPassportMandatory).toLowerCase() === "true",
+        AirItineraryFareInfo: {
+          ...fi.AirItineraryFareInfo,
+          FareBreakdown: fi.AirItineraryFareInfo.FareBreakdown.filter(
+            (br) => br.PassengerTypeQuantity.Quantity > 0
+          ),
+        },
+      };
 
-    // fallback: maybe it was stored at the root of your original payload
-    if (!sessionId) {
-      const raw = localStorage.getItem("searchResults");
-      if (raw) {
-        const obj = JSON.parse(raw);
-        sessionId =
-          obj.session_id ||
-          obj.SessionId ||
-          obj.data?.session_id ||
-          obj.AirSearchResponse?.session_id ||
-          obj.AirSearchResponse?.SessionId ||
-          "";
+      localStorage.setItem("selectedFare", JSON.stringify(cleaned));
+
+        // Always pull the already-saved value from localStorage
+        const sid = localStorage.getItem("flightSessionId") || "";
+        if (!sid) return alert("SessionId missing in search payload – please search again.");
+
+const fareSource = fi.AirItineraryFareInfo.FareSourceCode;
+      if (!fareSource) {
+        alert("Session ID missing — please search again.");
+        return router.push("/");
       }
-    }
+      /*  This one token will be sent as both flight_session_id
+          and fare_source_code on the booking screen            */
+          localStorage.setItem("fareSourceCode", fi.AirItineraryFareInfo.FareSourceCode);
+          router.push("/booking");
+     };
 
-    if (!sessionId) {
-      alert("⚠️ Could not find a valid session_id. Please search again.");
-      return router.push("/");
-    }
 
-    localStorage.setItem("flightSessionId", sessionId);
-    router.push("/booking");
-  };
 
+  // Pagination
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-  const currentItems = filtered.slice(
+  const pageItems = filtered.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
-  const formatTime = (iso: string) =>
-    new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
+  // Loading / error states
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
         <motion.div
+          className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full"
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-          className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full"
         />
       </div>
     );
   }
-
-  if (message) {
+  if (errorMsg) {
     return (
       <div className="h-screen flex flex-col items-center justify-center text-gray-600">
-        <p className="mb-4 text-xl">😕 {message}</p>
+        <p className="mb-4 text-xl">😕 {errorMsg}</p>
         <button
           onClick={() => router.push("/")}
           className="bg-purple-600 text-white px-5 py-2 rounded-lg hover:bg-purple-700"
@@ -200,21 +315,44 @@ export default function SearchResultsPage() {
     );
   }
 
-   return (
+  // Build airlineOptions from results
+  const airlineOptions = Array.from(
+    new Set(
+      allItins.flatMap((fi) =>
+        fi.OriginDestinationOptions.flatMap((odo) =>
+          odo.OriginDestinationOption.map(
+            (s) => s.FlightSegment.MarketingAirlineCode
+          )
+        )
+      )
+    )
+  );
+
+  return (
     <div className="max-w-7xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-4 gap-8">
       <FiltersSidebar
         filters={filters}
         setFilters={setFilters}
-        airlineOptions={["AI", "6E", "EK", "QF", "QR", "SV", "UL", "BA", "LH", "AF"]}
+        airlineOptions={airlineOptions}
       />
 
       <div className="lg:col-span-3 space-y-8">
         <h2 className="text-3xl font-bold text-gray-800">Search Results</h2>
 
-        {currentItems.map((fare, idx) => {
-          const totalFare = fare.AirItineraryFareInfo.ItinTotalFares.TotalFare;
-          const seg =
-            fare.OriginDestinationOptions[0].OriginDestinationOption[0].FlightSegment;
+        {pageItems.map((fi, idx) => {
+          const firstSeg =
+            fi.OriginDestinationOptions[0].OriginDestinationOption[0]
+              .FlightSegment;
+          const totals = fi.AirItineraryFareInfo.ItinTotalFares;
+
+          // Build totals array
+          const fareTotals = [
+            { label: "Base Fare",   amt: totals.BaseFare },
+            { label: "Equiv Fare",  amt: totals.EquivFare },
+            { label: "Service Tax", amt: totals.ServiceTax },
+            { label: "Total Tax",   amt: totals.TotalTax },
+            { label: "Grand Total", amt: totals.TotalFare },
+          ];
 
           return (
             <motion.div
@@ -222,108 +360,216 @@ export default function SearchResultsPage() {
               layout
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
               className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition"
             >
+              {/* Header */}
               <div className="flex justify-between items-center mb-4">
                 <div>
                   <h3 className="text-xl font-semibold text-purple-600">
-                    {seg.MarketingAirlineName || seg.MarketingAirlineCode} #
-                    {seg.FlightNumber}
+                    {firstSeg.MarketingAirlineName || firstSeg.MarketingAirlineCode}{" "}
+                    #{firstSeg.FlightNumber}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    {fare.DirectionInd} •{" "}
-                    {fare.OriginDestinationOptions[0].TotalStops} stop(s)
+                    {fi.DirectionInd} • 
+                    {odoTotalStops(fi)} stop
+                    {odoTotalStops(fi) !== 1 ? "s" : ""}
                   </p>
                 </div>
-                <p className="text-2xl font-bold">
-                  {totalFare.Amount} {totalFare.CurrencyCode}
-                </p>
+                <div className="text-2xl font-bold">
+                  {formatMoney(
+                    totals.TotalFare.Amount,
+                    totals.TotalFare.CurrencyCode
+                  )}
+                </div>
               </div>
 
+              {/* Segment Summary */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 text-gray-700">
                 <div>
-                  <strong>{seg.DepartureAirportLocationCode}</strong> →{" "}
-                  <strong>{seg.ArrivalAirportLocationCode}</strong>
+                  <strong>{firstSeg.DepartureAirportLocationCode}</strong> →{" "}
+                  <strong>{firstSeg.ArrivalAirportLocationCode}</strong>
                 </div>
                 <div>
-                  {formatTime(seg.DepartureDateTime)} –{" "}
-                  {formatTime(seg.ArrivalDateTime)}
+                  {formatDateTime(firstSeg.DepartureDateTime)} –{" "}
+                  {formatDateTime(firstSeg.ArrivalDateTime)}
                 </div>
-                <div>Duration: {seg.JourneyDuration} mins</div>
-                <div>Cabin: {seg.CabinClassCode}</div>
+                <div>Duration: {firstSeg.JourneyDuration} min</div>
+                <div>Cabin: {firstSeg.CabinClassText || firstSeg.CabinClassCode}</div>
               </div>
 
+              {/* Expand */}
               <button
                 onClick={() =>
-                  setExpandedIdx(idx === expandedIdx ? null : idx)
+                  setExpanded(expanded === idx ? null : idx)
                 }
                 className="flex items-center text-purple-600 font-medium mb-4"
               >
-                {expandedIdx === idx ? "Hide Details" : "View Details"}{" "}
-                {expandedIdx === idx ? (
+                {expanded === idx ? "Hide Details" : "View Details"}{" "}
+                {expanded === idx ? (
                   <ChevronUp className="ml-1 w-5 h-5" />
                 ) : (
                   <ChevronDown className="ml-1 w-5 h-5" />
                 )}
               </button>
 
-              {expandedIdx === idx && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  transition={{ duration: 0.2 }}
-                  className="space-y-3 mb-6 text-sm text-gray-600"
-                >
-                  {fare.AirItineraryFareInfo.FareBreakdown.map((br, i) => (
-                    <div key={i} className="p-4 bg-gray-50 rounded-lg">
-                      <p>
-                        <strong>{br.PassengerTypeQuantity.Code}</strong> x{" "}
-                        {br.PassengerTypeQuantity.Quantity} —{" "}
-                        {br.PassengerFare.TotalFare.Amount} USD
-                      </p>
-                      <p>
-                        Baggage: {br.Baggage?.join(", ") || "—"} / Cabin:{" "}
-                        {br.CabinBaggage?.join(", ") || "—"}
-                      </p>
-                      <p>Meal: {br.MealInfo?.join(", ") || "Standard"}</p>
+              {/* Details */}
+              <AnimatePresence initial={false}>
+                {expanded === idx && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-6 mb-6 text-gray-700"
+                  >
+                    {/* Fare Totals */}
+                    <div className="grid grid-cols-2 gap-4">
+                      {fareTotals.map((t, i) => (
+                        <div key={i} className="text-sm">
+                          <strong>{t.label}:</strong>{" "}
+                          {formatMoney(t.amt.Amount, t.amt.CurrencyCode)}
+                        </div>
+                      ))}
                     </div>
-                  ))}
 
-                  <ul className="space-y-1">
-                    <li>
-                      <strong>Fare Type:</strong>{" "}
-                      {fare.AirItineraryFareInfo.FareType}
-                    </li>
-                    <li>
-                      <strong>Refundable:</strong>{" "}
-                      {fare.AirItineraryFareInfo.IsRefundable ? "Yes" : "No"}
-                    </li>
-                    <li>
-                      <strong>Validating Airline:</strong>{" "}
-                      {seg.OperatingAirline.Code}
-                    </li>
-                    <li>
-                      <strong>Seats Remaining:</strong>{" "}
-                      {
-                        fare.OriginDestinationOptions[0]
-                          .OriginDestinationOption[0].SeatsRemaining.Number
-                      }
-                    </li>
-                    <li>
-                      <strong>Booking Class:</strong>{" "}
-                      {fare.OriginDestinationOptions[0]
-                        .OriginDestinationOption[0].ResBookDesigText ||
-                        fare.OriginDestinationOptions[0]
-                          .OriginDestinationOption[0].ResBookDesigCode ||
-                        "—"}
-                    </li>
-                  </ul>
-                </motion.div>
-              )}
+                    {/* Passenger breakdown */}
+                    <div className="space-y-4">
+                      {fi.AirItineraryFareInfo.FareBreakdown.map(
+                        (br, bi) => (
+                          <div
+                            key={bi}
+                            className="p-4 bg-gray-50 rounded-lg"
+                          >
+                            <p>
+                              <strong>
+                                {br.PassengerTypeQuantity.Code} x{" "}
+                                {br.PassengerTypeQuantity.Quantity}
+                              </strong>{" "}
+                              —{" "}
+                              {formatMoney(
+                                br.PassengerFare.TotalFare.Amount,
+                                br.PassengerFare.TotalFare.CurrencyCode
+                              )}
+                            </p>
+                            <p>
+                              Baggage:{" "}
+                              {br.Baggage?.join(", ") || "—"} / Cabin:{" "}
+                              {br.CabinBaggage?.join(", ") || "—"}
+                            </p>
+                            <p>Meal: {br.MealInfo?.join(", ") || "Standard"}</p>
 
-<button
-                onClick={() => handleSelectFlight(fare)}
+                            {/* taxes */}
+                            {Array.isArray(br.PassengerFare.Taxes) && (
+                              <div className="mt-2 text-xs">
+                                <strong>Taxes:</strong>{" "}
+                                {br.PassengerFare.Taxes.map((tx, ti) => (
+                                  <span key={ti}>
+                                    {tx.TaxCode}{" "}
+                                    {numeral(tx.Amount).format("0,0.00")}{" "}
+                                    {tx.CurrencyCode}
+                                    {ti < br.PassengerFare.Taxes!.length - 1
+                                      ? ", "
+                                      : ""}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* penalties */}
+                            {Array.isArray(br.PenaltyDetails) && (
+                              <div className="mt-2 text-xs">
+                                <strong>Penalties:</strong>{" "}
+                                {br.PenaltyDetails.map((pd, pi) => (
+                                  <span key={pi}>
+                                    {pd.RefundAllowed
+                                      ? `Refund ₹${pd.RefundPenaltyAmount}`
+                                      : "No Refund"}
+                                    ; {pd.ChangeAllowed
+                                      ? `Change ₹${pd.ChangePenaltyAmount}`
+                                      : "No Change"}
+                                    {pi < br.PenaltyDetails!.length - 1
+                                      ? " • "
+                                      : ""}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      )}
+                    </div>
+
+                    {/* Segment-by-segment details for multi-legs */}
+                    {fi.OriginDestinationOptions.map((odo, oi) => (
+                      <div key={oi} className="space-y-2">
+                        <h4 className="font-semibold">
+                          Trip {oi + 1} — {odo.TotalStops} stop
+                          {odo.TotalStops !== 1 ? "s" : ""}
+                        </h4>
+                        {odo.OriginDestinationOption.map((segObj, si) => {
+                          const s = segObj.FlightSegment;
+                          return (
+                            <div
+                              key={si}
+                              className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm"
+                            >
+                              <div>
+                                <strong>
+                                  {s.DepartureAirportLocationCode}
+                                </strong>{" "}
+                                →{" "}
+                                <strong>
+                                  {s.ArrivalAirportLocationCode}
+                                </strong>
+                              </div>
+                              <div>
+                                {formatDateTime(s.DepartureDateTime)} –{" "}
+                                {formatDateTime(s.ArrivalDateTime)}
+                              </div>
+                              <div>
+                                {s.MarketingAirlineName ||
+                                  s.MarketingAirlineCode}{" "}
+                                {s.FlightNumber} ({s.Equipment?.AirEquipType})
+                              </div>
+                              <div>Journey: {s.JourneyDuration} min</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+
+                    {/* Misc details */}
+                    <div className="text-xs space-y-1">
+                      <p>
+                        <strong>Ticket Type:</strong>{" "}
+                        {fi.TicketType || "—"}
+                      </p>
+                      <p>
+                        <strong>Passport Mandatory:</strong>{" "}
+                        {fi.IsPassportMandatory ? "Yes" : "No"}
+                      </p>
+                      <p>
+                        <strong>Validating Airline:</strong>{" "}
+                        {fi.ValidatingAirlineCode}
+                      </p>
+                      <p>
+                        <strong>Sequence #:</strong>{" "}
+                        {fi.SequenceNumber || "—"}
+                      </p>
+                      <p>
+                        <strong>Split Itinerary:</strong>{" "}
+                        {fi.AirItineraryFareInfo.SplitItinerary
+                          ? "Yes"
+                          : "No"}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Select */}
+              <button
+                onClick={() => handleSelect(fi)}
                 className="w-full py-3 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-purple-900 transition"
               >
                 Select Flight
@@ -332,7 +578,7 @@ export default function SearchResultsPage() {
           );
         })}
 
-        {filtered.length > ITEMS_PER_PAGE && (
+        {totalPages > 1 && (
           <div className="mt-8">
             <Pagination
               currentPage={currentPage}

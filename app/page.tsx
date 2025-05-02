@@ -1,24 +1,59 @@
 "use client";
 
-import { useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import HeroSection from "@/components/HeroSection";
 import FlightSearchWidget from "@/components/FlightSearchWidget";
 import PromotionalSlider from "@/components/PromotionalSlider";
 import PopularDestinations from "@/components/PopularDestinations";
+import Link from "next/link";
+
+const features = [
+  {
+    icon: "💳",
+    title: "Secure Payments",
+    description: "Your payment info is always protected with industry-leading encryption.",
+  },
+  {
+    icon: "🏆",
+    title: "Best Price Guarantee",
+    description: "We ensure unbeatable fares across all destinations.",
+  },
+  {
+    icon: "🤝",
+    title: "24/7 Customer Support",
+    description: "Travel experts available anytime you need assistance.",
+  },
+] as const;
+
+const testimonials = [
+  {
+    quote: "“Booked last minute and everything was smooth! Will fly again!”",
+    author: "Sarah K.",
+  },
+  {
+    quote: "“Fantastic support during our international trip. 5 stars!”",
+    author: "Adeel R.",
+  },
+] as const;
 
 export default function HomePage() {
-  const [heroIndex, setHeroIndex] = useState(0);
-
   return (
-    <main className="flex flex-col bg-white overflow-hidden">
-      {/* HERO SECTION */}
-      <section className="relative w-full min-h-[110vh]">
+    <main className="flex flex-col bg-white text-gray-800">
+      {/* ===== HERO ===== */}
+      <section
+        id="hero"
+        aria-labelledby="hero-heading"
+        className="relative w-full min-h-screen overflow-hidden"
+      >
+        {/* Full-screen background carousel */}
         <HeroSection backgroundOnly />
 
-        <div className="relative z-10 flex flex-col items-center text-white text-center px-4 pt-36 sm:pt-40">
+        {/* Overlay content */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center text-white">
           <motion.h1
-            className="text-4xl sm:text-5xl font-extrabold mb-6 drop-shadow-lg"
+            id="hero-heading"
+            className="text-4xl sm:text-5xl font-extrabold drop-shadow-lg"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -27,91 +62,104 @@ export default function HomePage() {
           </motion.h1>
 
           <motion.div
+            className="mt-8 w-full max-w-4xl"
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.8 }}
-            className="w-full max-w-5xl"
           >
             <FlightSearchWidget />
           </motion.div>
 
-          <div className="mt-12 sm:mt-16 w-full">
+          {/* Thumbnail preview */}
+          <div className="mt-12 w-full max-w-5xl">
             <HeroSection thumbnailsOnly />
           </div>
         </div>
       </section>
 
-      {/* FEATURES SECTION */}
-      <section className="bg-gray-50 py-20 px-4">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-10">
-          {[
-            "💳 Secure Payments",
-            "🏆 Best Price Guarantee",
-            "🤝 24/7 Customer Support"
-          ].map((feature, i) => (
-            <motion.div
-              key={i}
-              className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition-all duration-300"
+      {/* ===== FEATURES ===== */}
+      <section
+        aria-labelledby="features-heading"
+        className="bg-gray-50 py-16 px-4"
+      >
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 sm:grid-cols-3">
+          <h2 id="features-heading" className="sr-only">
+            Key Features
+          </h2>
+          {features.map(({ icon, title, description }, idx) => (
+            <motion.article
+              key={title}
+              className="flex flex-col items-start gap-4 rounded-xl bg-white p-6 shadow-lg transition-shadow hover:shadow-2xl"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.2 }}
+              transition={{ delay: idx * 0.2 }}
               viewport={{ once: true }}
             >
-              <div className="text-3xl mb-2">{feature.split(" ")[0]}</div>
-              <h4 className="text-lg font-semibold text-hra-dark">
-                {feature.split(" ").slice(1).join(" ")}
-              </h4>
-              <p className="mt-2 text-gray-600">
-                {i === 0
-                  ? "Your payment info is always protected."
-                  : i === 1
-                  ? "We ensure unbeatable prices across all destinations."
-                  : "Talk to our travel experts anytime you need."}
-              </p>
-            </motion.div>
+              <div className="text-4xl">{icon}</div>
+              <h3 className="text-xl font-semibold">{title}</h3>
+              <p className="text-gray-600">{description}</p>
+            </motion.article>
           ))}
         </div>
       </section>
 
-      {/* DEALS SECTION */}
-      <section className="bg-white px-4 py-20">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-hra-dark mb-8">Top Offers</h2>
+      {/* ===== TOP OFFERS ===== */}
+      <section aria-labelledby="offers-heading" className="py-16 px-4">
+        <div className="mx-auto max-w-7xl">
+          <h2
+            id="offers-heading"
+            className="mb-8 text-3xl font-bold text-gray-900"
+          >
+            Top Offers
+          </h2>
           <PromotionalSlider />
         </div>
       </section>
 
-      {/* DESTINATIONS SECTION */}
-      <section className="bg-gray-50 px-4 py-20">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-hra-dark mb-8">Popular Destinations</h2>
+      {/* ===== POPULAR DESTINATIONS ===== */}
+      <section
+        aria-labelledby="destinations-heading"
+        className="bg-gray-50 py-16 px-4"
+      >
+        <div className="mx-auto max-w-7xl">
+          <h2
+            id="destinations-heading"
+            className="mb-8 text-3xl font-bold text-gray-900"
+          >
+            Popular Destinations
+          </h2>
           <PopularDestinations />
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section className="bg-white py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-hra-dark mb-4">What Our Travelers Say</h2>
-          <p className="text-gray-600 mb-12">
+      {/* ===== TESTIMONIALS ===== */}
+      <section
+        aria-labelledby="testimonials-heading"
+        className="py-16 px-4"
+      >
+        <div className="mx-auto max-w-4xl text-center">
+          <h2
+            id="testimonials-heading"
+            className="mb-4 text-3xl font-bold text-gray-900"
+          >
+            What Our Travelers Say
+          </h2>
+          <p className="mb-12 text-gray-600">
             Real stories from our valued passengers around the world.
           </p>
           <div className="space-y-10">
-            {[
-              "\u201cBooked last minute and everything was smooth! Will fly again!\u201d",
-              "\u201cFantastic support during our international trip. 5 stars!\u201d"
-            ].map((quote, i) => (
+            {testimonials.map(({ quote, author }, idx) => (
               <motion.blockquote
-                key={i}
+                key={author}
+                className="mx-auto max-w-2xl border-l-4 border-pink-500 pl-6 italic text-gray-700"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.2 }}
+                transition={{ delay: idx * 0.2 }}
                 viewport={{ once: true }}
-                className="border-l-4 border-hra-pink pl-6 italic text-gray-700"
               >
                 <p>{quote}</p>
-                <footer className="mt-2 text-sm font-medium text-hra-dark">
-                  {i === 0 ? "– Sarah K." : "– Adeel R."}
+                <footer className="mt-2 text-sm font-medium text-gray-900">
+                  — {author}
                 </footer>
               </motion.blockquote>
             ))}
@@ -119,19 +167,21 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA SECTION */}
-      <section className="bg-gradient-to-br from-pink-600 to-purple-600 text-white py-24 px-4 text-center">
-        <div className="max-w-xl mx-auto">
-          <h2 className="text-4xl font-bold mb-4">Ready to Fly?</h2>
-          <p className="mb-6 text-white/90">
-            Get the best flight deals, personalized experiences, and priority support with HRA.
+      {/* ===== CALL TO ACTION ===== */}
+      <section className="bg-gradient-to-br from-pink-600 to-purple-600 py-24 px-4 text-white">
+        <div className="mx-auto max-w-xl text-center">
+          <h2 className="mb-4 text-4xl font-bold">Ready to Fly?</h2>
+          <p className="mb-6 text-lg text-white/90">
+            Get the best flight deals, personalized experiences, and priority support with HRA Airlines.
           </p>
-          <button
-            className="bg-white text-pink-600 font-semibold px-6 py-3 rounded-md hover:bg-gray-100 transition"
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          <Link
+            href="#hero"
+            scroll={false}
+            className="inline-block rounded-md bg-white px-6 py-3 text-lg font-semibold text-pink-600 transition hover:bg-gray-200"
+            aria-label="Scroll back to search"
           >
             Start Exploring
-          </button>
+          </Link>
         </div>
       </section>
     </main>

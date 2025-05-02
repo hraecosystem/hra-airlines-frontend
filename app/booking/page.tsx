@@ -23,8 +23,24 @@ interface Passenger {
   passportExpiryDate: string;
 }
 
-function makePassenger(title: string): Passenger {
+// function makePassenger(title: string): Passenger {
+//   return {
+//     title,
+//     firstName: "",
+//     lastName: "",
+//     dob: "",
+//     nationality: null,
+//     passportNo: "",
+//     passportIssueCountry: null,
+//     passportIssueDate: "",
+//     passportExpiryDate: "",
+//   };
+// }
+
+
+function makePassenger(type: "ADT"|"CHD"|"INF", title: string): Passenger & { type: string } {
   return {
+    type,
     title,
     firstName: "",
     lastName: "",
@@ -37,14 +53,17 @@ function makePassenger(title: string): Passenger {
   };
 }
 
+
 const countryOptions = countryList().getData();
+const digits = (s: string) => s.replace(/\D/g, "");
 
 export default function BookingPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const [fare, setFare] = useState<any>(null);   //  <-- you removed this by accident
 
-  const [fare, setFare] = useState<any>(null);
-  const [sessionId, setSessionId] = useState("");
+  const [sessionId,   setSessionId]   = useState("");   // search-level token
+  const [fareSource,  setFareSource]  = useState("");   // itinerary-level token
   const [needsPassport, setNeedsPassport] = useState(false);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [email, setEmail] = useState("");
@@ -65,41 +84,46 @@ export default function BookingPage() {
   useEffect(() => {
     (async () => {
       try {
-        const rawFare = localStorage.getItem("selectedFare");
-        const rawSession = localStorage.getItem("flightSessionId");
-        if (!rawFare || !rawSession) {
+        const rawFare        = localStorage.getItem("selectedFare");
+        const rawSession     = localStorage.getItem("flightSessionId");
+        const rawFareSource  = localStorage.getItem("fareSourceCode");
+        if (!rawFare || !rawSession || !rawFareSource) {
           throw new Error("No flight selected.");
         }
-        const parsed = JSON.parse(rawFare);
-        setFare(parsed);
-        setSessionId(rawSession);
 
-        // detect passport requirement
-        const passportFlag =
-          parsed.AirItineraryFareInfo?.IsPassportMandatory ??
-          parsed.IsPassportMandatory;
-        setNeedsPassport(
-          passportFlag === true ||
-            String(passportFlag).toLowerCase() === "true"
-        );
+        const parsed = JSON.parse(rawFare);     // parse only once
+        setFare(parsed);                        // keep the full itinerary in state
+        setSessionId(rawSession);               // search-level token (unchanged)
+        setFareSource(rawFareSource);           // itinerary-level token (NEW)
+        
 
-        // qty function
-        const qtyOf = (code: string) =>
-          parsed.AirItineraryFareInfo.FareBreakdown.find(
-            (b: any) => b.PassengerTypeQuantity.Code === code
-          )?.PassengerTypeQuantity.Quantity || 0;
 
-        // build passenger array
-        setPassengers([
-          ...Array(qtyOf("ADT")).fill(null).map(() => makePassenger("Mr")),
-          ...Array(qtyOf("CHD")).fill(null).map(() => makePassenger("Master")),
-          ...Array(qtyOf("INF")).fill(null).map(() => makePassenger("Baby")),
-        ]);
+// ── passport flag ──
+const passportFlag =
+  parsed.AirItineraryFareInfo?.IsPassportMandatory ??
+  parsed.IsPassportMandatory;
+setNeedsPassport(
+  passportFlag === true || String(passportFlag).toLowerCase() === "true"
+);
+
+// ── passenger array ──
+const qtyOf = (code: string) =>
+  parsed.AirItineraryFareInfo.FareBreakdown.find(
+    (b: any) => b.PassengerTypeQuantity.Code === code
+  )?.PassengerTypeQuantity.Quantity || 0;
+
+  setPassengers([
+    ...Array(qtyOf("ADT")).fill(0).map(() => makePassenger("ADT","Mr")),
+    ...Array(qtyOf("CHD")).fill(0).map(() => makePassenger("CHD","Master")),
+    ...Array(qtyOf("INF")).fill(0).map(() => makePassenger("INF","Baby")),
+  ]);
 
         // prefill contact
         const prof = await api.get("/profile");
-        setEmail(prof.data.user.email || "");
-        setPhone(prof.data.user.phone || "");
+        const { email = "", phone = "" } = prof?.data?.data ?? {};
+        setEmail(email);
+        setPhone(phone);
+        
       } catch (e: any) {
         setError(e.message || "Failed to load booking details.");
       } finally {
@@ -192,11 +216,11 @@ export default function BookingPage() {
     try {
       // 1) revalidate
       const rev = await api.post("/flights/revalidate", {
-        session_id: sessionId,
-        fare_source_code: fare.AirItineraryFareInfo.FareSourceCode,
+        flight_session_id: sessionId,
+        fare_source_code : fareSource,
       });
-      const isValid =
-        rev.data?.data?.AirRevalidateResponse?.AirRevalidateResult?.IsValid;
+        const isValid = rev.data?.data?.IsValid ?? rev.data?.data?.Success ?? false;
+
       if (!isValid) {
         alert("Fare expired. Please search again.");
         return router.push("/search-results");
@@ -212,20 +236,22 @@ export default function BookingPage() {
       // 3) build booking payload
       const payload = {
         flightBookingInfo: {
-          flight_session_id: sessionId,
-          fare_source_code: fare.AirItineraryFareInfo.FareSourceCode,
+          flight_session_id: sessionId,   // search-level
+          fare_source_code : fareSource,  // itinerary-level
           IsPassportMandatory: needsPassport.toString(),
-          areaCode: phone.replace(/\D/g, "").slice(0, 3) || "971",
-          countryCode: phone.replace(/\D/g, "").slice(0, 3) || "971",
+          areaCode   : digits(phone).slice(0,3) || "971",
+          countryCode: digits(phone).slice(0,3) || "971",
           fareType: fare.AirItineraryFareInfo.FareType,
         },
         paxInfo: {
           customerEmail: email.trim(),
-          customerPhone: phone.trim(),
+          customerPhone: digits(phone),   // ← no “+”
           paxDetails: [
             { adult: pack(adults), child: pack(childs), infant: pack(infs) },
           ],
         },
+        fareItinerary: fare,                 // 👈 add this line
+
       };
 
       // 4) book
@@ -235,17 +261,17 @@ export default function BookingPage() {
       const raw = (resp as any).data ?? resp;
       console.log("Raw booking response:", raw);
 
-      // ---- NEW: first check your { status:'success', data:{ mongoBookingId } } shape ----
-      if (
-        raw.status === "success" &&
-        raw.data &&
-        typeof raw.data.mongoBookingId === "string"
-      ) {
-        // store it if you like:
-        localStorage.setItem("bookingId", raw.data.mongoBookingId);
-        // then proceed
-        return router.push("/payment");
-      }
+      // ---- NEW: first check the Booking API wrapper ----
+if (
+  raw.status === "success" &&
+  raw.data &&
+  typeof (raw.data.bookingId ?? raw.data.mongoBookingId) === "string"
+) {
+  const id = raw.data.bookingId ?? raw.data.mongoBookingId;
+  localStorage.setItem("bookingId", id);
+  return router.push("/payment");
+}
+
 
       // ---- FALLBACK: old BookFlightResponse logic ----
       const result =

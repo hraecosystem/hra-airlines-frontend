@@ -1,4 +1,3 @@
-// app/profile/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -32,31 +31,37 @@ export default function ProfilePage() {
 
   // Fetch profile data
   useEffect(() => {
-    if (user) {
-      (async () => {
-        try {
-          const { data } = await api.get("/profile");
-          const u = data.user;
-          setFirstName(u.firstName || "");
-          setLastName(u.lastName || "");
-          setPhone(u.phone || "");
-        } catch (err: any) {
-          setProfileMessage({ type: 'error', text: err.response?.data?.message || "Failed to load profile." });
-        } finally {
-          setLoading(false);
-        }
-      })();
-    }
+    if (!user) return;
+    (async () => {
+      try {
+        const resp = await api.get("/profile");
+        // backend returns { status: "success", data: { firstName, lastName, phone, ... } }
+        const u = resp.data.data;
+        setFirstName(u.firstName || "");
+        setLastName(u.lastName || "");
+        setPhone(u.phone || "");
+      } catch (err: any) {
+        setProfileMessage({
+          type: 'error',
+          text: err.response?.data?.message || "Failed to load profile."
+        });
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [user]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setProfileMessage(null);
     try {
-      const { data } = await api.put("/profile", { firstName, lastName, phone });
-      setProfileMessage({ type: 'success', text: 'Profile updated successfully.' });
+      const resp = await api.put("/profile", { firstName, lastName, phone });
+      setProfileMessage({ type: 'success', text: resp.data.message || 'Profile updated successfully.' });
     } catch (err: any) {
-      setProfileMessage({ type: 'error', text: err.response?.data?.message || 'Profile update failed.' });
+      setProfileMessage({
+        type: 'error',
+        text: err.response?.data?.message || 'Profile update failed.'
+      });
     }
   };
 
@@ -65,12 +70,15 @@ export default function ProfilePage() {
     setPasswordMessage(null);
     setPwdLoading(true);
     try {
-      await api.put("/profile/password", { oldPassword, newPassword });
-      setPasswordMessage({ type: 'success', text: 'Password updated successfully.' });
+      const resp = await api.put("/profile/password", { oldPassword, newPassword });
+      setPasswordMessage({ type: 'success', text: resp.data.message || 'Password updated successfully.' });
       setOldPassword("");
       setNewPassword("");
     } catch (err: any) {
-      setPasswordMessage({ type: 'error', text: err.response?.data?.message || 'Password update failed.' });
+      setPasswordMessage({
+        type: 'error',
+        text: err.response?.data?.message || 'Password update failed.'
+      });
     } finally {
       setPwdLoading(false);
     }
@@ -79,10 +87,11 @@ export default function ProfilePage() {
   if (authLoading || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center text-gray-600">
-        <svg className="animate-spin h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <circle cx="12" cy="12" r="10" strokeWidth="4" className="opacity-25" />
-          <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8v8z" />
-        </svg>
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+          className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full"
+        />
       </div>
     );
   }
@@ -95,13 +104,12 @@ export default function ProfilePage() {
       </Head>
 
       <motion.main
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
         className="min-h-screen bg-gray-50 p-6"
       >
         <div className="max-w-lg mx-auto bg-white rounded-2xl shadow-lg p-8 space-y-6">
-
           <h1 className="text-2xl font-bold text-blue-800 text-center">👤 My Profile</h1>
 
           {profileMessage && (
@@ -183,9 +191,11 @@ export default function ProfilePage() {
             <button
               type="submit"
               disabled={pwdLoading}
-              className={`w-full flex justify-center items-center py-2 rounded-lg text-white font-semibold transition \${pwdLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'}`}
+              className={`w-full flex justify-center items-center py-2 rounded-lg text-white font-semibold transition ${
+                pwdLoading ? "bg-gray-400 cursor-not-allowed" : "bg-purple-600 hover:bg-purple-700"
+              }`}
             >
-              {pwdLoading ? 'Updating…' : 'Update Password'}
+              {pwdLoading ? "Updating…" : "Update Password"}
             </button>
           </form>
         </div>
