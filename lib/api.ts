@@ -30,13 +30,22 @@ api.interceptors.request.use(
   (err: AxiosError) => Promise.reject(err)
 );
 
+// api.interceptors.response.use(
+//   (resp) => resp,
+//   (err: AxiosError) => {
+//     // Auto-redirect to login if 401
+//     if (err.response?.status === 401 && typeof window !== "undefined") {
+//       window.location.href = "/auth/login";
+//     }
+//     return Promise.reject(err);
+//   }
+// );
+
+
 api.interceptors.response.use(
   (resp) => resp,
   (err: AxiosError) => {
-    // Auto-redirect to login if 401
-    if (err.response?.status === 401 && typeof window !== "undefined") {
-      window.location.href = "/auth/login";
-    }
+    // no more window.location.href = '/auth/login'
     return Promise.reject(err);
   }
 );

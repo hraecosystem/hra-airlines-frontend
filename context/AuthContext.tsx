@@ -1,4 +1,3 @@
-// src/context/AuthContext.tsx
 "use client";
 
 import React, {
@@ -9,7 +8,7 @@ import React, {
   ReactNode,
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import api, { $get, $post } from "@/lib/api";
+import { $get, $post } from "@/lib/api";
 import type { AxiosError } from "axios";
 
 export interface User {
@@ -42,39 +41,21 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 1) Intercept 401s to force logout & redirect
-  useEffect(() => {
-    const id = api.interceptors.response.use(
-      (res) => res,
-      (err: AxiosError) => {
-        if (err.response?.status === 401) {
-          setUser(null);
-          if (!pathname.startsWith("/auth")) {
-            router.replace("/auth/login");
-          }
-        }
-        return Promise.reject(err);
-      }
-    );
-    return () => void api.interceptors.response.eject(id);
-  }, [pathname, router]);
-
-  // 2) Try to refresh user on mount & on every route change,
-  //    then gate protected routes until we know the result.
+  // helper to call /auth/me
   const refreshUser = async (): Promise<boolean> => {
     try {
       const resp = await $get<AuthResponse>("/auth/me");
       if (resp.status === "success") {
         setUser(resp.data);
         return true;
-      } else {
-        setUser(null);
-        return false;
       }
+      setUser(null);
+      return false;
     } catch {
       setUser(null);
       return false;
@@ -82,30 +63,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const publicPaths = [
-      "/", "/search-results", "/destinations", "/about", "/contact",
-      "/faqs", "/offers", "/booking",
-      "/auth/login", "/auth/register", "/auth/forgot-password",
-      "/auth/verify-otp", "/auth/reset-password",
+    // exact‐match "/" plus prefix matches for everything else
+    const PUBLIC_PATHS = [
+      "/",                       // home
+      "/search-results",
+      "/destinations",
+      "/about",
+      "/contact",
+      "/faqs",
+      "/offers",
+      "/booking",
+      "/auth/login",
+      "/auth/register",
+      "/auth/forgot-password",
+      "/auth/verify-otp",
+      "/auth/reset-password",
     ];
-    const isPublic = publicPaths.some((p) => pathname.startsWith(p));
 
-    // start loading state
+    // Decide if current pathname is public:
+    const isPublic = PUBLIC_PATHS.some((p) =>
+      p === "/" ? pathname === "/" : pathname.startsWith(p)
+    );
+
     setLoading(true);
-
-    (async () => {
-      const isAuth = await refreshUser();
+    refreshUser().then((isAuth) => {
       setLoading(false);
-
-      // if this is a protected route and we are not auth'd, redirect
+      // If it's not public and user isn't authed, redirect
       if (!isPublic && !isAuth) {
-        router.replace("/auth/login");
+        router.replace(`/auth/login?redirect=${encodeURIComponent(pathname)}`);
       }
-    })();
+    });
   }, [pathname, router]);
 
-  // 3) login / logout unchanged
-
+  // login
   const login = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
@@ -128,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // logout
   const logout = async () => {
     setLoading(true);
     try {
@@ -139,27 +130,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 4) Loading spinner while bootstrapping auth
+  // while checking auth
   if (loading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white z-50">
-        <svg
-          className="animate-spin h-12 w-12 text-blue-600"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8v8z"
-          />
+        <svg className="animate-spin h-12 w-12 text-blue-600" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+          <path fill="currentColor" d="M4 12a8 8 0 018-8v8z" className="opacity-75" />
         </svg>
       </div>
     );
