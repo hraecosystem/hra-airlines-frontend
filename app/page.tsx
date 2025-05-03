@@ -195,15 +195,11 @@ export default function HomePage() {
               </h2>
               <div className="space-y-6">
                 <p className="text-xl text-gray-600">
-                  Unlock exclusive benefits and save 15% on all flights with your HRA Airlines card.
+                  Save money on all your flights with the HRA Airlines card.
                 </p>
                 <ul className="space-y-4">
                   {[
-                    "15% off on all flights worldwide",
-                    "Priority check-in and boarding",
-                    "Extra baggage allowance",
-                    "Exclusive lounge access",
-                    "Earn points on every flight"
+                    "15% off on all flights worldwide"
                   ].map((benefit, index) => (
                     <motion.li
                       key={index}
