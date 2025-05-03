@@ -178,21 +178,21 @@ export default function OffersPage() {
             </div>
 
             {/* Newsletter Section */}
-            <div className="mt-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
+            <div className="mt-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 sm:p-8 text-white">
               <div className="max-w-3xl mx-auto text-center">
-                <h2 className="text-2xl font-bold mb-4">
+                <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">
                   Never Miss a Deal!
                 </h2>
-                <p className="mb-6 text-white/90">
+                <p className="mb-4 sm:mb-6 text-white/90 text-sm sm:text-base">
                   Subscribe to our newsletter and be the first to know about our exclusive offers and promotions.
                 </p>
-                <div className="flex gap-4 max-w-md mx-auto">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 max-w-md mx-auto">
                   <input
                     type="email"
                     placeholder="Enter your email"
-                    className="flex-1 px-4 py-2 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-white"
+                    className="w-full px-4 py-2 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-white"
                   />
-                  <button className="bg-white text-blue-600 px-6 py-2 rounded-lg font-medium hover:bg-gray-100 transition">
+                  <button className="w-full sm:w-auto bg-white text-blue-600 px-6 py-2 rounded-lg font-medium hover:bg-gray-100 transition">
                     Subscribe
                   </button>
                 </div>
