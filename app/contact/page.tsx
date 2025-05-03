@@ -75,7 +75,7 @@ export default function ContactPage() {
             >
               <MapPin className="w-12 h-12 text-blue-600 mb-4" />
               <h3 className="text-xl font-semibold mb-2">Visit Us</h3>
-              <p className="text-gray-600">16-22 Ar Razqi St, Al Danah - Zone 1, Abu Dhabi, UAE</p>
+              <p className="text-gray-600">404, C34 Building Khalifa Street Abu Dhabi, UAE</p>
             </motion.div>
 
             <motion.div
