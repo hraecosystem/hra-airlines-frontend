@@ -1,6 +1,7 @@
+// app/ticket/[id]/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
@@ -30,7 +31,7 @@ type Segment = {
 };
 
 type FareLine = { label: string; amount: number };
-type TaxLine = { name: string; amount: number };
+type TaxLine  = { name: string; amount: number };
 
 interface Ticket {
   pnr: string;
@@ -48,31 +49,35 @@ interface Ticket {
 
 export default function TicketPage() {
   const router = useRouter();
-  const { id } = useParams();
+  const { id }  = useParams();
   const { user, loading: authLoading } = useAuth();
 
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError]   = useState("");
 
-  // 1) Redirect to login if unauthenticated
+  // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
       router.replace(`/auth/login?redirect=/ticket/${id}`);
     }
   }, [authLoading, user, router, id]);
 
-  // 2) Fetch ticket when user is known
+  // Fetch ticket data
   useEffect(() => {
     if (!user || !id) return;
     api
       .get<{ status: string; data: Ticket }>(`/ticket/${id}`)
-      .then((res) => setTicket(res.data.data))
-      .catch((e) => setError(e.response?.data?.message || "Ticket not found"))
+      .then((res) => {
+        setTicket(res.data.data);
+      })
+      .catch((e) => {
+        setError(e.response?.data?.message || "Ticket not found.");
+      })
       .finally(() => setLoading(false));
   }, [user, id]);
 
-  // 3) Download via fetch + blob (preserves httpOnly cookie)
+  // Download PDF
   const handleDownload = async () => {
     try {
       const res = await api.get<Blob>(`/ticket/${id}/pdf`, { responseType: "blob" });
@@ -89,10 +94,10 @@ export default function TicketPage() {
     }
   };
 
-  // 4) Print helper
+  // Print page
   const handlePrint = () => window.print();
 
-  // 5) Loading state
+  // Loading or error UI
   if (authLoading || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -100,8 +105,6 @@ export default function TicketPage() {
       </div>
     );
   }
-
-  // 6) Error state
   if (error || !ticket) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center space-y-4 p-4">
@@ -116,7 +119,6 @@ export default function TicketPage() {
     );
   }
 
-  // Parse the booked/issued date
   const issuedDate = new Date(ticket.createdAt);
 
   return (
@@ -127,34 +129,26 @@ export default function TicketPage() {
       transition={{ duration: 0.4 }}
     >
       <div className="mx-auto max-w-3xl bg-white rounded-2xl shadow-lg overflow-hidden print:shadow-none">
-        {/* Header: Back / Print / Download */}
+        {/* Top Bar */}
         <div className="flex items-center justify-between bg-blue-600 px-6 py-4 print:hidden">
-          <button
-            onClick={() => router.back()}
-            aria-label="Back"
-            className="text-white hover:text-blue-200"
-          >
+          <button onClick={() => router.back()} className="text-white hover:text-blue-200">
             <ChevronLeft size={24} />
           </button>
           <h1 className="text-2xl font-bold text-white">My E-Ticket</h1>
           <div className="flex gap-3">
-            <button
-              onClick={handlePrint}
-              className="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white px-3 py-1 rounded"
-            >
+            <button onClick={handlePrint}
+                    className="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white px-3 py-1 rounded">
               <Printer size={16} /> Print
             </button>
-            <button
-              onClick={handleDownload}
-              className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-400 text-white px-3 py-1 rounded"
-            >
+            <button onClick={handleDownload}
+                    className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-400 text-white px-3 py-1 rounded">
               <Download size={16} /> Download
             </button>
           </div>
         </div>
 
         <div className="p-6 space-y-8">
-          {/* Basic details */}
+          {/* Core Info */}
           <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
             <div>
               <p className="font-semibold">PNR</p>
@@ -166,15 +160,13 @@ export default function TicketPage() {
             </div>
             <div>
               <p className="font-semibold">Status</p>
-              <p
-                className={
-                  ticket.status === "CONFIRMED"
-                    ? "text-green-700"
-                    : ticket.status === "CANCELLED"
-                    ? "text-red-700"
-                    : ""
-                }
-              >
+              <p className={
+                ticket.status === "CONFIRMED"
+                  ? "text-green-700"
+                  : ticket.status === "CANCELLED"
+                  ? "text-red-700"
+                  : ""
+              }>
                 {ticket.status}
               </p>
             </div>
@@ -187,9 +179,7 @@ export default function TicketPage() {
           {/* Passengers */}
           {ticket.passengers.length > 0 && (
             <section>
-              <h2 className="text-lg font-semibold text-gray-800 mb-2">
-                Passengers
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-800 mb-2">Passengers</h2>
               <table className="w-full text-sm text-gray-700 border">
                 <thead className="bg-gray-100">
                   <tr>
@@ -201,12 +191,8 @@ export default function TicketPage() {
                 <tbody>
                   {ticket.passengers.map((p, i) => (
                     <tr key={i} className={i % 2 === 0 ? "" : "bg-gray-50"}>
-                      <td className="p-2">
-                        {p.title} {p.firstName} {p.lastName}
-                      </td>
-                      <td className="p-2">
-                        {format(new Date(p.dob), "MM/dd/yyyy")}
-                      </td>
+                      <td className="p-2">{p.title} {p.firstName} {p.lastName}</td>
+                      <td className="p-2">{format(new Date(p.dob), "MM/dd/yyyy")}</td>
                       <td className="p-2">{p.passportNo || "—"}</td>
                     </tr>
                   ))}
@@ -215,75 +201,57 @@ export default function TicketPage() {
             </section>
           )}
 
-          {/* Flight itinerary */}
+          {/* Itinerary */}
           <section>
-            <h2 className="text-lg font-semibold text-gray-800 mb-2">
-              Flight Itinerary
-            </h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">Flight Itinerary</h2>
             <div className="space-y-4">
               {ticket.flightSegments.map((seg, i) => (
-                <div
-                  key={i}
-                  className="border rounded-lg bg-gray-50 p-4 print:bg-white"
-                >
+                <div key={i} className="border rounded-lg bg-gray-50 p-4 print:bg-white">
                   <p className="font-medium">
-                    {seg.airlineName || seg.airlineCode} {seg.flightNumber} —{" "}
-                    {seg.cabinClass}
+                    {(seg.airlineName || seg.airlineCode)} {seg.flightNumber} — {seg.cabinClass}
                   </p>
                   <p className="text-sm text-gray-700">
-                    <strong>From:</strong> {seg.origin} at{" "}
-                    {format(new Date(seg.departureDateTime), "PPP p")}
+                    <strong>From:</strong> {seg.origin} at {format(new Date(seg.departureDateTime), "PPP p")}
                   </p>
                   <p className="text-sm text-gray-700">
-                    <strong>To:</strong> {seg.destination} at{" "}
-                    {format(new Date(seg.arrivalDateTime), "PPP p")}
+                    <strong>To:</strong> {seg.destination} at {format(new Date(seg.arrivalDateTime), "PPP p")}
                   </p>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* Fare breakdown */}
+          {/* Fare Breakdown */}
           {ticket.fareBreakdown.length > 0 && (
             <section>
-              <h2 className="text-lg font-semibold text-gray-800 mb-2">
-                Fare Breakdown
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-800 mb-2">Fare Breakdown</h2>
               <table className="w-full text-sm text-gray-700 border">
                 <tbody>
                   {ticket.fareBreakdown.map((f, i) => (
                     <tr key={i} className={i % 2 === 0 ? "" : "bg-gray-50"}>
                       <td className="p-2">{f.label}</td>
-                      <td className="p-2 text-right">
-                        {f.amount.toFixed(2)} {ticket.currency}
-                      </td>
+                      <td className="p-2 text-right">{f.amount.toFixed(2)} {ticket.currency}</td>
                     </tr>
                   ))}
                   <tr className="font-semibold border-t">
                     <td className="p-2">Total</td>
-                    <td className="p-2 text-right">
-                      {ticket.totalPrice.toFixed(2)} {ticket.currency}
-                    </td>
+                    <td className="p-2 text-right">{ticket.totalPrice.toFixed(2)} {ticket.currency}</td>
                   </tr>
                 </tbody>
               </table>
             </section>
           )}
 
-          {/* Taxes & fees */}
+          {/* Taxes & Fees */}
           {ticket.taxes.length > 0 && (
             <section>
-              <h2 className="text-lg font-semibold text-gray-800 mb-2">
-                Taxes & Fees
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-800 mb-2">Taxes & Fees</h2>
               <table className="w-full text-sm text-gray-700 border">
                 <tbody>
                   {ticket.taxes.map((t, i) => (
                     <tr key={i} className={i % 2 === 0 ? "" : "bg-gray-50"}>
                       <td className="p-2">{t.name}</td>
-                      <td className="p-2 text-right">
-                        {t.amount.toFixed(2)} {ticket.currency}
-                      </td>
+                      <td className="p-2 text-right">{t.amount.toFixed(2)} {ticket.currency}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -291,29 +259,26 @@ export default function TicketPage() {
             </section>
           )}
 
-          {/* Fare rules link */}
+          {/* Fare Rules Link */}
           {ticket.fareRulesUrl && (
             <section>
-              <h2 className="text-lg font-semibold text-gray-800 mb-2">
-                Fare Rules
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-800 mb-2">Fare Rules</h2>
               <p className="text-sm text-gray-700">
                 For full fare rules,{" "}
                 <a
                   href={ticket.fareRulesUrl}
                   target="_blank"
-                  rel="noopener"
+                  rel="noopener noreferrer"
                   className="text-blue-600 hover:underline"
                 >
                   click here
-                </a>
-                .
+                </a>.
               </p>
             </section>
           )}
         </div>
 
-        {/* Footer back link */}
+        {/* Footer Back Link */}
         <div className="p-6 text-center print:hidden">
           <Link
             href="/dashboard/bookings"

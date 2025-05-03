@@ -1,4 +1,3 @@
-// app/payment-success/page.tsx
 import type { Metadata } from "next";
 import PaymentSuccessContent from "@/components/PaymentSuccessContent";
 
