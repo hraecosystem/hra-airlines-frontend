@@ -9,6 +9,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import AutoCompleteInput from "./AutoCompleteInput";
 import api from "@/lib/api";
 import { toYMD } from "@/utils/date";
+import { Plane, Search, Loader2 } from "lucide-react";
 
 type JourneyType = "OneWay" | "Return" | "Circle";
 type CabinClass = "Economy" | "PremiumEconomy" | "Business" | "First";
@@ -145,7 +146,7 @@ export default function FlightSearchWidget() {
 
   // Shared input classes
   const inputClass =
-    "w-full px-4 py-2 border border-gray-300 bg-white text-gray-800 rounded-lg focus:ring-2 focus:ring-blue-500";
+    "w-full px-2 py-1.5 sm:px-4 sm:py-3 border border-gray-200 bg-white text-gray-800 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all duration-200 hover:border-blue-300 text-sm sm:text-base";
 
   return (
     <motion.form
@@ -153,28 +154,28 @@ export default function FlightSearchWidget() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="mx-auto max-w-3xl space-y-6 rounded-xl bg-white p-6 shadow-lg"
+      className="mx-auto max-w-4xl space-y-2 sm:space-y-8 rounded-xl sm:rounded-2xl bg-white/95 backdrop-blur-sm p-2 sm:p-8 shadow-xl border border-gray-100"
       aria-busy={loading}
     >
-      <h2 className="text-center text-2xl font-bold text-gray-900">
-        Find Your Perfect Flight
+      <h2 className="text-center text-xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-8">
+        Find Your Perfect Flight <Plane className="inline-block w-5 h-5 sm:w-8 sm:h-8 ml-1 sm:ml-2" />
       </h2>
 
       {error && (
         <div
           role="alert"
-          className="rounded bg-red-100 px-4 py-2 text-red-800"
+          className="rounded-lg sm:rounded-xl bg-red-50 px-3 sm:px-6 py-2 sm:py-4 text-red-800 border border-red-200 text-xs sm:text-sm"
         >
           {error}
         </div>
       )}
 
       {/* Trip & Cabin */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-2 sm:gap-6">
         <div>
           <label
             htmlFor="tripType"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-2"
           >
             Trip Type
           </label>
@@ -197,7 +198,7 @@ export default function FlightSearchWidget() {
         <div>
           <label
             htmlFor="cabinClass"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-2"
           >
             Cabin Class
           </label>
@@ -219,26 +220,30 @@ export default function FlightSearchWidget() {
 
       {/* Flight Legs */}
       {tripType === "Circle" ? (
-        <>
+        <div className="h-[200px] overflow-y-auto pr-1 space-y-1">
           {segments.map((s, i) => (
             <div
               key={i}
-              className="grid grid-cols-1 gap-4 sm:grid-cols-4 items-end"
+              className="grid grid-cols-1 gap-1 sm:grid-cols-4 items-end bg-gray-50/50 p-1 sm:p-3 rounded-lg"
             >
-              <AutoCompleteInput
-                label={`Trip ${i + 1} Origin`}
-                value={s.origin}
-                onChange={(v) => updateLeg(i, "origin", v)}
-                inputClassName={inputClass}
-              />
-              <AutoCompleteInput
-                label={`Trip ${i + 1} Destination`}
-                value={s.destination}
-                onChange={(v) => updateLeg(i, "destination", v)}
-                inputClassName={inputClass}
-              />
+              <div className="sm:col-span-2">
+                <div className="grid grid-cols-2 gap-1">
+                  <AutoCompleteInput
+                    label={`Trip ${i + 1} Origin`}
+                    value={s.origin}
+                    onChange={(v) => updateLeg(i, "origin", v)}
+                    inputClassName={inputClass}
+                  />
+                  <AutoCompleteInput
+                    label={`Trip ${i + 1} Destination`}
+                    value={s.destination}
+                    onChange={(v) => updateLeg(i, "destination", v)}
+                    inputClassName={inputClass}
+                  />
+                </div>
+              </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-xs font-medium text-gray-700 mb-0.5">
                   Date
                 </label>
                 <DatePicker
@@ -255,7 +260,7 @@ export default function FlightSearchWidget() {
                   type="button"
                   onClick={() => removeLeg(i)}
                   aria-label={`Remove leg ${i + 1}`}
-                  className="text-red-500 hover:text-red-700"
+                  className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
                 >
                   ✕
                 </button>
@@ -266,15 +271,15 @@ export default function FlightSearchWidget() {
             <button
               type="button"
               onClick={addLeg}
-              className="text-blue-600 hover:underline"
+              className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 hover:underline text-xs sticky bottom-0 bg-white/95 backdrop-blur-sm py-1 w-full justify-center"
             >
-              + Add another Trip
+              <span className="text-base">+</span> Add another Trip
             </button>
           )}
-        </>
+        </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-2 sm:gap-6">
             <AutoCompleteInput
               label="Origin"
               value={segments[0].origin}
@@ -288,9 +293,9 @@ export default function FlightSearchWidget() {
               inputClassName={inputClass}
             />
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-2 sm:gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-2">
                 Departure Date
               </label>
               <DatePicker
@@ -305,7 +310,7 @@ export default function FlightSearchWidget() {
             </div>
             {tripType === "Return" && (
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-2">
                   Return Date
                 </label>
                 <DatePicker
@@ -324,7 +329,7 @@ export default function FlightSearchWidget() {
       )}
 
       {/* Passengers */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-6 bg-gray-50/50 p-2 sm:p-6 rounded-lg sm:rounded-xl">
         {[
           {
             id: "adults",
@@ -351,7 +356,7 @@ export default function FlightSearchWidget() {
           <div key={id}>
             <label
               htmlFor={id}
-              className="block text-sm font-medium text-gray-700"
+              className="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-2"
             >
               {label}
             </label>
@@ -373,13 +378,25 @@ export default function FlightSearchWidget() {
         type="submit"
         disabled={loading}
         whileTap={{ scale: 0.97 }}
-        className={`w-full rounded-lg py-3 text-white font-semibold transition ${
+        className={`w-full rounded-lg sm:rounded-xl py-2 sm:py-4 text-white font-semibold text-sm sm:text-lg transition-all duration-200 ${
           loading
             ? "bg-gray-400 cursor-not-allowed"
-            : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            : "bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 shadow-lg hover:shadow-xl"
         }`}
       >
-        {loading ? "🔄 Searching…" : "🔍 Search Flights"}
+        <div className="flex items-center justify-center gap-1 sm:gap-2">
+          {loading ? (
+            <>
+              <Loader2 className="w-3 h-3 sm:w-5 sm:h-5 animate-spin" />
+              <span>Searching...</span>
+            </>
+          ) : (
+            <>
+              <Search className="w-3 h-3 sm:w-5 sm:h-5" />
+              <span>Search Flights</span>
+            </>
+          )}
+        </div>
       </motion.button>
     </motion.form>
   );

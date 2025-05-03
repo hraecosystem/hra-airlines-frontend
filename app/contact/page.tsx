@@ -1,264 +1,217 @@
 "use client";
 
-import { useState } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
-import Link from "next/link";
-import { Mail, MapPin, Phone, Clock } from "lucide-react";
-
-type FormData = {
-  fullName: string;
-  email: string;
-  subject: string;
-  message: string;
-  agree: boolean;
-};
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { Mail, Phone, MapPin, Clock, Send, CheckCircle } from "lucide-react";
 
 export default function ContactPage() {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting, isSubmitSuccessful },
-    reset,
-  } = useForm<FormData>();
-  const [serverError, setServerError] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const onSubmit: SubmitHandler<FormData> = async (data) => {
-    setServerError("");
-    try {
-      await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      reset();
-    } catch (err: any) {
-      setServerError(err.message || "Failed to send message. Please try again.");
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    // Simuler l'envoi du formulaire
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setIsSubmitting(false);
+    setIsSubmitted(true);
+    setFormData({ name: "", email: "", subject: "", message: "" });
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-white to-blue-50 py-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto space-y-16">
-        {/* Intro */}
-        <section className="text-center space-y-4">
-          <h1 className="text-4xl font-extrabold text-hra-pink">Contact Us</h1>
-          <p className="text-gray-700">
-            Don’t hesitate to reach out—our team is here to help with any questions or concerns.
-          </p>
-        </section>
-
-        {/* Info + Form */}
-        <section className="grid lg:grid-cols-2 gap-12">
-          {/* Contact Info */}
-          <div className="space-y-6">
-            <div className="flex items-start gap-3">
-              <MapPin className="w-6 h-6 text-hra-pink flex-shrink-0" />
-              <div>
-                <h2 className="text-2xl font-semibold text-hra-dark mb-1">Address</h2>
-                <p className="text-gray-700">
-                  404, C34 Building<br />
-                  Khalifa Street<br />
-                  Abu Dhabi, UAE
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Phone className="w-6 h-6 text-hra-pink flex-shrink-0" />
-              <div>
-                <h2 className="text-2xl font-semibold text-hra-dark mb-1">Phone</h2>
-                <p className="text-gray-700">+971 26 322 569</p>
-                <p className="text-sm text-gray-500">Mon–Fri, 9:00 AM–6:00 PM</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Mail className="w-6 h-6 text-hra-pink flex-shrink-0" />
-              <div>
-                <h2 className="text-2xl font-semibold text-hra-dark mb-1">Email</h2>
-                <p className="text-gray-700">contact@hra-airlines.com</p>
-                <p className="text-sm text-gray-500">Response within 24 hours</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Clock className="w-6 h-6 text-hra-pink flex-shrink-0" />
-              <div>
-                <h2 className="text-2xl font-semibold text-hra-dark mb-1">Working Hours</h2>
-                <p className="text-gray-700">Monday–Friday, 9:00 AM–6:00 PM</p>
-              </div>
-            </div>
+    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      {/* Hero Section */}
+      <section className="relative bg-blue-900 text-white py-20">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center opacity-20" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-4xl sm:text-5xl font-bold mb-4">
+              Contact Us
+            </h1>
+            <p className="text-xl text-blue-100 max-w-3xl mx-auto">
+              We're here to help and answer any questions you might have
+            </p>
           </div>
+        </div>
+      </section>
 
-          {/* Inquiry Form */}
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="bg-white p-8 rounded-xl shadow-lg space-y-6"
-          >
-            {isSubmitSuccessful && (
-              <p className="text-green-600 font-medium">✅ Your message has been sent!</p>
-            )}
-            {serverError && (
-              <p className="text-red-600 font-medium">{serverError}</p>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Full Name</label>
-              <input
-                {...register("fullName", { required: "Full name is required" })}
-                className={`mt-1 w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 ${
-                  errors.fullName
-                    ? "border-red-500 focus:ring-red-300"
-                    : "border-gray-300 focus:ring-pink-300"
-                }`}
-              />
-              {errors.fullName && (
-                <p className="text-red-600 text-xs mt-1">
-                  {errors.fullName.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Email Address</label>
-              <input
-                type="email"
-                {...register("email", {
-                  required: "Email is required",
-                  pattern: {
-                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                    message: "Invalid email address",
-                  },
-                })}
-                className={`mt-1 w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 ${
-                  errors.email
-                    ? "border-red-500 focus:ring-red-300"
-                    : "border-gray-300 focus:ring-pink-300"
-                }`}
-              />
-              {errors.email && (
-                <p className="text-red-600 text-xs mt-1">
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Subject</label>
-              <select
-                {...register("subject", {
-                  required: "Please select a subject",
-                })}
-                className={`mt-1 w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 ${
-                  errors.subject
-                    ? "border-red-500 focus:ring-red-300"
-                    : "border-gray-300 focus:ring-pink-300"
-                }`}
-              >
-                <option value="">Select a subject</option>
-                <option value="general">General Inquiry</option>
-                <option value="modify">Modify Booking</option>
-                <option value="baggage">Baggage Policy</option>
-                <option value="cancel">Cancel Flight</option>
-                <option value="points">HRA Points</option>
-                <option value="other">Other</option>
-              </select>
-              {errors.subject && (
-                <p className="text-red-600 text-xs mt-1">
-                  {errors.subject.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Message</label>
-              <textarea
-                rows={4}
-                {...register("message", { required: "Message is required" })}
-                className={`mt-1 w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 ${
-                  errors.message
-                    ? "border-red-500 focus:ring-red-300"
-                    : "border-gray-300 focus:ring-pink-300"
-                }`}
-              />
-              {errors.message && (
-                <p className="text-red-600 text-xs mt-1">
-                  {errors.message.message}
-                </p>
-              )}
-            </div>
-
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                {...register("agree", { required: true })}
-                className="h-4 w-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500"
-              />
-              <label className="ml-2 text-sm text-gray-700">
-                I accept the{" "}
-                <Link href="/privacy" className="underline text-pink-600">
-                  Privacy Policy
-                </Link>{" "}
-                and consent to processing my personal data.
-              </label>
-            </div>
-            {errors.agree && (
-              <p className="text-red-600 text-xs">You must accept to continue.</p>
-            )}
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-gradient-to-r from-pink-600 to-purple-600 text-white font-semibold py-3 rounded-lg hover:from-pink-700 hover:to-purple-700 transition disabled:opacity-50"
+      {/* Contact Information */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition"
             >
-              {isSubmitting ? "Sending…" : "Send Message"}
-            </button>
-          </form>
+              <Mail className="w-12 h-12 text-blue-600 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Email Us</h3>
+              <p className="text-gray-600">support@hra-airlines.com</p>
+            </motion.div>
 
-          {/* FAQ */}
-          <section className="space-y-6">
-            <h2 className="text-3xl font-bold text-center text-hra-dark">
-              Frequently Asked Questions
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition"
+            >
+              <Phone className="w-12 h-12 text-blue-600 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Call Us</h3>
+              <p className="text-gray-600">+971 26 322 569</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition"
+            >
+              <MapPin className="w-12 h-12 text-blue-600 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Visit Us</h3>
+              <p className="text-gray-600">16-22 Ar Razqi St, Al Danah - Zone 1, Abu Dhabi, UAE</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition"
+            >
+              <Clock className="w-12 h-12 text-blue-600 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Working Hours</h3>
+              <p className="text-gray-600">24/7 Customer Support</p>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Form */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50">
+        <div className="max-w-3xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="bg-white rounded-2xl shadow-xl p-8"
+          >
+            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+              Send us a Message
             </h2>
-            {[
-              {
-                q: "How can I modify my booking?",
-                a: "You can modify your booking by logging into your HRA account or contacting our customer service.",
-              },
-              {
-                q: "What is the baggage policy?",
-                a: "Our fares include one checked bag of 23 kg. Additional options are available during booking.",
-              },
-              {
-                q: "How can I cancel my flight?",
-                a: "Cancellation is possible up to 24 hours before departure. Conditions vary by ticket type.",
-              },
-              {
-                q: "How do I earn HRA points?",
-                a: "Your points are automatically credited after each flight. Log in to your account to view them.",
-              },
-              {
-                q: "What documents are required?",
-                a: "A valid ID is required. For international flights, please check visa requirements.",
-              },
-              {
-                q: "How can I contact customer service?",
-                a: "Our customer service is available by phone, email, or through this contact form.",
-              },
-            ].map((faq, i) => (
-              <details
-                key={i}
-                className="group bg-white rounded-lg shadow p-4 hover:shadow-lg transition"
+            {isSubmitted ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-8"
               >
-                <summary className="cursor-pointer flex justify-between items-center">
-                  <span className="font-medium">{faq.q}</span>
-                  <span className="transform transition-transform group-open:rotate-180">
-                    ▼
-                  </span>
-                </summary>
-                <p className="mt-2 text-gray-600">{faq.a}</p>
-              </details>
-            ))}
-          </section>
-        </section>
-      </div>
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                <h3 className="text-2xl font-semibold text-gray-900 mb-2">
+                  Message Sent Successfully!
+                </h3>
+                <p className="text-gray-600">
+                  Thank you for contacting us. We'll get back to you soon.
+                </p>
+              </motion.div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                      Your Name
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+                    Subject
+                  </label>
+                  <input
+                    type="text"
+                    id="subject"
+                    value={formData.subject}
+                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                    Message
+                  </label>
+                  <textarea
+                    id="message"
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    rows={6}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                </div>
+                <div className="text-center">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="inline-flex items-center px-8 py-4 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? (
+                      "Sending..."
+                    ) : (
+                      <>
+                        <Send className="w-5 h-5 mr-2" />
+                        Send Message
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Map Section */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3631.7023657476147!2d54.361276!3d24.491392!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3e5e66e1e8c2b2d1%3A0x1f3e9c9c9c9c9c9c!2s16-22%20Ar%20Razqi%20St%20-%20Al%20Danah%20-%20Zone%201%20-%20Abu%20Dhabi%20-%20United%20Arab%20Emirates!5e0!3m2!1sen!2sae!4v1620000000000!5m2!1sen!2sae"
+              width="100%"
+              height="450"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

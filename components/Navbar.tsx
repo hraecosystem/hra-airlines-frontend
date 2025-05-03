@@ -11,16 +11,34 @@ import {
   LogOut,
   User,
   LayoutDashboard,
+  Plane,
+  MapPin,
+  Gift,
+  Phone,
+  Info,
+  HelpCircle,
+  Hotel,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { user, logout } = useAuth();
+
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -42,28 +60,25 @@ export default function Navbar() {
   }, []);
 
   const navLinks = [
-    { label: "Home", href: "/" },
-    { label: "Destinations", href: "/destinations" },
-    { label: "Offers", href: "/offers" },
-    { label: "Contact", href: "/contact" },
-    { label: "About", href: "/about" },
-    { label: "FAQs", href: "/faqs" },
-    { label: "Hotels", href: "https://hra-experience.com", external: true },
+    { label: "Home", href: "/", icon: Plane },
+    { label: "Destinations", href: "/destinations", icon: MapPin },
+    { label: "Offers", href: "/offers", icon: Gift },
+    { label: "Contact", href: "/contact", icon: Phone },
+    { label: "About", href: "/about", icon: Info },
+    { label: "FAQs", href: "/faqs", icon: HelpCircle },
+    { label: "Hotels", href: "https://hra-experience.com", icon: Hotel, external: true },
   ];
 
   return (
-    <nav className="fixed inset-x-0 top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
+    <nav
+      className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? "bg-white/95 backdrop-blur-md shadow-md"
+          : "bg-white/80 backdrop-blur-sm"
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Mobile menu button */}
-          <button
-            className="sm:hidden p-2 rounded-md text-gray-700 hover:text-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-400"
-            onClick={() => setIsMenuOpen((o) => !o)}
-            aria-label="Toggle menu"
-          >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <Image
@@ -77,15 +92,16 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop navigation */}
-          <div className="hidden sm:flex sm:items-center sm:space-x-6">
-            {navLinks.map(({ label, href, external }) => (
+          <div className="hidden sm:flex items-center space-x-8">
+            {navLinks.map(({ label, href, icon: Icon, external }) => (
               <Link
                 key={href}
                 href={href}
                 target={external ? "_blank" : undefined}
                 rel={external ? "noopener noreferrer" : undefined}
-                className="text-gray-700 hover:text-pink-600 font-medium text-sm transition-colors duration-200"
+                className="group flex items-center text-gray-700 hover:text-blue-600 font-medium text-sm transition-colors duration-200"
               >
+                <Icon className="w-4 h-4 mr-1.5 group-hover:scale-110 transition-transform" />
                 {label}
               </Link>
             ))}
@@ -94,104 +110,134 @@ export default function Navbar() {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsDropdownOpen((o) => !o)}
-                  className="flex items-center space-x-1 px-3 py-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                  className="flex items-center space-x-1 px-3 py-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
                   aria-label="User menu"
                 >
                   <User size={20} className="text-gray-600" />
                   <ChevronDown size={16} className="text-gray-600" />
                 </button>
-                {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1">
-                    <Link
-                      href="/profile"
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      onClick={() => setIsDropdownOpen(false)}
+
+                <AnimatePresence>
+                  {isDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg py-1"
                     >
-                      <User size={16} className="mr-2" /> Profile
-                    </Link>
-                    <Link
-                      href="/dashboard/bookings"
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      <LayoutDashboard size={16} className="mr-2" /> My Bookings
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
-                    >
-                      <LogOut size={16} className="mr-2" /> Logout
-                    </button>
-                  </div>
-                )}
+                      <Link
+                        href="/profile"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        <User size={16} className="mr-2" /> Profile
+                      </Link>
+                      <Link
+                        href="/dashboard/bookings"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        <LayoutDashboard size={16} className="mr-2" /> My Bookings
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
+                      >
+                        <LogOut size={16} className="mr-2" /> Logout
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             ) : (
               <Link
                 href="/auth/login"
-                className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors duration-200"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
               >
                 Sign In
               </Link>
             )}
           </div>
+
+          {/* Mobile menu button */}
+          <button
+            className="sm:hidden p-2 rounded-md text-gray-700 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            onClick={() => setIsMenuOpen((o) => !o)}
+            aria-label="Toggle menu"
+          >
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
       </div>
 
       {/* Mobile menu panel */}
-      {isMenuOpen && (
-        <div className="sm:hidden bg-white border-t border-gray-200 shadow-md">
-          <div className="px-4 py-3 space-y-4 flex flex-col">
-            {navLinks.map(({ label, href, external }) => (
-              <Link
-                key={href}
-                href={href}
-                target={external ? "_blank" : undefined}
-                rel={external ? "noopener noreferrer" : undefined}
-                className="text-gray-800 hover:text-pink-600 font-medium text-base"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {label}
-              </Link>
-            ))}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="sm:hidden bg-white border-t border-gray-200 shadow-md"
+          >
+            <div className="px-4 py-6 space-y-6 flex flex-col items-center">
+              {navLinks.map(({ label, href, icon: Icon, external }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  target={external ? "_blank" : undefined}
+                  rel={external ? "noopener noreferrer" : undefined}
+                  className="flex items-center justify-center text-gray-800 hover:text-blue-600 font-medium text-base w-full"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Icon className="w-5 h-5 mr-2" />
+                  {label}
+                </Link>
+              ))}
 
-            {user ? (
-              <>
+              {user ? (
+                <>
+                  <Link
+                    href="/profile"
+                    className="flex items-center justify-center text-gray-800 hover:text-blue-600 w-full"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <User className="w-5 h-5 mr-2" />
+                    Profile
+                  </Link>
+                  <Link
+                    href="/dashboard/bookings"
+                    className="flex items-center justify-center text-gray-800 hover:text-blue-600 w-full"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <LayoutDashboard className="w-5 h-5 mr-2" />
+                    My Bookings
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex items-center justify-center text-red-600 text-left font-medium w-full"
+                  >
+                    <LogOut className="w-5 h-5 mr-2" />
+                    Logout
+                  </button>
+                </>
+              ) : (
                 <Link
-                  href="/profile"
-                  className="text-gray-800 hover:text-pink-600"
+                  href="/auth/login"
+                  className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium text-center w-full max-w-xs"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Profile
+                  Sign In
                 </Link>
-                <Link
-                  href="/dashboard/bookings"
-                  className="text-gray-800 hover:text-pink-600"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  My Bookings
-                </Link>
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setIsMenuOpen(false);
-                  }}
-                  className="text-red-600 text-left font-medium"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <Link
-                href="/auth/login"
-                className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors duration-200"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Sign In
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }

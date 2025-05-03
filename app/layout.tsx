@@ -97,6 +97,7 @@ export default function RootLayout({
 
       <body
         className={`${inter.variable} font-sans antialiased bg-gray-50 text-gray-800`}
+        suppressHydrationWarning={true}
       >
         {/* GTM no-script fallback */}
         <noscript>
