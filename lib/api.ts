@@ -17,7 +17,7 @@ const api: AxiosInstance = axios.create({
   baseURL,
   headers: { "Content-Type": "application/json" },
   withCredentials: true,               // send & receive httpOnly cookies
-  timeout: 10_000,                     // 10s
+  timeout: 35_000,                     // 15s
   xsrfCookieName: "XSRF-TOKEN",        // name of the cookie your backend sets
   xsrfHeaderName: "X-CSRF-Token",      // header your backend expects
 });
@@ -30,16 +30,7 @@ api.interceptors.request.use(
   (err: AxiosError) => Promise.reject(err)
 );
 
-// api.interceptors.response.use(
-//   (resp) => resp,
-//   (err: AxiosError) => {
-//     // Auto-redirect to login if 401
-//     if (err.response?.status === 401 && typeof window !== "undefined") {
-//       window.location.href = "/auth/login";
-//     }
-//     return Promise.reject(err);
-//   }
-// );
+
 
 
 api.interceptors.response.use(

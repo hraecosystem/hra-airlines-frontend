@@ -12,6 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 type CountryOption = { label: string; value: string };
 
 interface Passenger {
+  type: "ADT" | "CHD" | "INF";
   title: string;
   firstName: string;
   lastName: string;
@@ -23,19 +24,6 @@ interface Passenger {
   passportExpiryDate: string;
 }
 
-// function makePassenger(title: string): Passenger {
-//   return {
-//     title,
-//     firstName: "",
-//     lastName: "",
-//     dob: "",
-//     nationality: null,
-//     passportNo: "",
-//     passportIssueCountry: null,
-//     passportIssueDate: "",
-//     passportExpiryDate: "",
-//   };
-// }
 
 
 function makePassenger(type: "ADT"|"CHD"|"INF", title: string): Passenger & { type: string } {
@@ -64,7 +52,7 @@ export default function BookingPage() {
 
   const [sessionId,   setSessionId]   = useState("");   // search-level token
   const [fareSource,  setFareSource]  = useState("");   // itinerary-level token
-  const [needsPassport, setNeedsPassport] = useState(false);
+  const [needsPassport, setNeedsPassport] = useState(true);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -98,13 +86,6 @@ export default function BookingPage() {
         
 
 
-// ── passport flag ──
-const passportFlag =
-  parsed.AirItineraryFareInfo?.IsPassportMandatory ??
-  parsed.IsPassportMandatory;
-setNeedsPassport(
-  passportFlag === true || String(passportFlag).toLowerCase() === "true"
-);
 
 // ── passenger array ──
 const qtyOf = (code: string) =>
@@ -115,7 +96,7 @@ const qtyOf = (code: string) =>
   setPassengers([
     ...Array(qtyOf("ADT")).fill(0).map(() => makePassenger("ADT","Mr")),
     ...Array(qtyOf("CHD")).fill(0).map(() => makePassenger("CHD","Master")),
-    ...Array(qtyOf("INF")).fill(0).map(() => makePassenger("INF","Baby")),
+    ...Array(qtyOf("INF")).fill(0).map(() => makePassenger("INF","Master")),
   ]);
 
         // prefill contact
@@ -227,18 +208,16 @@ const qtyOf = (code: string) =>
       }
 
       // 2) split pax types
-      const adults = passengers.filter((p) =>
-        ["Mr", "Mrs", "Miss"].includes(p.title)
-      );
-      const childs = passengers.filter((p) => p.title === "Master");
-      const infs = passengers.filter((p) => p.title === "Baby");
+      const adults = passengers.filter((p) => p.type === "ADT");
+      const childs = passengers.filter((p) => p.type === "CHD");
+      const infs   = passengers.filter((p) => p.type === "INF");
 
       // 3) build booking payload
       const payload = {
         flightBookingInfo: {
           flight_session_id: sessionId,   // search-level
           fare_source_code : fareSource,  // itinerary-level
-          IsPassportMandatory: needsPassport.toString(),
+          IsPassportMandatory: "true",          // always send “true”
           areaCode   : digits(phone).slice(0,3) || "971",
           countryCode: digits(phone).slice(0,3) || "971",
           fareType: fare.AirItineraryFareInfo.FareType,
@@ -392,7 +371,7 @@ if (
                       ) => updatePassenger(idx, "title", e.target.value)}
                       className="mt-1 w-full border rounded px-2 py-1"
                     >
-                      {["Mr", "Mrs", "Miss", "Master", "Baby"].map((t) => (
+{(p.type === "ADT" ? ["Mr","Mrs","Miss"] : ["Master","Miss"]).map((t) => (
                         <option key={t} value={t}>
                           {t}
                         </option>
