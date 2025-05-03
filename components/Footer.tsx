@@ -31,23 +31,23 @@ export default function Footer() {
             <h3 className="text-lg font-semibold mb-4 text-white">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/flights" className="text-gray-300 hover:text-white transition-colors">
-                  Book Flights
+                <Link href="/" className="text-gray-300 hover:text-white transition-colors">
+                  Home
                 </Link>
               </li>
               <li>
-                <Link href="/manage-booking" className="text-gray-300 hover:text-white transition-colors">
-                  Manage Booking
+                <Link href="/offers" className="text-gray-300 hover:text-white transition-colors">
+                  Special Offers
                 </Link>
               </li>
               <li>
-                <Link href="/check-in" className="text-gray-300 hover:text-white transition-colors">
-                  Online Check-in
+                <Link href="/destinations" className="text-gray-300 hover:text-white transition-colors">
+                  Destinations
                 </Link>
               </li>
               <li>
-                <Link href="/flight-status" className="text-gray-300 hover:text-white transition-colors">
-                  Flight Status
+                <Link href="/about" className="text-gray-300 hover:text-white transition-colors">
+                  About Us
                 </Link>
               </li>
             </ul>
@@ -61,18 +61,43 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className="text-gray-300 hover:text-white transition-colors">
-                  FAQ
+                <Link href="/faqs" className="text-gray-300 hover:text-white transition-colors">
+                  FAQs
                 </Link>
               </li>
               <li>
-                <Link href="/baggage" className="text-gray-300 hover:text-white transition-colors">
-                  Baggage Information
+                <Link href="/manage-booking" className="text-gray-300 hover:text-white transition-colors">
+                  Manage Booking
                 </Link>
               </li>
               <li>
-                <Link href="/travel-info" className="text-gray-300 hover:text-white transition-colors">
-                  Travel Information
+                <Link href="/flight-status" className="text-gray-300 hover:text-white transition-colors">
+                  Flight Status
+                </Link>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold mb-4 text-white">Legal</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link href="/privacy" className="text-gray-300 hover:text-white transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="text-gray-300 hover:text-white transition-colors">
+                  Terms of Use
+                </Link>
+              </li>
+              <li>
+                <Link href="/cookies" className="text-gray-300 hover:text-white transition-colors">
+                  Cookie Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/accessibility" className="text-gray-300 hover:text-white transition-colors">
+                  Accessibility
                 </Link>
               </li>
             </ul>
