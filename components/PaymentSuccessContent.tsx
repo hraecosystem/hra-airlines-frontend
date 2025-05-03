@@ -24,18 +24,25 @@ export default function PaymentSuccessContent() {
       setErrorMsg("Missing payment session.");
       return;
     }
-    api.post<{ bookingId: string }>("/payment/verify-session", { sessionId })
-      .then(res => {
-        if (res.data.bookingId) setStatus("success");
-        else {
-          setStatus("error");
-          setErrorMsg("Payment could not be confirmed.");
-        }
-      })
-      .catch(() => {
+    api
+    .post<{
+      status: string;
+      data: { bookingId: string };
+    }>("/payment/verify-session", { sessionId })
+    .then(res => {
+      const bookingId = res.data.data.bookingId;
+      if (bookingId) {
+        setStatus("success");
+      } else {
         setStatus("error");
-        setErrorMsg("Failed to verify payment. Try again later.");
-      });
+        setErrorMsg("Payment could not be confirmed.");
+      }
+    })
+    .catch(() => {
+      setStatus("error");
+      setErrorMsg("Failed to verify payment. Try again later.");
+    });
+  
   }, [sessionId]);
 
   // 2a. Decrement countdown once per second (after we switch to "success")
