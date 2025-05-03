@@ -2,164 +2,145 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { motion } from "framer-motion";
 import {
-  Mail,
+  Plane,
   MapPin,
+  Gift,
   Phone,
+  Info,
+  HelpCircle,
+  Hotel,
   Facebook,
   Instagram,
   Twitter,
   Linkedin,
-  ArrowRight,
 } from "lucide-react";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
+  const navLinks = [
+    { label: "Home", href: "/", icon: Plane },
+    { label: "Destinations", href: "/destinations", icon: MapPin },
+    { label: "Offers", href: "/offers", icon: Gift },
+    { label: "Contact", href: "/contact", icon: Phone },
+    { label: "About", href: "/about", icon: Info },
+    { label: "FAQs", href: "/faqs", icon: HelpCircle },
+    { label: "Hotels", href: "https://hra-experience.com", icon: Hotel, external: true },
+  ];
+
   return (
-    <footer className="bg-gradient-to-b from-gray-900 to-gray-950 text-gray-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center md:text-left">
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-white">About Us</h3>
-            <p className="text-gray-300">
+    <footer className="relative bg-gradient-to-b from-gray-900 via-gray-950 to-black text-gray-300 overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-500/20 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(68,68,68,.2)_50%,transparent_75%,transparent_100%)] bg-[length:20px_20px]" />
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+          {/* Logo and Description */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center md:text-left"
+          >
+            <Link href="/" className="inline-block mb-6 transform hover:scale-105 transition-transform duration-300">
+              <Image
+                src="/logo-hra.png"
+                alt="HRA Airlines"
+                width={180}
+                height={45}
+                className="h-12 w-auto brightness-0 invert hover:brightness-100 transition-all duration-300"
+              />
+            </Link>
+            <p className="text-gray-400 text-sm leading-relaxed max-w-md">
               HRA Airlines is committed to providing exceptional air travel
               experiences with safety, comfort, and reliability.
             </p>
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-white">Quick Links</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/" className="text-gray-300 hover:text-white transition-colors">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link href="/offers" className="text-gray-300 hover:text-white transition-colors">
-                  Special Offers
-                </Link>
-              </li>
-              <li>
-                <Link href="/destinations" className="text-gray-300 hover:text-white transition-colors">
-                  Destinations
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" className="text-gray-300 hover:text-white transition-colors">
-                  About Us
-                </Link>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-white">Support</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/contact" className="text-gray-300 hover:text-white transition-colors">
-                  Contact Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/faqs" className="text-gray-300 hover:text-white transition-colors">
-                  FAQs
-                </Link>
-              </li>
-              <li>
-                <Link href="/manage-booking" className="text-gray-300 hover:text-white transition-colors">
-                  Manage Booking
-                </Link>
-              </li>
-              <li>
-                <Link href="/flight-status" className="text-gray-300 hover:text-white transition-colors">
-                  Flight Status
-                </Link>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-white">Legal</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/privacy" className="text-gray-300 hover:text-white transition-colors">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link href="/terms" className="text-gray-300 hover:text-white transition-colors">
-                  Terms of Use
-                </Link>
-              </li>
-              <li>
-                <Link href="/cookies" className="text-gray-300 hover:text-white transition-colors">
-                  Cookie Policy
-                </Link>
-              </li>
-              <li>
-                <Link href="/accessibility" className="text-gray-300 hover:text-white transition-colors">
-                  Accessibility
-                </Link>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-white">Connect With Us</h3>
-            <div className="flex justify-center md:justify-start space-x-4">
+          </motion.div>
+
+          {/* Navigation Links */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="grid grid-cols-2 gap-6"
+          >
+            {navLinks.map(({ label, href, icon: Icon, external }, index) => (
               <Link
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-300 hover:text-white transition-colors"
+                key={href}
+                href={href}
+                target={external ? "_blank" : undefined}
+                rel={external ? "noopener noreferrer" : undefined}
+                className="group flex items-center text-gray-300 hover:text-white transition-all duration-300"
               >
-                <Facebook className="w-6 h-6" />
+                <div className="relative flex items-center">
+                  <Icon className="w-4 h-4 mr-3 text-blue-400 group-hover:text-blue-300 transition-colors duration-300" />
+                  <span className="relative">
+                    {label}
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300" />
+                  </span>
+                </div>
               </Link>
-              <Link
-                href="https://twitter.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-300 hover:text-white transition-colors"
-              >
-                <Twitter className="w-6 h-6" />
-              </Link>
-              <Link
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-300 hover:text-white transition-colors"
-              >
-                <Instagram className="w-6 h-6" />
-              </Link>
-              <Link
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-300 hover:text-white transition-colors"
-              >
-                <Linkedin className="w-6 h-6" />
-              </Link>
+            ))}
+          </motion.div>
+
+          {/* Social Links */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="text-center md:text-left"
+          >
+            <h3 className="text-lg font-semibold mb-6 text-white relative inline-block">
+              Follow Us
+              <span className="absolute -bottom-2 left-0 w-12 h-0.5 bg-blue-400" />
+            </h3>
+            <div className="flex justify-center md:justify-start space-x-6">
+              {[
+                { icon: Facebook, href: "https://facebook.com" },
+                { icon: Twitter, href: "https://twitter.com" },
+                { icon: Instagram, href: "https://instagram.com" },
+                { icon: Linkedin, href: "https://linkedin.com" },
+              ].map(({ icon: Icon, href }, index) => (
+                <Link
+                  key={href}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative"
+                >
+                  <div className="relative z-10 p-2 rounded-full bg-gray-800/50 backdrop-blur-sm group-hover:bg-blue-500/20 transition-all duration-300">
+                    <Icon className="w-5 h-5 text-gray-400 group-hover:text-blue-300 transition-colors duration-300" />
+                  </div>
+                  <div className="absolute inset-0 rounded-full bg-blue-500/20 blur-xl group-hover:blur-2xl transition-all duration-300" />
+                </Link>
+              ))}
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-gray-800">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className="mt-16 pt-8 border-t border-gray-800/50"
+        >
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-sm">
+            <p className="text-sm text-gray-400">
               © {currentYear} HRA Airlines. All rights reserved.
             </p>
-            <div className="flex space-x-6 text-sm">
-              <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">
-                Privacy Policy
-              </Link>
-              <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">
-                Terms of Use
-              </Link>
-              <Link href="/cookies" className="text-gray-400 hover:text-white transition-colors">
-                Cookie Policy
-              </Link>
-            </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </footer>
   );
