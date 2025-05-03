@@ -102,7 +102,7 @@ export default function HomePage() {
               Popular Destinations
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Discover our most sought-after destinations
+              Discover our most sought-after destinations with exclusive HRA Airlines card discounts
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -111,16 +111,22 @@ export default function HomePage() {
                 image: "https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=800&q=80",
                 title: "Paris",
                 description: "The City of Light awaits",
+                basePrice: 299,
+                cardPrice: 254,
               },
               {
                 image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=80",
                 title: "London",
                 description: "Experience British charm",
+                basePrice: 349,
+                cardPrice: 297,
               },
               {
                 image: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=800&q=80",
                 title: "New York",
                 description: "The city that never sleeps",
+                basePrice: 499,
+                cardPrice: 424,
               },
             ].map((destination, index) => (
               <motion.div
@@ -128,7 +134,7 @@ export default function HomePage() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="group relative h-96 rounded-xl overflow-hidden"
+                className="group relative h-96 rounded-xl overflow-hidden bg-white shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 <Image
                   src={destination.image}
@@ -136,19 +142,124 @@ export default function HomePage() {
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
                   <h3 className="text-2xl font-bold mb-2">{destination.title}</h3>
                   <p className="text-blue-100 mb-4">{destination.description}</p>
+                  
+                  {/* Price Section */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-bold">${destination.cardPrice}</span>
+                      <span className="text-sm text-gray-300 line-through">${destination.basePrice}</span>
+                    </div>
+                    <span className="bg-blue-500 text-white text-xs font-medium px-2 py-1 rounded-full">
+                      -15% with HRA Card
+                    </span>
+                  </div>
+
                   <Link
-                    href="/destinations"
+                    href={`/search?dest=${destination.title}`}
                     className="inline-flex items-center text-white hover:text-blue-200 transition"
                   >
-                    Explore <ArrowRight className="w-4 h-4 ml-2" />
+                    Book Now <ArrowRight className="w-4 h-4 ml-2" />
                   </Link>
                 </div>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* HRA Card Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'radial-gradient(circle at 1px 1px, #1e40af 1px, transparent 0)',
+            backgroundSize: '40px 40px'
+          }} />
+        </div>
+
+        <div className="max-w-7xl mx-auto relative">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Left Content */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-gray-900"
+            >
+              <h2 className="text-4xl sm:text-5xl font-bold mb-6">
+                Get Your HRA Card
+              </h2>
+              <div className="space-y-6">
+                <p className="text-xl text-gray-600">
+                  Unlock exclusive benefits and save 15% on all flights with your HRA Airlines card.
+                </p>
+                <ul className="space-y-4">
+                  {[
+                    "15% off on all flights worldwide",
+                    "Priority check-in and boarding",
+                    "Extra baggage allowance",
+                    "Exclusive lounge access",
+                    "Earn points on every flight"
+                  ].map((benefit, index) => (
+                    <motion.li
+                      key={index}
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                      className="flex items-center gap-3"
+                    >
+                      <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <span className="text-lg text-gray-700">{benefit}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                  className="pt-6"
+                >
+                  <Link
+                    href="https://hra-epay.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300"
+                  >
+                    Apply Now
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Link>
+                </motion.div>
+              </div>
+            </motion.div>
+
+            {/* Right Content - Card Image */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="relative"
+            >
+              <div className="relative w-full aspect-[1.586] max-w-sm mx-auto">
+                <Image
+                  src="/hra-experience-card.png"
+                  alt="HRA Airlines Experience Card"
+                  fill
+                  className="object-contain drop-shadow-xl"
+                />
+                {/* Static Badge */}
+                <div className="absolute -top-3 -right-3 bg-blue-600 text-white px-3 py-1.5 rounded-full font-bold text-xs">
+                  -15% OFF
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
