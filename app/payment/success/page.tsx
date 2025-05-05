@@ -15,7 +15,7 @@ export default function PaymentSuccessPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center p-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -27,13 +27,13 @@ export default function PaymentSuccessPage() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: "spring" }}
-            className="mx-auto w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-8"
+            className="mx-auto w-24 h-24 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mb-8 shadow-lg shadow-green-500/20"
           >
-            <CheckCircle2 className="w-16 h-16 text-green-600" />
+            <CheckCircle2 className="w-16 h-16 text-white" />
           </motion.div>
 
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent mb-4">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
               Payment Successful!
             </h1>
             
@@ -45,10 +45,10 @@ export default function PaymentSuccessPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <motion.div
               whileHover={{ scale: 1.02 }}
-              className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-md transition-all duration-200"
+              className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-md transition-all duration-200 border border-blue-100"
               onClick={() => router.push("/dashboard/bookings")}
             >
-              <div className="bg-blue-600 p-3 rounded-lg">
+              <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-3 rounded-lg shadow-lg shadow-blue-500/20">
                 <Plane className="w-8 h-8 text-white" />
               </div>
               <div className="text-left">
@@ -59,9 +59,9 @@ export default function PaymentSuccessPage() {
 
             <motion.div
               whileHover={{ scale: 1.02 }}
-              className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-md transition-all duration-200"
+              className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 flex items-center gap-4 cursor-pointer hover:shadow-md transition-all duration-200 border border-green-100"
             >
-              <div className="bg-green-600 p-3 rounded-lg">
+              <div className="bg-gradient-to-br from-green-600 to-green-700 p-3 rounded-lg shadow-lg shadow-green-500/20">
                 <Receipt className="w-8 h-8 text-white" />
               </div>
               <div className="text-left">
@@ -71,7 +71,7 @@ export default function PaymentSuccessPage() {
             </motion.div>
           </div>
 
-          <div className="bg-gray-50 rounded-xl p-6 mb-8">
+          <div className="bg-gray-50 rounded-xl p-6 mb-8 border border-gray-100">
             <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Calendar className="w-5 h-5 text-blue-600" />
               Next Steps
@@ -97,14 +97,16 @@ export default function PaymentSuccessPage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => router.push("/dashboard/bookings")}
-              className="w-full flex items-center justify-center gap-2 p-4 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-900 transition-all duration-200 shadow-sm hover:shadow-md"
+              className="w-full flex items-center justify-center gap-2 p-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               View My Bookings
-              <ArrowRight className="w-5 h-5" />
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
             </motion.button>
             <button
               onClick={() => router.push("/")}
-              className="w-full p-4 text-gray-600 hover:text-gray-900 transition-colors duration-200"
+              className="w-full p-4 text-gray-600 hover:text-gray-900 transition-colors duration-200 font-medium"
             >
               Return to Home
             </button>

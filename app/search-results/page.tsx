@@ -412,9 +412,16 @@ const fareSource = fi.AirItineraryFareInfo.FareSourceCode;
                         <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center">
                           <span className="text-blue-600 font-semibold">{firstSeg.DepartureAirportLocationCode}</span>
                         </div>
-                        <div className="flex-1">
-                          <div className="text-sm text-gray-500">Departure</div>
-                          <div className="font-medium">{formatDateTime(firstSeg.DepartureDateTime)}</div>
+                        <div className="flex-1 flex items-center gap-2">
+                          <div className="flex flex-col justify-center">
+                            <div className="text-sm text-gray-500">Departure</div>
+                            <div className="font-medium">{formatDateTime(firstSeg.DepartureDateTime)}</div>
+                          </div>
+                          <div className="w-6 h-6 text-gray-600 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                              <path d="M120-120v-80h720v80H120Zm70-200L40-570l96-26 112 94 140-37-207-276 116-31 299 251 170-46q32-9 60.5 7.5T864-585q9 32-7.5 60.5T808-487L190-320Z"/>
+                            </svg>
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
@@ -423,10 +430,17 @@ const fareSource = fi.AirItineraryFareInfo.FareSourceCode;
                             {fi.OriginDestinationOptions[0].OriginDestinationOption[fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1].FlightSegment.ArrivalAirportLocationCode}
                           </span>
                         </div>
-                        <div className="flex-1">
-                          <div className="text-sm text-gray-500">Arrival</div>
-                          <div className="font-medium">
-                            {formatDateTime(fi.OriginDestinationOptions[0].OriginDestinationOption[fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1].FlightSegment.ArrivalDateTime)}
+                        <div className="flex-1 flex items-center gap-2">
+                          <div className="flex flex-col justify-center">
+                            <div className="text-sm text-gray-500">Arrival</div>
+                            <div className="font-medium">
+                              {formatDateTime(fi.OriginDestinationOptions[0].OriginDestinationOption[fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1].FlightSegment.ArrivalDateTime)}
+                            </div>
+                          </div>
+                          <div className="w-6 h-6 text-gray-600 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                              <path d="M120-120v-80h720v80H120Zm622-202L120-499v-291l96 27 48 139 138 39-35-343 115 34 128 369 172 49q25 8 41.5 29t16.5 48q0 35-28.5 61.5T742-322Z"/>
+                            </svg>
                           </div>
                         </div>
                       </div>
