@@ -1,7 +1,7 @@
 // components/FlightSearchWidget.tsx
 "use client";
 
-import React, { FormEvent, useState } from "react";
+import React, { FormEvent, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import DatePicker from "react-datepicker";
@@ -9,7 +9,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import AutoCompleteInput from "./AutoCompleteInput";
 import api from "@/lib/api";
 import { toYMD } from "@/utils/date";
-import { Plane, Search, Loader2 } from "lucide-react";
+import { Plane, Search, Loader2, Calendar, Users } from "lucide-react";
 
 type JourneyType = "OneWay" | "Return" | "Circle";
 type CabinClass = "Economy" | "PremiumEconomy" | "Business" | "First";
@@ -19,6 +19,77 @@ interface Segment {
   destination: string;
   date: Date | null;
 }
+
+// Ajouter les styles personnalisés pour le calendrier
+const calendarStyles = {
+  ".react-datepicker": {
+    fontFamily: "inherit",
+    border: "none",
+    borderRadius: "1rem",
+    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+    overflow: "hidden",
+  },
+  ".react-datepicker__header": {
+    backgroundColor: "#f8fafc",
+    borderBottom: "1px solid #e2e8f0",
+    padding: "1rem",
+  },
+  ".react-datepicker__current-month": {
+    color: "#1e40af",
+    fontWeight: "600",
+    fontSize: "1rem",
+    marginBottom: "0.5rem",
+  },
+  ".react-datepicker__day-name": {
+    color: "#64748b",
+    fontWeight: "500",
+    width: "2.5rem",
+    margin: "0.2rem",
+  },
+  ".react-datepicker__day": {
+    width: "2.5rem",
+    height: "2.5rem",
+    lineHeight: "2.5rem",
+    margin: "0.2rem",
+    borderRadius: "0.5rem",
+    color: "#1e293b",
+    fontWeight: "500",
+  },
+  ".react-datepicker__day:hover": {
+    backgroundColor: "#e0f2fe",
+  },
+  ".react-datepicker__day--selected": {
+    backgroundColor: "#1e40af !important",
+    color: "white !important",
+  },
+  ".react-datepicker__day--keyboard-selected": {
+    backgroundColor: "#1e40af !important",
+    color: "white !important",
+  },
+  ".react-datepicker__day--disabled": {
+    color: "#cbd5e1",
+  },
+  ".react-datepicker__navigation": {
+    top: "1rem",
+  },
+  ".react-datepicker__navigation-icon::before": {
+    borderColor: "#64748b",
+  },
+  ".react-datepicker__navigation:hover *::before": {
+    borderColor: "#1e40af",
+  },
+};
+
+// Ajouter les styles globaux
+const globalStyles = `
+  ${Object.entries(calendarStyles)
+    .map(([selector, styles]) => {
+      return `${selector} { ${Object.entries(styles)
+        .map(([prop, value]) => `${prop}: ${value}`)
+        .join("; ")} }`;
+    })
+    .join("\n")}
+`;
 
 export default function FlightSearchWidget() {
   const router = useRouter();
@@ -35,7 +106,14 @@ export default function FlightSearchWidget() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-
+  useEffect(() => {
+    const styleSheet = document.createElement("style");
+    styleSheet.textContent = globalStyles;
+    document.head.appendChild(styleSheet);
+    return () => {
+      document.head.removeChild(styleSheet);
+    };
+  }, []);
 
   const updateLeg = (
     idx: number,
@@ -155,7 +233,7 @@ export default function FlightSearchWidget() {
 
   // Shared input classes
   const inputClass =
-    "w-full px-2 py-1.5 border border-gray-200 bg-white text-gray-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all duration-200 hover:border-blue-300 text-sm";
+    "w-full pl-10 pr-4 py-2.5 border border-gray-200 bg-white text-gray-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all duration-200 hover:border-blue-300 text-sm";
 
   return (
     <motion.form
@@ -163,259 +241,325 @@ export default function FlightSearchWidget() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="mx-auto max-w-3xl space-y-4 rounded-xl bg-white p-4 shadow-xl border border-gray-100"
+      className="mx-auto max-w-3xl space-y-6 rounded-2xl bg-white/95 backdrop-blur-sm p-6 shadow-2xl border border-gray-100"
       aria-busy={loading}
     >
-      <h2 className="text-center text-xl font-bold text-gray-900 mb-4">
-        Find Your Perfect Flight <Plane className="inline-block w-5 h-5 ml-1" />
+      <h2 className="text-center text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent mb-6">
+        Find Your Perfect Flight <Plane className="inline-block w-6 h-6 ml-2" />
       </h2>
 
       {error && (
-  <div
-    role="alert"
-    className="rounded-lg bg-red-50 px-4 py-2 text-red-800 border border-red-200 text-sm space-y-2"
-  >
-    <p>{error}</p>
-    {error.includes("temporarily unavailable") && (
-      <button
-        onClick={handleSubmit}
-        className="inline-block bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition text-xs"
-      >
-        Retry Now
-      </button>
-    )}
-  </div>
-)}
-
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          role="alert"
+          className="rounded-xl bg-red-50 px-4 py-3 text-red-800 border border-red-200 text-sm space-y-2"
+        >
+          <p>{error}</p>
+          {error.includes("temporarily unavailable") && (
+            <button
+              onClick={handleSubmit}
+              className="inline-block bg-red-600 text-white px-4 py-1.5 rounded-lg hover:bg-red-700 transition text-xs font-medium"
+            >
+              Retry Now
+            </button>
+          )}
+        </motion.div>
+      )}
 
       {/* Trip & Cabin */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
+      <div className="grid grid-cols-2 gap-6">
+        <div className="relative">
           <label
             htmlFor="tripType"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-gray-700 mb-2"
           >
             Trip Type
           </label>
-          <select
-            id="tripType"
-            value={tripType}
-            onChange={(e) => {
-              const v = e.target.value as JourneyType;
-              setTripType(v);
-              setSegments([{ origin: "", destination: "", date: null }]);
-              setReturnDate(null);
-            }}
-            className={inputClass}
-          >
-            <option>OneWay</option>
-            <option>Return</option>
-            <option>Circle</option>
-          </select>
+          <div className="relative">
+            <Plane className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <select
+              id="tripType"
+              value={tripType}
+              onChange={(e) => {
+                const v = e.target.value as JourneyType;
+                setTripType(v);
+                setSegments([{ origin: "", destination: "", date: null }]);
+                setReturnDate(null);
+              }}
+              className={inputClass}
+            >
+              <option>OneWay</option>
+              <option>Return</option>
+              <option>Circle</option>
+            </select>
+          </div>
         </div>
-        <div>
+        <div className="relative">
           <label
             htmlFor="cabinClass"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-gray-700 mb-2"
           >
             Cabin Class
           </label>
-          <select
-            id="cabinClass"
-            value={cabinClass}
-            onChange={(e) =>
-              setCabinClass(e.target.value as CabinClass)
-            }
-            className={inputClass}
-          >
-            <option>Economy</option>
-            <option>PremiumEconomy</option>
-            <option>Business</option>
-            <option>First</option>
-          </select>
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+            </svg>
+            <select
+              id="cabinClass"
+              value={cabinClass}
+              onChange={(e) =>
+                setCabinClass(e.target.value as CabinClass)
+              }
+              className={inputClass}
+            >
+              <option>Economy</option>
+              <option>PremiumEconomy</option>
+              <option>Business</option>
+              <option>First</option>
+            </select>
+          </div>
         </div>
       </div>
 
       {/* Flight Legs */}
       {tripType === "Circle" ? (
-        <div className="h-[180px] overflow-y-auto pr-1 space-y-2">
+        <div className="h-[180px] overflow-y-auto pr-2 space-y-3">
           {segments.map((s, i) => (
             <div
               key={i}
-              className="grid grid-cols-1 gap-2 sm:grid-cols-4 items-end bg-gray-50/50 p-2 rounded-lg"
+              className="grid grid-cols-1 gap-3 sm:grid-cols-4 items-end bg-gradient-to-br from-gray-50 to-gray-100/50 p-4 rounded-xl"
             >
               <div className="sm:col-span-2">
-                <div className="grid grid-cols-2 gap-1">
-                  <AutoCompleteInput
-                    label={`Trip ${i + 1} Origin`}
-                    value={s.origin}
-                    onChange={(v) => updateLeg(i, "origin", v)}
-                    inputClassName={inputClass}
-                  />
-                  <AutoCompleteInput
-                    label={`Trip ${i + 1} Destination`}
-                    value={s.destination}
-                    onChange={(v) => updateLeg(i, "destination", v)}
-                    inputClassName={inputClass}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="relative">
+                    <AutoCompleteInput
+                      label={`Trip ${i + 1} Origin`}
+                      value={s.origin}
+                      onChange={(v) => updateLeg(i, "origin", v)}
+                      placeholder="From"
+                      inputClassName={inputClass}
+                    />
+                    <svg className="absolute left-3 top-[38px] text-gray-400 w-5 h-5" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                      <path d="M120-120v-80h720v80H120Zm70-200L40-570l96-26 112 94 140-37-207-276 116-31 299 251 170-46q32-9 60.5 7.5T864-585q9 32-7.5 60.5T808-487L190-320Z"/>
+                    </svg>
+                  </div>
+                  <div className="relative">
+                    <AutoCompleteInput
+                      label={`Trip ${i + 1} Destination`}
+                      value={s.destination}
+                      onChange={(v) => updateLeg(i, "destination", v)}
+                      placeholder="To"
+                      inputClassName={inputClass}
+                    />
+                    <svg className="absolute left-3 top-[38px] text-gray-400 w-5 h-5" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                      <path d="M120-120v-80h720v80H120Zm622-202L120-499v-291l96 27 48 139 138 39-35-343 115 34 128 369 172 49q25 8 41.5 29t16.5 48q0 35-28.5 61.5T742-322Z"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Departure Date
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <DatePicker
+                    selected={s.date}
+                    onChange={(date) => updateLeg(i, "date", date)}
+                    dateFormat="MMM d, yyyy"
+                    minDate={new Date()}
+                    placeholderText="Select date"
+                    className={inputClass}
+                    calendarClassName="!font-sans"
+                    popperClassName="z-50"
+                    popperPlacement="bottom-start"
                   />
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-0.5">
-                  Date
-                </label>
-                <DatePicker
-                  selected={s.date}
-                  onChange={(d) => updateLeg(i, "date", d)}
-                  dateFormat="yyyy-MM-dd"
-                  minDate={new Date()}
-                  placeholderText="YYYY-MM-DD"
-                  className={inputClass}
-                />
+              <div className="flex items-end gap-2">
+                {segments.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeLeg(i)}
+                    className="p-2.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                )}
+                {i === segments.length - 1 && segments.length < 5 && (
+                  <button
+                    type="button"
+                    onClick={addLeg}
+                    className="p-2.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                )}
               </div>
-              {i > 0 && (
-                <button
-                  type="button"
-                  onClick={() => removeLeg(i)}
-                  aria-label={`Remove leg ${i + 1}`}
-                  className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
-                >
-                  ✕
-                </button>
-              )}
             </div>
           ))}
-          {segments.length < 5 && (
-            <button
-              type="button"
-              onClick={addLeg}
-              className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 hover:underline text-xs sticky bottom-0 bg-white/95 backdrop-blur-sm py-1 w-full justify-center"
-            >
-              <span className="text-base">+</span> Add another Trip
-            </button>
-          )}
         </div>
       ) : (
-        <>
-          <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+          <div className="relative">
             <AutoCompleteInput
-              label="Origin"
+              label="From"
               value={segments[0].origin}
               onChange={(v) => updateLeg(0, "origin", v)}
+              placeholder="Origin"
               inputClassName={inputClass}
             />
+            <svg className="absolute left-3 top-[38px] text-gray-400 w-5 h-5" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+              <path d="M120-120v-80h720v80H120Zm70-200L40-570l96-26 112 94 140-37-207-276 116-31 299 251 170-46q32-9 60.5 7.5T864-585q9 32-7.5 60.5T808-487L190-320Z"/>
+            </svg>
+          </div>
+          <div className="relative">
             <AutoCompleteInput
-              label="Destination"
+              label="To"
               value={segments[0].destination}
               onChange={(v) => updateLeg(0, "destination", v)}
+              placeholder="Destination"
               inputClassName={inputClass}
             />
+            <svg className="absolute left-3 top-[38px] text-gray-400 w-5 h-5" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+              <path d="M120-120v-80h720v80H120Zm622-202L120-499v-291l96 27 48 139 138 39-35-343 115 34 128 369 172 49q25 8 41.5 29t16.5 48q0 35-28.5 61.5T742-322Z"/>
+            </svg>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-2">
-                Departure Date
-              </label>
+          <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Departure Date
+            </label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <DatePicker
                 selected={segments[0].date}
-                onChange={(d) => updateLeg(0, "date", d)}
-                dateFormat="yyyy-MM-dd"
+                onChange={(date) => updateLeg(0, "date", date)}
+                dateFormat="MMM d, yyyy"
                 minDate={new Date()}
-                placeholderText="YYYY-MM-DD"
+                placeholderText="Select date"
                 className={inputClass}
-                required
+                calendarClassName="!font-sans"
+                popperClassName="z-50"
+                popperPlacement="bottom-start"
               />
             </div>
-            {tripType === "Return" && (
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-2">
-                  Return Date
-                </label>
-                <DatePicker
-                  selected={returnDate}
-                  onChange={setReturnDate}
-                  dateFormat="yyyy-MM-dd"
-                  minDate={segments[0].date || new Date()}
-                  placeholderText="YYYY-MM-DD"
-                  className={inputClass}
-                  required
-                />
-              </div>
-            )}
           </div>
-        </>
+        </div>
+      )}
+
+      {/* Return Date */}
+      {tripType === "Return" && (
+        <div className="relative">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Return Date
+          </label>
+          <div className="relative">
+            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <DatePicker
+              selected={returnDate}
+              onChange={setReturnDate}
+              dateFormat="MMM d, yyyy"
+              minDate={segments[0].date || new Date()}
+              placeholderText="Select return date"
+              className={inputClass}
+              calendarClassName="!font-sans"
+              popperClassName="z-50"
+              popperPlacement="bottom-start"
+            />
+          </div>
+        </div>
       )}
 
       {/* Passengers */}
-      <div className="grid grid-cols-3 gap-4 bg-gray-50/50 p-4 rounded-lg">
-        {[
-          {
-            id: "adults",
-            label: "Adults",
-            val: adults,
-            fn: setAdults,
-            min: 1,
-          },
-          {
-            id: "children",
-            label: "Children",
-            val: children,
-            fn: setChildren,
-            min: 0,
-          },
-          {
-            id: "infants",
-            label: "Infants",
-            val: infants,
-            fn: setInfants,
-            min: 0,
-          },
-        ].map(({ id, label, val, fn, min }) => (
-          <div key={id}>
-            <label
-              htmlFor={id}
-              className="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-2"
-            >
-              {label}
-            </label>
-            <input
-              id={id}
-              type="number"
-              min={min}
-              max={9}
-              value={val}
-              onChange={(e) => fn(Number(e.target.value))}
+      <div className="grid grid-cols-3 gap-6">
+        <div className="relative">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Adults
+          </label>
+          <div className="relative">
+            <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <select
+              value={adults}
+              onChange={(e) => setAdults(Number(e.target.value))}
               className={inputClass}
-            />
+            >
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
           </div>
-        ))}
+        </div>
+        <div className="relative">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Children
+          </label>
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            <select
+              value={children}
+              onChange={(e) => setChildren(Number(e.target.value))}
+              className={inputClass}
+            >
+              {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="relative">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Infants
+          </label>
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+            </svg>
+            <select
+              value={infants}
+              onChange={(e) => setInfants(Number(e.target.value))}
+              className={inputClass}
+            >
+              {[0, 1, 2, 3, 4].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
-      {/* Submit */}
-      <motion.button
+      {/* Search Button */}
+      <button
         type="submit"
         disabled={loading}
-        whileTap={{ scale: 0.97 }}
-        className={`w-full rounded-lg py-3 text-white font-semibold text-base transition-all duration-200 ${
-          loading
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 shadow-lg hover:shadow-xl"
-        }`}
+        className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-900 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
-        <div className="flex items-center justify-center gap-2">
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Searching...</span>
-            </>
-          ) : (
-            <>
-              <Search className="w-4 h-4" />
-              <span>Search Flights</span>
-            </>
-          )}
-        </div>
-      </motion.button>
+        {loading ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            Searching...
+          </>
+        ) : (
+          <>
+            <Search className="w-5 h-5" />
+            Search Flights
+          </>
+        )}
+      </button>
     </motion.form>
   );
 }

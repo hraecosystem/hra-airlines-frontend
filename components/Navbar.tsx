@@ -4,6 +4,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import styles from './Navbar.module.css';
 import {
   Menu,
   X,
@@ -77,6 +78,14 @@ export default function Navbar() {
           : "bg-white/80 backdrop-blur-sm"
       }`}
     >
+      <style jsx global>{`
+        .sign-in-button {
+          color: white !important;
+        }
+        .sign-in-button:hover {
+          color: white !important;
+        }
+      `}</style>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -153,9 +162,10 @@ export default function Navbar() {
             ) : (
               <Link
                 href="/auth/login"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
+                className="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
+                style={{ color: '#ffffff', backgroundColor: '#2563eb' }}
               >
-                Sign In
+                <span style={{ color: '#ffffff' }}>Sign In</span>
               </Link>
             )}
           </div>
@@ -228,10 +238,11 @@ export default function Navbar() {
               ) : (
                 <Link
                   href="/auth/login"
-                  className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium text-center w-full max-w-xs"
+                  className="bg-blue-600 px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium text-center w-full max-w-xs"
+                  style={{ color: '#ffffff', backgroundColor: '#2563eb' }}
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Sign In
+                  <span style={{ color: '#ffffff' }}>Sign In</span>
                 </Link>
               )}
             </div>

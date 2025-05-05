@@ -1,0 +1,9 @@
+.signInButton {
+  color: white !important;
+  background-color: #2563eb !important;
+}
+
+.signInButton:hover {
+  color: white !important;
+  background-color: #1d4ed8 !important;
+} 

@@ -10,6 +10,7 @@ import { Printer, Download, ChevronLeft, Plane, User, Calendar, CreditCard, Info
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { Spinner } from "@/components/ui/Spinner";
+import styles from './ticket.module.css';
 
 type Passenger = {
   title: string;
@@ -194,13 +195,7 @@ export default function TicketPage() {
                   <Clock size={22} />
                   <h3 className="font-semibold">Status</h3>
                 </div>
-                <p className={`text-xl font-bold tracking-wide ${
-                  ticket.status === "CONFIRMED"
-                    ? "text-green-900"
-                    : ticket.status === "CANCELLED"
-                    ? "text-red-900"
-                    : "text-purple-900"
-                }`}>
+                <p className={`text-xl font-bold tracking-wide ${styles.statusText}`}>
                   {ticket.status}
                 </p>
               </motion.div>
@@ -214,13 +209,7 @@ export default function TicketPage() {
                   <CreditCard size={22} />
                   <h3 className="font-semibold">Payment</h3>
                 </div>
-                <p className={`text-xl font-bold tracking-wide ${
-                  ticket.paymentStatus === "PAID"
-                    ? "text-green-900"
-                    : ticket.paymentStatus === "PENDING"
-                    ? "text-orange-900"
-                    : "text-red-900"
-                }`}>
+                <p className={`text-xl font-bold tracking-wide ${styles.paymentText}`}>
                   {ticket.paymentStatus}
                 </p>
               </motion.div>
