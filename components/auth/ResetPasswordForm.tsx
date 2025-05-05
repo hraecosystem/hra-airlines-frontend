@@ -50,7 +50,7 @@ export default function ResetPasswordForm() {
     try {
       await api.post("/auth/reset-password", {
         email,
-        token: otpCode.trim(),
+        otpCode: otpCode.trim(),    // ← renamed from `token`
         newPassword,
       });
       localStorage.removeItem("hra_reset_email");
