@@ -122,7 +122,7 @@ export default function RootLayout({
           <Navbar />
 
           {/* Main content */}
-          <main id="main-content" className="pt-20 min-h-screen">
+          <main id="main-content" className="pt-16 min-h-screen">
             {children}
           </main>
 

@@ -154,7 +154,7 @@ export default function FlightSearchWidget() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="mx-auto max-w-3xl space-y-4 rounded-xl bg-white/95 backdrop-blur-sm p-4 shadow-xl border border-gray-100"
+      className="mx-auto max-w-3xl space-y-4 rounded-xl bg-white p-4 shadow-xl border border-gray-100"
       aria-busy={loading}
     >
       <h2 className="text-center text-xl font-bold text-gray-900 mb-4">
