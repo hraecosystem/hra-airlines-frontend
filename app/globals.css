@@ -84,6 +84,26 @@ html {
   .text-gray-500 {
     color: rgb(107, 114, 128) !important;
   }
+  .text-green-700 {
+    color: rgb(21, 128, 61) !important;
+  }
+  .text-red-700 {
+    color: rgb(185, 28, 28) !important;
+  }
+  .text-purple-700 {
+    color: rgb(126, 34, 206) !important;
+  }
+  .text-orange-600 {
+    color: rgb(234, 88, 12) !important;
+  }
+
+  /* Force les couleurs des textes dans les cartes */
+  .bg-gradient-to-br p-5 p {
+    color: rgb(17, 24, 39) !important;
+  }
+  .bg-gradient-to-br p-5 h3 {
+    color: inherit !important;
+  }
 
   /* Force les couleurs de la navbar */
   nav a {
