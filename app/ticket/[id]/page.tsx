@@ -159,7 +159,7 @@ export default function TicketPage() {
 
         <div className="bg-white rounded-b-2xl shadow-lg overflow-hidden print:shadow-none">
           <div className="p-8 space-y-8">
-            {/* Core Info */}
+          {/* Core Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <motion.div 
                 className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200"
@@ -181,7 +181,7 @@ export default function TicketPage() {
                 <div className="flex items-center gap-3 text-green-600 mb-3">
                   <Calendar size={22} />
                   <h3 className="font-semibold">Issued</h3>
-                </div>
+            </div>
                 <p className="text-xl font-bold tracking-wide">{format(issuedDate, "PPP p")}</p>
               </motion.div>
 
@@ -193,16 +193,16 @@ export default function TicketPage() {
                 <div className="flex items-center gap-3 text-purple-600 mb-3">
                   <Clock size={22} />
                   <h3 className="font-semibold">Status</h3>
-                </div>
+            </div>
                 <p className={`text-xl font-bold tracking-wide ${
-                  ticket.status === "CONFIRMED"
-                    ? "text-green-700"
-                    : ticket.status === "CANCELLED"
-                    ? "text-red-700"
+                ticket.status === "CONFIRMED"
+                  ? "text-green-700"
+                  : ticket.status === "CANCELLED"
+                  ? "text-red-700"
                     : "text-purple-700"
                 }`}>
-                  {ticket.status}
-                </p>
+                {ticket.status}
+              </p>
               </motion.div>
 
               <motion.div 
@@ -213,12 +213,12 @@ export default function TicketPage() {
                 <div className="flex items-center gap-3 text-orange-600 mb-3">
                   <CreditCard size={22} />
                   <h3 className="font-semibold">Payment</h3>
-                </div>
+            </div>
                 <p className="text-xl font-bold tracking-wide">{ticket.paymentStatus}</p>
               </motion.div>
-            </div>
+          </div>
 
-            {/* Passengers */}
+          {/* Passengers */}
             <section className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-5 border-b border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-800 !important flex items-center gap-3">
@@ -255,7 +255,7 @@ export default function TicketPage() {
               </div>
             </section>
 
-            {/* Itinerary */}
+          {/* Itinerary */}
             <section className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-5 border-b border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-800 !important flex items-center gap-3">
@@ -265,7 +265,7 @@ export default function TicketPage() {
               </div>
               <div className="p-8">
                 <div className="space-y-6">
-                  {ticket.flightSegments.map((seg, i) => (
+              {ticket.flightSegments.map((seg, i) => (
                     <motion.div 
                       key={i} 
                       className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-8 shadow-sm hover:shadow-md transition-all duration-200"
@@ -306,10 +306,10 @@ export default function TicketPage() {
                     </motion.div>
                   ))}
                 </div>
-              </div>
-            </section>
+            </div>
+          </section>
 
-            {/* Fare Breakdown */}
+          {/* Fare Breakdown */}
             <section className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-5 border-b border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-800 !important flex items-center gap-3">
@@ -324,48 +324,48 @@ export default function TicketPage() {
                     <h3 className="font-semibold text-gray-800 mb-4 text-lg">Fare Breakdown</h3>
                     <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden shadow-sm">
                       <table className="w-full">
-                        <tbody>
-                          {ticket.fareBreakdown.map((f, i) => (
+                <tbody>
+                  {ticket.fareBreakdown.map((f, i) => (
                             <tr key={i} className={i % 2 === 0 ? "bg-white/50" : "bg-gray-50/50"}>
                               <td className="p-4 text-gray-700">{f.label}</td>
                               <td className="p-4 text-right font-medium">
                                 {f.amount.toFixed(2)} {ticket.currency}
                               </td>
-                            </tr>
-                          ))}
+                    </tr>
+                  ))}
                           <tr className="border-t border-gray-200 bg-white/80">
                             <td className="p-4 text-gray-700 font-medium">Subtotal</td>
                             <td className="p-4 text-right font-medium">
                               {(ticket.fareBreakdown.reduce((sum, f) => sum + f.amount, 0)).toFixed(2)} {ticket.currency}
                             </td>
-                          </tr>
-                        </tbody>
-                      </table>
+                  </tr>
+                </tbody>
+              </table>
                     </div>
                   </div>
 
-                  {/* Taxes & Fees */}
+          {/* Taxes & Fees */}
                   <div>
                     <h3 className="font-semibold text-gray-800 mb-4 text-lg">Taxes & Fees</h3>
                     <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden shadow-sm">
                       <table className="w-full">
-                        <tbody>
-                          {ticket.taxes.map((t, i) => (
+                <tbody>
+                  {ticket.taxes.map((t, i) => (
                             <tr key={i} className={i % 2 === 0 ? "bg-white/50" : "bg-gray-50/50"}>
                               <td className="p-4 text-gray-700">{t.name}</td>
                               <td className="p-4 text-right font-medium">
                                 {t.amount.toFixed(2)} {ticket.currency}
                               </td>
-                            </tr>
-                          ))}
+                    </tr>
+                  ))}
                           <tr className="border-t border-gray-200 bg-white/80">
                             <td className="p-4 text-gray-700 font-medium">Total Taxes</td>
                             <td className="p-4 text-right font-medium">
                               {(ticket.taxes.reduce((sum, t) => sum + t.amount, 0)).toFixed(2)} {ticket.currency}
                             </td>
                           </tr>
-                        </tbody>
-                      </table>
+                </tbody>
+              </table>
                     </div>
                   </div>
 
@@ -402,8 +402,8 @@ export default function TicketPage() {
               </div>
             </section>
 
-            {/* Fare Rules Link */}
-            {ticket.fareRulesUrl && (
+          {/* Fare Rules Link */}
+          {ticket.fareRulesUrl && (
               <section className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
                 <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-5 border-b border-gray-200">
                   <h2 className="text-xl font-semibold text-gray-800 !important flex items-center gap-3">
@@ -414,29 +414,29 @@ export default function TicketPage() {
                 <div className="p-8">
                   <p className="text-gray-700">
                     For full fare rules and conditions,{" "}
-                    <a
-                      href={ticket.fareRulesUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                <a
+                  href={ticket.fareRulesUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                       className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200"
-                    >
-                      click here
+                >
+                  click here
                     </a>
-                  </p>
+              </p>
                 </div>
-              </section>
-            )}
-          </div>
+            </section>
+          )}
+        </div>
 
-          {/* Footer Back Link */}
+        {/* Footer Back Link */}
           <div className="p-8 text-center print:hidden">
-            <Link
-              href="/dashboard/bookings"
+          <Link
+            href="/dashboard/bookings"
               className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors duration-200 font-medium"
-            >
+          >
               <ChevronLeft size={18} className="mr-2" />
-              Back to My Bookings
-            </Link>
+            Back to My Bookings
+          </Link>
           </div>
         </div>
       </div>
