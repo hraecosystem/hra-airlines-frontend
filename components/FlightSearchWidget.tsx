@@ -133,13 +133,22 @@ export default function FlightSearchWidget() {
 
       router.push("/search-results");
     } catch (err: any) {
-      console.error(err);
-      setError(
-        err.response?.data?.message ||
-          err.response?.data?.error?.ErrorMessage ||
-          "Unable to search flights. Please try again."
-      );
-    } finally {
+            console.error("Flight search error:", err);
+
+            // If Trawex is down (503), show a dedicated message:
+            if (err.response?.status === 503) {
+              setError(
+                "Our flight availability service is temporarily unavailable. " +
+                "Please try again in a few minutes."
+              );
+            } else if (err.response?.data?.message) {
+              // any custom backend message
+              setError(err.response.data.message);
+            } else {
+              // fallback
+              setError("Unable to search flights. Please check your entries and try again.");
+            }
+            }  finally {
       setLoading(false);
     }
   };
@@ -162,13 +171,22 @@ export default function FlightSearchWidget() {
       </h2>
 
       {error && (
-        <div
-          role="alert"
-          className="rounded-lg bg-red-50 px-4 py-2 text-red-800 border border-red-200 text-sm"
-        >
-          {error}
-        </div>
-      )}
+  <div
+    role="alert"
+    className="rounded-lg bg-red-50 px-4 py-2 text-red-800 border border-red-200 text-sm space-y-2"
+  >
+    <p>{error}</p>
+    {error.includes("temporarily unavailable") && (
+      <button
+        onClick={handleSubmit}
+        className="inline-block bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition text-xs"
+      >
+        Retry Now
+      </button>
+    )}
+  </div>
+)}
+
 
       {/* Trip & Cabin */}
       <div className="grid grid-cols-2 gap-4">
