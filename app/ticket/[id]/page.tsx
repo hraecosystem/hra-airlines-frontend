@@ -221,7 +221,7 @@ export default function TicketPage() {
             {/* Passengers */}
             <section className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-5 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-3">
+                <h2 className="text-xl font-semibold text-gray-800 !important flex items-center gap-3">
                   <User size={22} className="text-blue-600" />
                   Passengers
                 </h2>
@@ -258,7 +258,7 @@ export default function TicketPage() {
             {/* Itinerary */}
             <section className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-5 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-3">
+                <h2 className="text-xl font-semibold text-gray-800 !important flex items-center gap-3">
                   <Plane size={22} className="text-blue-600" />
                   Flight Itinerary
                 </h2>
@@ -312,7 +312,7 @@ export default function TicketPage() {
             {/* Fare Breakdown */}
             <section className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-5 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-3">
+                <h2 className="text-xl font-semibold text-gray-800 !important flex items-center gap-3">
                   <CreditCard size={22} className="text-blue-600" />
                   Fare Details
                 </h2>
@@ -406,7 +406,7 @@ export default function TicketPage() {
             {ticket.fareRulesUrl && (
               <section className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
                 <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-5 border-b border-gray-200">
-                  <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-3">
+                  <h2 className="text-xl font-semibold text-gray-800 !important flex items-center gap-3">
                     <Info size={22} className="text-blue-600" />
                     Fare Rules
                   </h2>

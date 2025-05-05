@@ -69,6 +69,9 @@ html {
   }
 
   /* Force les couleurs exactes sur tous les navigateurs */
+  .text-gray-700 {
+    color: rgb(55, 65, 81) !important;
+  }
   .text-blue-600 {
     color: rgb(37, 99, 235) !important;
   }
@@ -80,6 +83,14 @@ html {
   }
   .text-gray-500 {
     color: rgb(107, 114, 128) !important;
+  }
+
+  /* Force les couleurs de la navbar */
+  nav a {
+    color: rgb(55, 65, 81) !important;
+  }
+  nav a:hover {
+    color: rgb(37, 99, 235) !important;
   }
 
   /* Force l'anti-aliasing sur les textes */

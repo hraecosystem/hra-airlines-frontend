@@ -30,7 +30,7 @@ export default function HomePage() {
               transition={{ duration: 0.5 }}
               className="text-4xl sm:text-6xl font-bold mb-6"
             >
-              Explore the World with HRA Airlines
+              <span className="text-white !important">Explore the World with HRA Airlines</span>
             </motion.h1>
           </div>
           <motion.div
