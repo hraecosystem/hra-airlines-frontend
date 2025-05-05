@@ -137,7 +137,7 @@ export default function BookingHistoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 p-6">
       {/* Toast */}
       <AnimatePresence>
         {toast && (
@@ -145,42 +145,64 @@ export default function BookingHistoryPage() {
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -20, opacity: 0 }}
-            className={`fixed top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded shadow 
-              ${toast.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+            className={`fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50
+              ${toast.type === "success" 
+                ? "bg-gradient-to-r from-green-50 to-green-100 text-green-800 border border-green-200" 
+                : "bg-gradient-to-r from-red-50 to-red-100 text-red-800 border border-red-200"}`}
           >
             {toast.message}
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
-        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h1 className="text-2xl font-bold text-blue-800">My Bookings</h1>
-          <select
-            className="border rounded px-3 py-1"
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value as StatusFilter);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="ALL">All</option>
-            <option value="CONFIRMED">Confirmed</option>
-            <option value="TICKETED">Ticketed</option>
-            <option value="CANCELLED">Cancelled</option>
-          </select>
+        <header className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">My Bookings</h1>
+                <p className="text-gray-600 mt-1">Manage your flight reservations</p>
+              </div>
+            </div>
+            <select
+              className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value as StatusFilter);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="ALL">All Bookings</option>
+              <option value="CONFIRMED">Confirmed</option>
+              <option value="TICKETED">Ticketed</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          </div>
         </header>
 
         {/* List or Loader */}
         {loadingBookings ? (
           <div className="space-y-4">
             {[...Array(itemsPerPage)].map((_, i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded animate-pulse" />
+              <div key={i} className="h-32 bg-white rounded-xl shadow-sm animate-pulse" />
             ))}
           </div>
         ) : pageSlice.length === 0 ? (
-          <div className="text-center text-gray-500 py-10">No bookings found.</div>
+          <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Bookings Found</h3>
+            <p className="text-gray-600">You haven't made any bookings yet.</p>
+          </div>
         ) : (
           pageSlice.map((b) => (
             <motion.div
@@ -189,67 +211,84 @@ export default function BookingHistoryPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="bg-white rounded-lg shadow p-4 flex flex-col sm:flex-row sm:justify-between gap-4"
+              className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
             >
-              <div className="flex-1 space-y-1">
-                <p><span className="font-semibold">PNR:</span> {b.pnr}</p>
-                <p><span className="font-semibold">Booked On:</span>{" "}
-                  {format(new Date(b.createdAt), "PPP")}
-                </p>
-                <p><span className="font-semibold">Total:</span>{" "}
-                  {b.totalPrice.toFixed(2)} {b.currency}
-                </p>
-              </div>
+              <div className="p-6">
+                <div className="flex flex-col sm:flex-row justify-between gap-6">
+                  <div className="flex-1 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-blue-50 px-4 py-2 rounded-lg">
+                        <span className="text-blue-600 font-semibold">{b.pnr}</span>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Booked on</p>
+                        <p className="font-medium">{format(new Date(b.createdAt), "PPP")}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="bg-green-50 px-4 py-2 rounded-lg">
+                        <p className="text-sm text-gray-500">Total Amount</p>
+                        <p className="text-green-600 font-semibold">{b.totalPrice.toFixed(2)} {b.currency}</p>
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="flex flex-col sm:items-end gap-2">
-                <span
-                  className={`px-2 py-1 rounded text-sm font-medium ${
-                    b.status === "CONFIRMED"
-                      ? "bg-green-100 text-green-800"
-                      : b.status === "CANCELLED"
-                      ? "bg-red-100 text-red-600"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {b.status}
-                </span>
+                  <div className="flex flex-col items-end gap-4">
+                    <span
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium ${
+                        b.status === "CONFIRMED"
+                          ? "bg-green-50 text-green-700 border border-green-200"
+                          : b.status === "CANCELLED"
+                          ? "bg-red-50 text-red-700 border border-red-200"
+                          : "bg-blue-50 text-blue-700 border border-blue-200"
+                      }`}
+                    >
+                      {b.status}
+                    </span>
 
-                <div className="flex flex-wrap gap-2">
-                  {b.status !== "CANCELLED" ? (
-                    <>
-                      <button
-                        onClick={() => confirmCancel(b.pnr)}
-                        disabled={!!cancelingPnr}
-                        className="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700 disabled:opacity-50 flex items-center"
-                      >
-                        {cancelingPnr === b.pnr ? <Spinner className="w-4 h-4 mr-1" /> : null}
-                        Cancel
-                      </button>
+                    <div className="flex flex-wrap gap-2">
+                      {b.status !== "CANCELLED" ? (
+                        <>
+                          <button
+                            onClick={() => confirmCancel(b.pnr)}
+                            disabled={!!cancelingPnr}
+                            className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-100 disabled:opacity-50 flex items-center gap-2 border border-red-200"
+                          >
+                            {cancelingPnr === b.pnr ? <Spinner className="w-4 h-4" /> : null}
+                            Cancel
+                          </button>
 
-                      <Link
-                        href={`/dashboard/bookings/${b.pnr}/refund`}
-                        className="bg-yellow-500 text-white px-3 py-1 rounded text-xs hover:bg-yellow-600"
-                      >
-                        Refund
-                      </Link>
+                          <Link
+                            href={`/dashboard/bookings/${b.pnr}/refund`}
+                            className="bg-yellow-50 text-yellow-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-yellow-100 border border-yellow-200"
+                          >
+                            Refund
+                          </Link>
 
-                      <Link
-                        href={`/dashboard/bookings/${b.pnr}/reissue`}
-                        className="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600"
-                      >
-                        Reissue
-                      </Link>
+                          <Link
+                            href={`/dashboard/bookings/${b.pnr}/reissue`}
+                            className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-100 border border-blue-200"
+                          >
+                            Reissue
+                          </Link>
 
-                      <Link
-                        href={`/ticket/${b.mongoBookingId}`}
-                        className="bg-indigo-500 text-white px-3 py-1 rounded text-xs hover:bg-indigo-600"
-                      >
-                        View Ticket
-                      </Link>
-                    </>
-                  ) : (
-                    <span className="text-gray-400 text-xs">N/A</span>
-                  )}
+                          <Link
+                            href={`/ticket/${b.mongoBookingId}`}
+                            className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-100 border border-indigo-200"
+                          >
+                            View Ticket
+                          </Link>
+                        </>
+                      ) : (
+                        <div className="bg-gray-50 text-gray-500 px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 flex items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          </svg>
+                          Booking Cancelled
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -262,19 +301,25 @@ export default function BookingHistoryPage() {
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((p) => p - 1)}
-              className="px-3 py-1 border rounded disabled:opacity-50"
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white flex items-center gap-2"
             >
-              &larr; Prev
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Previous
             </button>
-            <span className="text-sm">
+            <span className="text-sm text-gray-600">
               Page {currentPage} of {totalPages}
             </span>
             <button
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage((p) => p + 1)}
-              className="px-3 py-1 border rounded disabled:opacity-50"
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white flex items-center gap-2"
             >
-              Next &rarr;
+              Next
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           </div>
         )}
@@ -284,36 +329,42 @@ export default function BookingHistoryPage() {
       <AnimatePresence>
         {modalOpen && (
           <motion.div
-            className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="bg-white rounded-lg p-6 shadow-lg w-full max-w-md text-center"
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.9 }}
+              className="bg-white rounded-xl p-6 shadow-xl w-full max-w-md mx-4"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
             >
-              <h2 className="text-lg font-bold mb-4">Confirm Cancellation</h2>
-              <p className="mb-6">
-                Are you sure you want to cancel booking{" "}
-                <strong>{targetPnr}</strong>?
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900">Confirm Cancellation</h2>
+              </div>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to cancel booking <span className="font-semibold text-gray-900">{targetPnr}</span>? This action cannot be undone.
               </p>
-              <div className="flex justify-center gap-4">
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setModalOpen(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
+                >
+                  No, Keep Booking
+                </button>
                 <button
                   onClick={doCancel}
                   disabled={!!cancelingPnr}
-                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50"
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
                 >
-                  {cancelingPnr ? <Spinner className="w-4 h-4 inline-block mr-1"/> : null}
-                  Yes, Cancel
-                </button>
-                <button
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded border hover:bg-gray-100"
-                >
-                  No
+                  {cancelingPnr ? <Spinner className="w-4 h-4" /> : null}
+                  Yes, Cancel Booking
                 </button>
               </div>
             </motion.div>
