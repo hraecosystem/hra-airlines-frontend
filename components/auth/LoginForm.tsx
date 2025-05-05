@@ -68,27 +68,27 @@ export default function LoginForm() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="w-full max-w-md bg-white border border-gray-200 shadow-xl rounded-2xl p-8"
+      className="w-full max-w-md bg-white/95 backdrop-blur-sm border border-gray-200 shadow-xl rounded-2xl p-8 hover:shadow-2xl transition-all duration-300"
     >
-      <h1 className="text-center text-3xl font-extrabold text-blue-700 mb-6">
+      <h1 className="text-center text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent mb-6">
         Welcome Back
       </h1>
 
       {error && (
         <div
           role="alert"
-          className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6"
+          className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 animate-fade-in"
         >
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="relative">
+        <div className="relative group">
           <label htmlFor="email" className="sr-only">
             Email address
           </label>
-          <Mail className="absolute left-3 top-3 text-gray-400" size={20} />
+          <Mail className="absolute left-3 top-3 text-gray-400 group-hover:text-blue-500 transition-colors" size={20} />
           <input
             id="email"
             name="email"
@@ -98,15 +98,15 @@ export default function LoginForm() {
             disabled={submitting}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500"
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 transition-all duration-200 hover:border-blue-300"
           />
         </div>
 
-        <div className="relative">
+        <div className="relative group">
           <label htmlFor="password" className="sr-only">
             Password
           </label>
-          <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
+          <Lock className="absolute left-3 top-3 text-gray-400 group-hover:text-blue-500 transition-colors" size={20} />
           <input
             id="password"
             name="password"
@@ -116,51 +116,34 @@ export default function LoginForm() {
             disabled={submitting}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500"
+            className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 transition-all duration-200 hover:border-blue-300"
           />
           <button
             type="button"
-            onClick={() => setShowPassword((v) => !v)}
-            aria-label={showPassword ? "Hide password" : "Show password"}
+            onClick={() => setShowPassword(!showPassword)}
             disabled={submitting}
-            className="absolute right-3 top-3 text-gray-500 focus:outline-none"
+            className="absolute right-3 top-3 text-gray-400 hover:text-blue-500 transition-colors"
           >
-            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
           </button>
         </div>
 
         <button
           type="submit"
           disabled={submitting}
-          className={`w-full flex justify-center items-center py-3 rounded-xl font-semibold text-white transition ${
-            submitting
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700"
-          }`}
+          className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {submitting && (
-            <svg
-              className="animate-spin h-5 w-5 mr-2 text-white"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-                className="opacity-25"
-              />
-              <path
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v8z"
-                className="opacity-75"
-              />
-            </svg>
+          {submitting ? (
+            <span className="flex items-center justify-center">
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Signing in...
+            </span>
+          ) : (
+            "Sign In"
           )}
-          {submitting ? "Signing in…" : "Sign In"}
         </button>
 
         <div className="mt-6 flex justify-between text-sm">

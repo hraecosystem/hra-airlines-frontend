@@ -217,14 +217,14 @@ const qtyOf = (code: string) =>
         flightBookingInfo: {
           flight_session_id: sessionId,   // search-level
           fare_source_code : fareSource,  // itinerary-level
-          IsPassportMandatory: "true",          // always send “true”
+          IsPassportMandatory: "true",          // always send "true"
           areaCode   : digits(phone).slice(0,3) || "971",
           countryCode: digits(phone).slice(0,3) || "971",
           fareType: fare.AirItineraryFareInfo.FareType,
         },
         paxInfo: {
           customerEmail: email.trim(),
-          customerPhone: digits(phone),   // ← no “+”
+          customerPhone: digits(phone),   // ← no "+"
           paxDetails: [
             { adult: pack(adults), child: pack(childs), infant: pack(infs) },
           ],
@@ -306,236 +306,248 @@ if (
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
-      <div className="mx-auto max-w-3xl bg-white rounded-2xl shadow-lg overflow-hidden">
-        <header className="bg-pink-50 px-6 py-4">
-          <h1 className="text-2xl font-bold text-pink-700">
-            Booking Details
-          </h1>
-        </header>
-        <main className="p-6 space-y-6">
-          {error && (
-            <div className="bg-red-100 text-red-700 px-4 py-2 rounded">
-              {error}
-              {error.includes("search again") && (
-                <button
-                  onClick={() => router.push("/search-results")}
-                  className="ml-4 text-blue-600 underline"
-                >
-                  Back to Search
-                </button>
-              )}
-            </div>
-          )}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
+      <div className="mx-auto max-w-4xl">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300"
+        >
+          <header className="bg-gradient-to-r from-blue-600 to-blue-800 px-8 py-6">
+            <h1 className="text-3xl font-bold text-white">
+              Booking Details
+            </h1>
+            <p className="text-blue-100 mt-1">Please fill in your information to complete the booking</p>
+          </header>
+          <main className="p-8 space-y-8">
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl shadow-sm"
+              >
+                {error}
+                {error.includes("search again") && (
+                  <button
+                    onClick={() => router.push("/search-results")}
+                    className="ml-4 text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                  >
+                    Back to Search
+                  </button>
+                )}
+              </motion.div>
+            )}
 
-          {/* Contact inputs */}
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-gray-700">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setEmail(e.target.value)
-                }
-                className="mt-1 w-full border rounded px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-gray-700">Phone</label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setPhone(e.target.value)
-                }
-                className="mt-1 w-full border rounded px-3 py-2"
-              />
-            </div>
-          </div>
-
-          {/* Passenger forms */}
-          {passengers.map((p, idx) => {
-            const base = `pax-${idx}-`;
-            return (
-              <div key={idx} className="bg-gray-50 p-4 rounded-lg">
-                <h2 className="font-semibold mb-3">Passenger {idx + 1}</h2>
-                <div className="grid md:grid-cols-4 gap-4">
-                  {/* Title */}
-                  <div>
-                    <label className="block text-gray-600">Title</label>
-                    <select
-                      value={p.title}
-                      onChange={(
-                        e: React.ChangeEvent<HTMLSelectElement>
-                      ) => updatePassenger(idx, "title", e.target.value)}
-                      className="mt-1 w-full border rounded px-2 py-1"
-                    >
-{(p.type === "ADT" ? ["Mr","Mrs","Miss"] : ["Master","Miss"]).map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {/* First Name */}
-                  <div>
-                    <label className="block text-gray-600">
-                      First Name
-                    </label>
-                    <input
-                      value={p.firstName}
-                      onChange={(
-                        e: React.ChangeEvent<HTMLInputElement>
-                      ) => updatePassenger(idx, "firstName", e.target.value)}
-                      className={`mt-1 w-full border rounded px-2 py-1 ${
-                        fieldErrors[base + "firstName"]
-                          ? "border-red-500"
-                          : ""
-                      }`}
-                    />
-                  </div>
-                  {/* Last Name */}
-                  <div>
-                    <label className="block text-gray-600">Last Name</label>
-                    <input
-                      value={p.lastName}
-                      onChange={(
-                        e: React.ChangeEvent<HTMLInputElement>
-                      ) => updatePassenger(idx, "lastName", e.target.value)}
-                      className={`mt-1 w-full border rounded px-2 py-1 ${
-                        fieldErrors[base + "lastName"]
-                          ? "border-red-500"
-                          : ""
-                      }`}
-                    />
-                  </div>
-                  {/* DOB */}
-                  <div>
-                    <label className="block text-gray-600">DOB</label>
-                    <input
-                      type="date"
-                      value={p.dob}
-                      onChange={(
-                        e: React.ChangeEvent<HTMLInputElement>
-                      ) => updatePassenger(idx, "dob", e.target.value)}
-                      className={`mt-1 w-full border rounded px-2 py-1 ${
-                        fieldErrors[base + "dob"] ? "border-red-500" : ""
-                      }`}
-                    />
-                  </div>
-                  {/* Nationality */}
-                  <div className="md:col-span-2">
-                    <label className="block text-gray-600">Nationality</label>
-                    <Select
-                      options={countryOptions}
-                      value={p.nationality}
-                      onChange={(val) =>
-                        updatePassenger(idx, "nationality", val as CountryOption)
-                      }
-                      className="mt-1"
-                    />
-                  </div>
-
-                  {/* Passport fields */}
-                  {needsPassport && (
-                    <>
-                      <div>
-                        <label className="block text-gray-600">
-                          Passport No.
-                        </label>
-                        <input
-                          value={p.passportNo}
-                          onChange={(
-                            e: React.ChangeEvent<HTMLInputElement>
-                          ) => updatePassenger(idx, "passportNo", e.target.value)}
-                          className={`mt-1 w-full border rounded px-2 py-1 ${
-                            fieldErrors[base + "passportNo"]
-                              ? "border-red-500"
-                              : ""
-                          }`}
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-gray-600">
-                          Passport Issue Country
-                        </label>
-                        <Select
-                          options={countryOptions}
-                          value={p.passportIssueCountry}
-                          onChange={(val) =>
-                            updatePassenger(
-                              idx,
-                              "passportIssueCountry",
-                              val as CountryOption
-                            )
-                          }
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-gray-600">Issue Date</label>
-                        <input
-                          type="date"
-                          value={p.passportIssueDate}
-                          onChange={(
-                            e: React.ChangeEvent<HTMLInputElement>
-                          ) =>
-                            updatePassenger(
-                              idx,
-                              "passportIssueDate",
-                              e.target.value
-                            )
-                          }
-                          className={`mt-1 w-full border rounded px-2 py-1 ${
-                            fieldErrors[base + "passportIssueDate"]
-                              ? "border-red-500"
-                              : ""
-                          }`}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-gray-600">
-                          Expiry Date
-                        </label>
-                        <input
-                          type="date"
-                          value={p.passportExpiryDate}
-                          onChange={(
-                            e: React.ChangeEvent<HTMLInputElement>
-                          ) =>
-                            updatePassenger(
-                              idx,
-                              "passportExpiryDate",
-                              e.target.value
-                            )
-                          }
-                          className={`mt-1 w-full border rounded px-2 py-1 ${
-                            fieldErrors[base + "passportExpiryDate"]
-                              ? "border-red-500"
-                              : ""
-                          }`}
-                        />
-                      </div>
-                    </>
-                  )}
+            {/* Contact inputs */}
+            <div className="bg-gray-50 rounded-xl p-6 shadow-sm">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Contact Information</h2>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setEmail(e.target.value)
+                    }
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="you@example.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">Phone</label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setPhone(e.target.value)
+                    }
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="+1 (555) 000-0000"
+                  />
                 </div>
               </div>
-            );
-          })}
+            </div>
 
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className={`w-full py-3 rounded-lg font-semibold transition ${
-              submitting
-                ? "bg-gray-400 cursor-not-allowed text-gray-700"
-                : "bg-pink-600 hover:bg-pink-700 text-white"
-            }`}
-          >
-            {submitting ? "Processing…" : "Proceed to Payment"}
-          </button>
-        </main>
+            {/* Passenger forms */}
+            {passengers.map((p, idx) => {
+              const base = `pax-${idx}-`;
+              return (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                  className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300"
+                >
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <span className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold">
+                      {idx + 1}
+                    </span>
+                    Passenger {idx + 1} ({p.type === "ADT" ? "Adult" : p.type === "CHD" ? "Child" : "Infant"})
+                  </h2>
+                  <div className="grid md:grid-cols-4 gap-6">
+                    {/* Title */}
+                    <div>
+                      <label className="block text-gray-700 font-medium mb-2">Title</label>
+                      <select
+                        value={p.title}
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                          updatePassenger(idx, "title", e.target.value)
+                        }
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      >
+                        {(p.type === "ADT" ? ["Mr", "Mrs", "Miss"] : ["Master", "Miss"]).map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {/* First Name */}
+                    <div>
+                      <label className="block text-gray-700 font-medium mb-2">First Name</label>
+                      <input
+                        value={p.firstName}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          updatePassenger(idx, "firstName", e.target.value)
+                        }
+                        className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                          fieldErrors[base + "firstName"] ? "border-red-500" : "border-gray-300"
+                        }`}
+                        placeholder="John"
+                      />
+                    </div>
+                    {/* Last Name */}
+                    <div>
+                      <label className="block text-gray-700 font-medium mb-2">Last Name</label>
+                      <input
+                        value={p.lastName}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          updatePassenger(idx, "lastName", e.target.value)
+                        }
+                        className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                          fieldErrors[base + "lastName"] ? "border-red-500" : "border-gray-300"
+                        }`}
+                        placeholder="Doe"
+                      />
+                    </div>
+                    {/* DOB */}
+                    <div>
+                      <label className="block text-gray-700 font-medium mb-2">Date of Birth</label>
+                      <input
+                        type="date"
+                        value={p.dob}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          updatePassenger(idx, "dob", e.target.value)
+                        }
+                        className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                          fieldErrors[base + "dob"] ? "border-red-500" : "border-gray-300"
+                        }`}
+                      />
+                    </div>
+                    {/* Nationality */}
+                    <div className="md:col-span-2">
+                      <label className="block text-gray-700 font-medium mb-2">Nationality</label>
+                      <Select
+                        options={countryOptions}
+                        value={p.nationality}
+                        onChange={(val) =>
+                          updatePassenger(idx, "nationality", val as CountryOption)
+                        }
+                        className="mt-1"
+                        classNamePrefix="select"
+                        placeholder="Select country..."
+                      />
+                    </div>
+
+                    {/* Passport fields */}
+                    {needsPassport && (
+                      <>
+                        <div>
+                          <label className="block text-gray-700 font-medium mb-2">Passport Number</label>
+                          <input
+                            value={p.passportNo}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                              updatePassenger(idx, "passportNo", e.target.value)
+                            }
+                            className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                              fieldErrors[base + "passportNo"] ? "border-red-500" : "border-gray-300"
+                            }`}
+                            placeholder="AB123456"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-gray-700 font-medium mb-2">Passport Issue Country</label>
+                          <Select
+                            options={countryOptions}
+                            value={p.passportIssueCountry}
+                            onChange={(val) =>
+                              updatePassenger(idx, "passportIssueCountry", val as CountryOption)
+                            }
+                            className="mt-1"
+                            classNamePrefix="select"
+                            placeholder="Select country..."
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-700 font-medium mb-2">Issue Date</label>
+                          <input
+                            type="date"
+                            value={p.passportIssueDate}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                              updatePassenger(idx, "passportIssueDate", e.target.value)
+                            }
+                            className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                              fieldErrors[base + "passportIssueDate"] ? "border-red-500" : "border-gray-300"
+                            }`}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-700 font-medium mb-2">Expiry Date</label>
+                          <input
+                            type="date"
+                            value={p.passportExpiryDate}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                              updatePassenger(idx, "passportExpiryDate", e.target.value)
+                            }
+                            className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                              fieldErrors[base + "passportExpiryDate"] ? "border-red-500" : "border-gray-300"
+                            }`}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
+
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleSubmit}
+              disabled={submitting}
+              className={`w-full py-4 rounded-xl font-semibold text-lg transition-all duration-200 ${
+                submitting
+                  ? "bg-gray-400 cursor-not-allowed text-gray-700"
+                  : "bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white shadow-lg hover:shadow-xl"
+              }`}
+            >
+              {submitting ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Processing...
+                </span>
+              ) : (
+                "Proceed to Payment"
+              )}
+            </motion.button>
+          </main>
+        </motion.div>
       </div>
     </div>
   );

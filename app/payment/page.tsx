@@ -6,7 +6,7 @@ import Head from "next/head";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
-import { CreditCard, DollarSign, ArrowLeft, Loader2, AlertCircle } from "lucide-react";
+import { CreditCard, DollarSign, ArrowLeft, Loader2, AlertCircle, Plane, Users, Calendar, CreditCard as CreditCardIcon } from "lucide-react";
 import { motion } from "framer-motion";
 
 type Method = "stripe" | "hra-coin";
@@ -140,81 +140,164 @@ export default function PaymentPage() {
         transition={{ duration: 0.4 }}
         className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-white p-6"
       >
-        <div className="w-full max-w-xl bg-white rounded-2xl shadow-lg overflow-hidden">
-          <header className="flex items-center bg-blue-600 p-4 text-white">
-            <button onClick={() => router.back()} aria-label="Back">
+        <div className="w-full max-w-4xl bg-white rounded-2xl shadow-lg overflow-hidden">
+          <header className="flex items-center bg-gradient-to-r from-blue-600 to-blue-800 p-6 text-white">
+            <button onClick={() => router.back()} aria-label="Back" className="hover:bg-blue-700 p-2 rounded-full transition-colors">
               <ArrowLeft />
             </button>
-            <h1 className="ml-4 text-xl font-semibold">Complete Your Payment</h1>
+            <h1 className="ml-4 text-2xl font-semibold">Complete Your Payment</h1>
           </header>
 
-          <main className="p-6 space-y-6">
-            {/* Booking Summary */}
-            <section>
-              <h2 className="text-lg font-medium text-gray-800 mb-2">Summary</h2>
-              <div className="rounded-lg border divide-y">
-                {booking!.segments.map((s, idx) => (
-                  <div key={idx} className="flex justify-between p-3 hover:bg-gray-50">
-                    <div>
-                      <p className="font-semibold">{s.origin} → {s.destination}</p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(s.departureDateTime).toLocaleString()} —{' '}
-                        {new Date(s.arrivalDateTime).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm">{s.airline} #{s.flightNumber}</p>
-                      <p className="text-sm text-gray-500">{s.cabinClass}</p>
-                    </div>
+          <main className="p-6 space-y-8">
+            {/* Trip Details & Summary */}
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left Column - Trip Details */}
+              <div className="space-y-6">
+                <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b">
+                    <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                      <Plane className="w-5 h-5 text-blue-600" />
+                      Trip Details
+                    </h2>
                   </div>
-                ))}
-                <div className="p-3 flex justify-between font-semibold">
-                  <span>Total:</span>
-                  <span>
-                    {booking!.currency} {booking!.totalPrice.toFixed(2)}
-                  </span>
+                  <div className="divide-y">
+                    {booking!.segments.map((s, idx) => (
+                      <div key={idx} className="p-4 hover:bg-gray-50">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-semibold text-gray-900">{s.origin} → {s.destination}</p>
+                            <p className="text-sm text-gray-500">
+                              {new Date(s.departureDateTime).toLocaleString()} —{' '}
+                              {new Date(s.arrivalDateTime).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium">{s.airline}</p>
+                            <p className="text-sm text-gray-500">Flight #{s.flightNumber}</p>
+                            <p className="text-sm text-gray-500">{s.cabinClass}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b">
+                    <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                      <Users className="w-5 h-5 text-blue-600" />
+                      Passengers
+                    </h2>
+                  </div>
+                  <div className="divide-y">
+                    {booking!.passengers.map((passenger, idx) => (
+                      <div key={idx} className="p-4 hover:bg-gray-50">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {passenger.title} {passenger.firstName} {passenger.lastName}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              DOB: {new Date(passenger.dob).toLocaleDateString()}
+                            </p>
+                          </div>
+                          {passenger.passportNo && (
+                            <div className="text-right">
+                              <p className="text-sm text-gray-500">Passport: {passenger.passportNo}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </section>
 
-            {/* Payment Method */}
-            <section>
-              <h2 className="text-lg font-medium text-gray-800 mb-2">Payment Method</h2>
-              <div className="flex space-x-4">
-                <button
-                  onClick={() => setMethod("stripe")}
-                  className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-sm font-medium transition 
-                    ${method === "stripe" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}
-                  `}
-                >
-                  <CreditCard /> Stripe
-                </button>
-                <button
-                  onClick={() => setMethod("hra-coin")}
-                  disabled
-                  className="flex-1 flex items-center justify-center gap-2 p-3 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed text-sm font-medium"
-                >
-                  <DollarSign /> HRA-Coin (Soon)
-                </button>
+              {/* Right Column - Payment Summary */}
+              <div className="space-y-6">
+                <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b">
+                    <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-blue-600" />
+                      Payment Summary
+                    </h2>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    {booking!.fareBreakdown?.map((fare, idx) => (
+                      <div key={idx} className="flex justify-between items-center">
+                        <span className="text-gray-600">{fare.label}</span>
+                        <span className="font-medium">{booking!.currency} {fare.amount.toFixed(2)}</span>
+                      </div>
+                    ))}
+                    {booking!.taxes?.map((tax, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-sm">
+                        <span className="text-gray-500">{tax.name}</span>
+                        <span className="text-gray-600">{booking!.currency} {tax.amount.toFixed(2)}</span>
+                      </div>
+                    ))}
+                    <div className="pt-4 border-t">
+                      <div className="flex justify-between items-center font-semibold text-lg">
+                        <span>Total Amount</span>
+                        <span className="text-blue-600">
+                          {booking!.currency} {booking!.totalPrice.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Method */}
+                <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b">
+                    <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                      <CreditCardIcon className="w-5 h-5 text-blue-600" />
+                      Payment Method
+                    </h2>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    <div className="flex space-x-4">
+                      <button
+                        onClick={() => setMethod("stripe")}
+                        className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-lg text-sm font-medium transition-all duration-200
+                          ${method === "stripe" 
+                            ? "bg-blue-50 border-2 border-blue-600 text-blue-600" 
+                            : "bg-gray-50 border-2 border-gray-200 text-gray-600 hover:border-gray-300"}
+                        `}
+                      >
+                        <img src="https://stripe.com/img/v3/home/twitter.png" alt="Stripe" className="h-6" />
+                        <span>Stripe</span>
+                      </button>
+                      <button
+                        onClick={() => setMethod("hra-coin")}
+                        disabled
+                        className="flex-1 flex items-center justify-center gap-2 p-4 rounded-lg bg-gray-50 border-2 border-gray-200 text-gray-400 cursor-not-allowed text-sm font-medium"
+                      >
+                        <DollarSign className="w-5 h-5" />
+                        <span>HRA-Coin (Soon)</span>
+                      </button>
+                    </div>
+
+                    {checkoutLoading ? (
+                      <button className="w-full flex items-center justify-center gap-2 p-4 bg-green-600 text-white rounded-lg opacity-75 cursor-wait">
+                        <Loader2 className="animate-spin" /> Preparing Payment...
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handlePay}
+                        disabled={method === "stripe" && !stripeUrl}
+                        className="w-full p-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-semibold hover:from-green-700 hover:to-green-800 disabled:opacity-50 transition-all duration-200 shadow-sm hover:shadow-md"
+                      >
+                        {method === "stripe" ? "Pay with Stripe" : "HRA-Coin Coming Soon"}
+                      </button>
+                    )}
+                    {error && (
+                      <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-center text-sm">
+                        {error}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            </section>
-
-            {/* Checkout Button */}
-            <section>
-              {checkoutLoading ? (
-                <button className="w-full flex items-center justify-center gap-2 p-3 bg-green-600 text-white rounded-lg opacity-75 cursor-wait">
-                  <Loader2 className="animate-spin" /> Preparing...
-                </button>
-              ) : (
-                <button
-                  onClick={handlePay}
-                  disabled={method === "stripe" && !stripeUrl}
-                  className="w-full p-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition"
-                >
-                  {method === "stripe" ? "Pay with Stripe" : "HRA-Coin Coming Soon"}
-                </button>
-              )}
-              {error && <p className="mt-2 text-red-600 text-center">{error}</p>}
             </section>
           </main>
         </div>

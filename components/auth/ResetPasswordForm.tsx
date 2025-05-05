@@ -73,19 +73,14 @@ export default function ResetPasswordForm() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4">
+    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-6">
       <motion.section
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 space-y-6"
-        role="form"
-        aria-labelledby="reset-heading"
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md bg-white/95 backdrop-blur-sm border border-gray-200 shadow-xl rounded-2xl p-8 hover:shadow-2xl transition-all duration-300"
       >
-        <h1
-          id="reset-heading"
-          className="text-3xl font-bold text-gray-800 text-center"
-        >
+        <h1 className="text-3xl font-extrabold text-center bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent mb-6">
           Reset Your Password
         </h1>
 
@@ -94,111 +89,95 @@ export default function ResetPasswordForm() {
           Resetting for: <strong>{email}</strong>
         </div>
 
-        {/* OTP */}
-        <div className="relative">
-          <label htmlFor="otp" className="sr-only">
-            OTP Code
-          </label>
-          <Key className="absolute left-3 top-3 text-gray-400" size={20} />
-          <input
-            id="otp"
-            type="text"
-            placeholder="Enter 6-digit OTP"
-            inputMode="numeric"
-            maxLength={6}
-            disabled={loading}
-            value={otpCode}
-            onChange={(e) => setOtpCode(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300"
-          />
-        </div>
-
-        {/* New Password */}
-        <div className="relative">
-          <label htmlFor="new-password" className="sr-only">
-            New Password
-          </label>
-          <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
-          <input
-            id="new-password"
-            type={showPassword ? "text" : "password"}
-            placeholder="New Password"
-            disabled={loading}
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword((v) => !v)}
-            disabled={loading}
-            aria-label={showPassword ? "Hide password" : "Show password"}
-            className="absolute inset-y-0 right-3 flex items-center text-gray-500"
-          >
-            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
-        </div>
-
-        {/* Confirm Password */}
-        <div className="relative">
-          <label htmlFor="confirm-password" className="sr-only">
-            Confirm Password
-          </label>
-          <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
-          <input
-            id="confirm-password"
-            type={showPassword ? "text" : "password"}
-            placeholder="Confirm Password"
-            disabled={loading}
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300"
-          />
-        </div>
-
-        {/* Feedback */}
         {feedback && (
-          <p
+          <div
             role="alert"
-            className={`text-center text-sm font-medium ${
-              feedback.type === "error" ? "text-red-600" : "text-green-600"
-            }`}
+            className={`${
+              feedback.type === "error"
+                ? "bg-red-50 border-red-200 text-red-700"
+                : "bg-green-50 border-green-200 text-green-700"
+            } px-4 py-3 rounded-lg mb-6 border animate-fade-in`}
           >
             {feedback.text}
-          </p>
+          </div>
         )}
 
-        {/* Submit */}
-        <motion.button
-          onClick={handleReset}
-          disabled={loading}
-          whileTap={{ scale: 0.98 }}
-          className="w-full flex items-center justify-center py-3 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300 disabled:opacity-50 transition"
-        >
-          {loading && (
-            <svg
-              className="animate-spin h-5 w-5 mr-2 text-white"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
+        <form onSubmit={(e) => { e.preventDefault(); handleReset(); }} className="space-y-5">
+          <div className="relative group">
+            <label htmlFor="otp" className="sr-only">
+              OTP Code
+            </label>
+            <input
+              id="otp"
+              type="text"
+              placeholder="Enter OTP Code"
+              value={otpCode}
+              onChange={(e) => setOtpCode(e.target.value)}
+              disabled={loading}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 transition-all duration-200 hover:border-blue-300"
+            />
+            <Key className="absolute left-3 top-3 text-gray-400 group-hover:text-blue-500 transition-colors" size={20} />
+          </div>
+
+          <div className="relative group">
+            <label htmlFor="new-password" className="sr-only">
+              New Password
+            </label>
+            <Lock className="absolute left-3 top-3 text-gray-400 group-hover:text-blue-500 transition-colors" size={20} />
+            <input
+              id="new-password"
+              type={showPassword ? "text" : "password"}
+              placeholder="New Password"
+              disabled={loading}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 transition-all duration-200 hover:border-blue-300"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              disabled={loading}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              className="absolute right-3 top-3 text-gray-400 hover:text-blue-500 transition-colors"
             >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v8z"
-              />
-            </svg>
-          )}
-          {loading ? "Resetting…" : "Reset Password"}
-        </motion.button>
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
+
+          <div className="relative group">
+            <label htmlFor="confirm-password" className="sr-only">
+              Confirm Password
+            </label>
+            <Lock className="absolute left-3 top-3 text-gray-400 group-hover:text-blue-500 transition-colors" size={20} />
+            <input
+              id="confirm-password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Confirm Password"
+              disabled={loading}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 transition-all duration-200 hover:border-blue-300"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Resetting password...
+              </span>
+            ) : (
+              "Reset Password"
+            )}
+          </button>
+        </form>
       </motion.section>
     </main>
   );

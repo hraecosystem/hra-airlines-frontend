@@ -99,7 +99,7 @@ export default function Navbar() {
                 href={href}
                 target={external ? "_blank" : undefined}
                 rel={external ? "noopener noreferrer" : undefined}
-                className="group flex items-center text-gray-700 hover:text-blue-600 font-medium text-sm transition-colors duration-200"
+                className="group flex items-center text-gray-700 hover:text-blue-600 font-medium text-sm transition-colors duration-200 no-underline"
               >
                 <Icon className="w-4 h-4 mr-1.5 group-hover:scale-110 transition-transform" />
                 {label}
@@ -188,7 +188,7 @@ export default function Navbar() {
                   href={href}
                   target={external ? "_blank" : undefined}
                   rel={external ? "noopener noreferrer" : undefined}
-                  className="flex items-center justify-center text-gray-800 hover:text-blue-600 font-medium text-base w-full"
+                  className="flex items-center justify-center text-gray-800 hover:text-blue-600 font-medium text-base w-full no-underline"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <Icon className="w-5 h-5 mr-2" />

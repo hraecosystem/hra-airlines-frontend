@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import FiltersSidebar from "@/components/common/FiltersSidebar";
 import Pagination from "@/components/common/Pagination";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
 import numeral from "numeral";
 
 interface FlightSegment {
@@ -329,6 +329,7 @@ const fareSource = fi.AirItineraryFareInfo.FareSourceCode;
   );
 
   return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
     <div className="max-w-7xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-4 gap-8">
       <FiltersSidebar
         filters={filters}
@@ -337,7 +338,14 @@ const fareSource = fi.AirItineraryFareInfo.FareSourceCode;
       />
 
       <div className="lg:col-span-3 space-y-8">
-        <h2 className="text-3xl font-bold text-gray-800">Search Results</h2>
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-xl shadow-sm p-6"
+          >
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">Search Results</h2>
+            <p className="text-gray-600 mt-1">Found {filtered.length} flights matching your criteria</p>
+          </motion.div>
 
         {pageItems.map((fi, idx) => {
           const firstSeg =
@@ -360,49 +368,143 @@ const fareSource = fi.AirItineraryFareInfo.FareSourceCode;
               layout
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition"
+                className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
             >
               {/* Header */}
-              <div className="flex justify-between items-center mb-4">
+                <div className="p-6 border-b border-gray-100">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 relative">
+                        <img
+                          src={`https://flightaware.com/images/airline_logos/90p/${firstSeg.MarketingAirlineCode}.png`}
+                          alt={firstSeg.MarketingAirlineName || firstSeg.MarketingAirlineCode}
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = `https://www.gstatic.com/flights/airline_logos/70px/${firstSeg.MarketingAirlineCode}.png`;
+                          }}
+                        />
+                      </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-purple-600">
+                        <h3 className="text-xl font-semibold text-gray-900">
                     {firstSeg.MarketingAirlineName || firstSeg.MarketingAirlineCode}{" "}
                     #{firstSeg.FlightNumber}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    {fi.DirectionInd} • 
-                    {odoTotalStops(fi)} stop
-                    {odoTotalStops(fi) !== 1 ? "s" : ""}
+                          {fi.DirectionInd} • <span className="font-semibold text-gray-700">{odoTotalStops(fi)}</span> stop{odoTotalStops(fi) !== 1 ? "s" : ""}
                   </p>
                 </div>
-                <div className="text-2xl font-bold">
-                  {formatMoney(
-                    totals.TotalFare.Amount,
-                    totals.TotalFare.CurrencyCode
-                  )}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {formatMoney(totals.TotalFare.Amount, totals.TotalFare.CurrencyCode)}
+                      </div>
+                      <p className="text-sm text-gray-500">Total</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Flight Details */}
+                <div className="p-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center">
+                          <span className="text-blue-600 font-semibold">{firstSeg.DepartureAirportLocationCode}</span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm text-gray-500">Departure</div>
+                          <div className="font-medium">{formatDateTime(firstSeg.DepartureDateTime)}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
+                          <span className="text-green-600 font-semibold">
+                            {fi.OriginDestinationOptions[0].OriginDestinationOption[fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1].FlightSegment.ArrivalAirportLocationCode}
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm text-gray-500">Arrival</div>
+                          <div className="font-medium">
+                            {formatDateTime(fi.OriginDestinationOptions[0].OriginDestinationOption[fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1].FlightSegment.ArrivalDateTime)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center">
+                          <span className="text-purple-600 font-semibold text-sm">
+                            {(() => {
+                              const firstDeparture = new Date(firstSeg.DepartureDateTime);
+                              const lastArrival = new Date(fi.OriginDestinationOptions[0].OriginDestinationOption[fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1].FlightSegment.ArrivalDateTime);
+                              const totalMinutes = Math.round((lastArrival.getTime() - firstDeparture.getTime()) / (1000 * 60));
+                              const hours = Math.floor(totalMinutes / 60);
+                              const minutes = totalMinutes % 60;
+                              return `${hours}h${minutes}m`;
+                            })()}
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm text-gray-500">Duration</div>
+                          <div className="font-medium">
+                            {(() => {
+                              const firstDeparture = new Date(firstSeg.DepartureDateTime);
+                              const lastArrival = new Date(fi.OriginDestinationOptions[0].OriginDestinationOption[fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1].FlightSegment.ArrivalDateTime);
+                              const totalMinutes = Math.round((lastArrival.getTime() - firstDeparture.getTime()) / (1000 * 60));
+                              const hours = Math.floor(totalMinutes / 60);
+                              const minutes = totalMinutes % 60;
+                              return `${hours}h ${minutes}m total (including stops)`;
+                            })()}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-yellow-50 rounded-full flex items-center justify-center">
+                          <span className="text-yellow-600 font-semibold">{firstSeg.CabinClassCode}</span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm text-gray-500">Cabin Class</div>
+                          <div className="font-medium">{firstSeg.CabinClassText || firstSeg.CabinClassCode}</div>
+                        </div>
+                      </div>
                 </div>
               </div>
 
-              {/* Segment Summary */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 text-gray-700">
-                <div>
-                  <strong>{firstSeg.DepartureAirportLocationCode}</strong> →{" "}
-                  <strong>{firstSeg.ArrivalAirportLocationCode}</strong>
+                  {/* Flight Route Visualization */}
+                  <div className="relative py-8 mb-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-200"></div>
+                    </div>
+                    <div className="relative flex justify-between items-center">
+                      <div className="flex flex-col items-center">
+                        <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-2">
+                          <span className="text-blue-600 font-semibold text-lg">{firstSeg.DepartureAirportLocationCode}</span>
+                        </div>
+                        <div className="text-sm text-gray-600">{formatDateTime(firstSeg.DepartureDateTime)}</div>
+                      </div>
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border-2 border-blue-200">
+                          <ArrowRight className="w-6 h-6 text-blue-600" />
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-2">
+                          <span className="text-green-600 font-semibold text-lg">
+                            {fi.OriginDestinationOptions[0].OriginDestinationOption[fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1].FlightSegment.ArrivalAirportLocationCode}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {formatDateTime(fi.OriginDestinationOptions[0].OriginDestinationOption[fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1].FlightSegment.ArrivalDateTime)}
+                        </div>
                 </div>
-                <div>
-                  {formatDateTime(firstSeg.DepartureDateTime)} –{" "}
-                  {formatDateTime(firstSeg.ArrivalDateTime)}
                 </div>
-                <div>Duration: {firstSeg.JourneyDuration} min</div>
-                <div>Cabin: {firstSeg.CabinClassText || firstSeg.CabinClassCode}</div>
               </div>
 
-              {/* Expand */}
+                  {/* Expand Button */}
               <button
-                onClick={() =>
-                  setExpanded(expanded === idx ? null : idx)
-                }
-                className="flex items-center text-purple-600 font-medium mb-4"
+                    onClick={() => setExpanded(expanded === idx ? null : idx)}
+                    className="flex items-center text-blue-600 font-medium mb-6 hover:text-blue-700 transition-colors duration-200"
               >
                 {expanded === idx ? "Hide Details" : "View Details"}{" "}
                 {expanded === idx ? (
@@ -420,160 +522,151 @@ const fareSource = fi.AirItineraryFareInfo.FareSourceCode;
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="space-y-6 mb-6 text-gray-700"
+                        className="space-y-6 mb-6"
                   >
-                    {/* Fare Totals */}
+                        {/* Fare Breakdown */}
+                        <div className="bg-gray-50 rounded-xl p-6">
+                          <h4 className="font-semibold text-gray-900 mb-4">Fare Breakdown</h4>
                     <div className="grid grid-cols-2 gap-4">
                       {fareTotals.map((t, i) => (
                         <div key={i} className="text-sm">
-                          <strong>{t.label}:</strong>{" "}
+                                <span className="text-gray-600">{t.label}:</span>{" "}
+                                <span className="font-medium text-gray-900">
                           {formatMoney(t.amt.Amount, t.amt.CurrencyCode)}
+                                </span>
                         </div>
                       ))}
+                          </div>
                     </div>
 
-                    {/* Passenger breakdown */}
+                        {/* Passenger Breakdown */}
+                        <div className="bg-gray-50 rounded-xl p-6">
+                          <h4 className="font-semibold text-gray-900 mb-4">Passenger Details</h4>
                     <div className="space-y-4">
-                      {fi.AirItineraryFareInfo.FareBreakdown.map(
-                        (br, bi) => (
-                          <div
-                            key={bi}
-                            className="p-4 bg-gray-50 rounded-lg"
-                          >
-                            <p>
-                              <strong>
-                                {br.PassengerTypeQuantity.Code} x{" "}
-                                {br.PassengerTypeQuantity.Quantity}
-                              </strong>{" "}
-                              —{" "}
+                            {fi.AirItineraryFareInfo.FareBreakdown.map((br, bi) => (
+                              <div key={bi} className="bg-white rounded-lg p-4 shadow-sm">
+                                <div className="flex justify-between items-center mb-2">
+                                  <span className="font-medium text-gray-900">
+                                    {br.PassengerTypeQuantity.Code} x {br.PassengerTypeQuantity.Quantity}
+                                  </span>
+                                  <span className="text-blue-600 font-semibold">
                               {formatMoney(
                                 br.PassengerFare.TotalFare.Amount,
                                 br.PassengerFare.TotalFare.CurrencyCode
                               )}
-                            </p>
-                            <p>
-                              Baggage:{" "}
-                              {br.Baggage?.join(", ") || "—"} / Cabin:{" "}
-                              {br.CabinBaggage?.join(", ") || "—"}
-                            </p>
-                            <p>Meal: {br.MealInfo?.join(", ") || "Standard"}</p>
-
-                            {/* taxes */}
-                            {Array.isArray(br.PassengerFare.Taxes) && (
-                              <div className="mt-2 text-xs">
-                                <strong>Taxes:</strong>{" "}
-                                {br.PassengerFare.Taxes.map((tx, ti) => (
-                                  <span key={ti}>
-                                    {tx.TaxCode}{" "}
-                                    {numeral(tx.Amount).format("0,0.00")}{" "}
-                                    {tx.CurrencyCode}
-                                    {ti < br.PassengerFare.Taxes!.length - 1
-                                      ? ", "
-                                      : ""}
                                   </span>
-                                ))}
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                                  <div>
+                                    <span className="font-medium">Baggage:</span>{" "}
+                                    {br.Baggage?.join(", ") || "—"}
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Cabin:</span>{" "}
+                                    {br.CabinBaggage?.join(", ") || "—"}
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Meal:</span>{" "}
+                                    {br.MealInfo?.join(", ") || "Standard"}
+                                  </div>
+                                </div>
                               </div>
-                            )}
-
-                            {/* penalties */}
-                            {Array.isArray(br.PenaltyDetails) && (
-                              <div className="mt-2 text-xs">
-                                <strong>Penalties:</strong>{" "}
-                                {br.PenaltyDetails.map((pd, pi) => (
-                                  <span key={pi}>
-                                    {pd.RefundAllowed
-                                      ? `Refund ₹${pd.RefundPenaltyAmount}`
-                                      : "No Refund"}
-                                    ; {pd.ChangeAllowed
-                                      ? `Change ₹${pd.ChangePenaltyAmount}`
-                                      : "No Change"}
-                                    {pi < br.PenaltyDetails!.length - 1
-                                      ? " • "
-                                      : ""}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
+                            ))}
                           </div>
-                        )
-                      )}
                     </div>
 
-                    {/* Segment-by-segment details for multi-legs */}
+                        {/* Flight Segments */}
+                        <div className="bg-gray-50 rounded-xl p-6">
+                          <h4 className="font-semibold text-gray-900 mb-4">Flight Details</h4>
+                          <div className="space-y-6">
                     {fi.OriginDestinationOptions.map((odo, oi) => (
-                      <div key={oi} className="space-y-2">
-                        <h4 className="font-semibold">
-                          Trip {oi + 1} — {odo.TotalStops} stop
-                          {odo.TotalStops !== 1 ? "s" : ""}
-                        </h4>
+                              <div key={oi} className="bg-white rounded-lg p-4 shadow-sm">
+                                <h5 className="font-medium text-gray-900 mb-3">
+                                  Trip {oi + 1} — {odo.TotalStops} stop{odo.TotalStops !== 1 ? "s" : ""}
+                                </h5>
+                                <div className="space-y-4">
                         {odo.OriginDestinationOption.map((segObj, si) => {
                           const s = segObj.FlightSegment;
                           return (
-                            <div
-                              key={si}
-                              className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm"
-                            >
+                                      <div key={si} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                                        <div className="w-12 h-12 relative">
+                                          <img
+                                            src={`https://flightaware.com/images/airline_logos/90p/${s.MarketingAirlineCode}.png`}
+                                            alt={s.MarketingAirlineName || s.MarketingAirlineCode}
+                                            className="w-full h-full object-contain"
+                                            onError={(e) => {
+                                              const target = e.target as HTMLImageElement;
+                                              target.src = `https://www.gstatic.com/flights/airline_logos/70px/${s.MarketingAirlineCode}.png`;
+                                            }}
+                                          />
+                                        </div>
+                                        <div className="flex-1">
+                                          <div className="flex justify-between items-center mb-1">
+                                            <span className="font-medium">
+                                              {s.MarketingAirlineName || s.MarketingAirlineCode} {s.FlightNumber}
+                                            </span>
+                                            <span className="text-sm text-gray-500">
+                                              {s.Equipment?.AirEquipType}
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between items-center text-sm text-gray-600">
                               <div>
-                                <strong>
-                                  {s.DepartureAirportLocationCode}
-                                </strong>{" "}
-                                →{" "}
-                                <strong>
-                                  {s.ArrivalAirportLocationCode}
-                                </strong>
+                                              {s.DepartureAirportLocationCode} → {s.ArrivalAirportLocationCode}
                               </div>
                               <div>
-                                {formatDateTime(s.DepartureDateTime)} –{" "}
-                                {formatDateTime(s.ArrivalDateTime)}
+                                              {formatDateTime(s.DepartureDateTime)} – {formatDateTime(s.ArrivalDateTime)}
+                                            </div>
                               </div>
-                              <div>
-                                {s.MarketingAirlineName ||
-                                  s.MarketingAirlineCode}{" "}
-                                {s.FlightNumber} ({s.Equipment?.AirEquipType})
                               </div>
-                              <div>Journey: {s.JourneyDuration} min</div>
                             </div>
                           );
                         })}
+                                </div>
                       </div>
                     ))}
+                          </div>
+                        </div>
 
-                    {/* Misc details */}
-                    <div className="text-xs space-y-1">
-                      <p>
-                        <strong>Ticket Type:</strong>{" "}
-                        {fi.TicketType || "—"}
-                      </p>
-                      <p>
-                        <strong>Passport Mandatory:</strong>{" "}
-                        {fi.IsPassportMandatory ? "Yes" : "No"}
-                      </p>
-                      <p>
-                        <strong>Validating Airline:</strong>{" "}
-                        {fi.ValidatingAirlineCode}
-                      </p>
-                      <p>
-                        <strong>Sequence #:</strong>{" "}
-                        {fi.SequenceNumber || "—"}
-                      </p>
-                      <p>
-                        <strong>Split Itinerary:</strong>{" "}
-                        {fi.AirItineraryFareInfo.SplitItinerary
-                          ? "Yes"
-                          : "No"}
-                      </p>
+                        {/* Additional Info */}
+                        <div className="bg-gray-50 rounded-xl p-6">
+                          <h4 className="font-semibold text-gray-900 mb-4">Additional Information</h4>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="text-gray-600">Ticket Type:</span>{" "}
+                              <span className="font-medium">{fi.TicketType || "—"}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Passport Required:</span>{" "}
+                              <span className="font-medium">{fi.IsPassportMandatory ? "Yes" : "No"}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Validating Airline:</span>{" "}
+                              <span className="font-medium">{fi.ValidatingAirlineCode}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Sequence #:</span>{" "}
+                              <span className="font-medium">{fi.SequenceNumber || "—"}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Split Itinerary:</span>{" "}
+                              <span className="font-medium">
+                                {fi.AirItineraryFareInfo.SplitItinerary ? "Yes" : "No"}
+                              </span>
+                            </div>
+                          </div>
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              {/* Select */}
+                  {/* Select Button */}
               <button
                 onClick={() => handleSelect(fi)}
-                className="w-full py-3 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-purple-900 transition"
+                    className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-900 transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 Select Flight
               </button>
+                </div>
             </motion.div>
           );
         })}
@@ -587,6 +680,7 @@ const fareSource = fi.AirItineraryFareInfo.FareSourceCode;
             />
           </div>
         )}
+        </div>
       </div>
     </div>
   );

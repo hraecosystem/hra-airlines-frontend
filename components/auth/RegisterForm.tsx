@@ -98,16 +98,29 @@ export default function RegisterForm() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md bg-white border border-gray-200 shadow-lg rounded-2xl p-8"
+        className="w-full max-w-md bg-white/95 backdrop-blur-sm border border-gray-200 shadow-xl rounded-2xl p-8 hover:shadow-2xl transition-all duration-300"
         role="form"
         aria-labelledby="register-heading"
       >
         <h1
           id="register-heading"
-          className="text-3xl font-extrabold text-center text-gray-800 mb-6"
+          className="text-3xl font-extrabold text-center bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent mb-6"
         >
           Create Your Account
         </h1>
+
+        {message && (
+          <div
+            role="alert"
+            className={`${
+              message.type === "error"
+                ? "bg-red-50 border-red-200 text-red-700"
+                : "bg-green-50 border-green-200 text-green-700"
+            } px-4 py-3 rounded-lg mb-6 border animate-fade-in`}
+          >
+            {message.text}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-5" noValidate>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -115,7 +128,7 @@ export default function RegisterForm() {
               ["firstName", "First Name"],
               ["lastName", "Last Name"],
             ].map(([name, placeholder]) => (
-              <div key={name} className="relative">
+              <div key={name} className="relative group">
                 <label htmlFor={name} className="sr-only">
                   {placeholder}
                 </label>
@@ -128,14 +141,14 @@ export default function RegisterForm() {
                   onChange={handleChange}
                   disabled={loading}
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300 placeholder-gray-500"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 transition-all duration-200 hover:border-blue-300"
                 />
-                <User className="absolute left-3 top-3 text-gray-400" size={20} />
+                <User className="absolute left-3 top-3 text-gray-400 group-hover:text-blue-500 transition-colors" size={20} />
               </div>
             ))}
           </div>
 
-          <div className="relative">
+          <div className="relative group">
             <label htmlFor="email" className="sr-only">
               Email Address
             </label>
@@ -148,12 +161,12 @@ export default function RegisterForm() {
               onChange={handleChange}
               disabled={loading}
               required
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300 placeholder-gray-500"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 transition-all duration-200 hover:border-blue-300"
             />
-            <Mail className="absolute left-3 top-3 text-gray-400" size={20} />
+            <Mail className="absolute left-3 top-3 text-gray-400 group-hover:text-blue-500 transition-colors" size={20} />
           </div>
 
-          <div className="relative">
+          <div className="relative group">
             <label htmlFor="phone" className="sr-only">
               Phone Number
             </label>
@@ -166,12 +179,12 @@ export default function RegisterForm() {
               onChange={handleChange}
               disabled={loading}
               required
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300 placeholder-gray-500"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 transition-all duration-200 hover:border-blue-300"
             />
-            <Phone className="absolute left-3 top-3 text-gray-400" size={20} />
+            <Phone className="absolute left-3 top-3 text-gray-400 group-hover:text-blue-500 transition-colors" size={20} />
           </div>
 
-          <div className="relative">
+          <div className="relative group">
             <label htmlFor="password" className="sr-only">
               Password
             </label>
@@ -185,49 +198,36 @@ export default function RegisterForm() {
               disabled={loading}
               required
               minLength={6}
-              className="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300 placeholder-gray-500"
+              className="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 transition-all duration-200 hover:border-blue-300"
             />
             <button
               type="button"
               onClick={() => setShowPassword((s) => !s)}
               disabled={loading}
               aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute right-3 top-3 text-gray-500 focus:outline-none"
+              className="absolute right-3 top-3 text-gray-400 hover:text-blue-500 transition-colors"
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
 
-          <motion.button
+          <button
             type="submit"
             disabled={loading}
-            whileTap={{ scale: 0.97 }}
-            className="w-full flex justify-center items-center bg-pink-600 hover:bg-pink-700 text-white font-semibold py-3 rounded-lg transition disabled:opacity-50"
+            className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading && (
-              <svg
-                className="animate-spin h-5 w-5 mr-2 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  className="opacity-25"
-                />
-                <path
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v8z"
-                  className="opacity-75"
-                />
-              </svg>
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Creating account...
+              </span>
+            ) : (
+              "Create Account"
             )}
-            {loading ? "Registering…" : "Register"}
-          </motion.button>
+          </button>
         </form>
 
         <p className="mt-4 text-center text-sm">
@@ -236,18 +236,6 @@ export default function RegisterForm() {
             Sign In
           </Link>
         </p>
-
-        {message && (
-          <div
-            role="alert"
-            aria-live="assertive"
-            className={`mt-4 text-center text-sm font-medium ${
-              message.type === "success" ? "text-green-600" : "text-red-600"
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
       </motion.section>
     </main>
   );
