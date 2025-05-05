@@ -162,61 +162,69 @@ export default function TicketPage() {
           {/* Core Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <motion.div 
-                className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200"
+                className="bg-blue-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200"
                 whileHover={{ scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <div className="flex items-center gap-3 text-blue-600 mb-3">
+                <div className="flex items-center gap-3 text-blue-800 mb-3">
                   <Info size={22} />
                   <h3 className="font-semibold">PNR</h3>
                 </div>
-                <p className="text-xl font-bold tracking-wide">{ticket.pnr}</p>
+                <p className="text-xl font-bold tracking-wide text-blue-900">{ticket.pnr}</p>
               </motion.div>
 
               <motion.div 
-                className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200"
+                className="bg-green-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200"
                 whileHover={{ scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <div className="flex items-center gap-3 text-green-600 mb-3">
+                <div className="flex items-center gap-3 text-green-800 mb-3">
                   <Calendar size={22} />
                   <h3 className="font-semibold">Issued</h3>
-            </div>
-                <p className="text-xl font-bold tracking-wide">{format(issuedDate, "PPP p")}</p>
+                </div>
+                <p className="text-xl font-bold tracking-wide text-green-900">{format(issuedDate, "PPP p")}</p>
               </motion.div>
 
               <motion.div 
-                className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200"
+                className="bg-purple-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200"
                 whileHover={{ scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <div className="flex items-center gap-3 text-purple-600 mb-3">
+                <div className="flex items-center gap-3 text-purple-800 mb-3">
                   <Clock size={22} />
                   <h3 className="font-semibold">Status</h3>
-            </div>
+                </div>
                 <p className={`text-xl font-bold tracking-wide ${
-                ticket.status === "CONFIRMED"
-                  ? "text-green-700"
-                  : ticket.status === "CANCELLED"
-                  ? "text-red-700"
-                    : "text-purple-700"
+                  ticket.status === "CONFIRMED"
+                    ? "text-green-900"
+                    : ticket.status === "CANCELLED"
+                    ? "text-red-900"
+                    : "text-purple-900"
                 }`}>
-                {ticket.status}
-              </p>
+                  {ticket.status}
+                </p>
               </motion.div>
 
               <motion.div 
-                className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200"
+                className="bg-orange-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200"
                 whileHover={{ scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <div className="flex items-center gap-3 text-orange-600 mb-3">
+                <div className="flex items-center gap-3 text-orange-800 mb-3">
                   <CreditCard size={22} />
                   <h3 className="font-semibold">Payment</h3>
-            </div>
-                <p className="text-xl font-bold tracking-wide">{ticket.paymentStatus}</p>
+                </div>
+                <p className={`text-xl font-bold tracking-wide ${
+                  ticket.paymentStatus === "PAID"
+                    ? "text-green-900"
+                    : ticket.paymentStatus === "PENDING"
+                    ? "text-orange-900"
+                    : "text-red-900"
+                }`}>
+                  {ticket.paymentStatus}
+                </p>
               </motion.div>
-          </div>
+            </div>
 
           {/* Passengers */}
             <section className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">

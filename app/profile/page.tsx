@@ -5,7 +5,8 @@ import Head from "next/head";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { UserCircleIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -100,104 +101,204 @@ export default function ProfilePage() {
     <>
       <Head>
         <title>My Profile | HRA Airlines</title>
-        <meta name="description" content="View and update your HRA Airlines account details." />
+        <meta name="description" content="Manage your HRA Airlines profile and personal information." />
       </Head>
 
       <motion.main
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="min-h-screen bg-gray-50 p-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+        className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6"
       >
-        <div className="max-w-lg mx-auto bg-white rounded-2xl shadow-lg p-8 space-y-6">
-          <h1 className="text-2xl font-bold text-blue-800 text-center">👤 My Profile</h1>
-
-          {profileMessage && (
-            <p className={`text-sm text-center ${profileMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-              {profileMessage.text}
-            </p>
-          )}
-
-          <form onSubmit={handleUpdateProfile} className="space-y-4">
-            <label className="block">
-              <span className="text-gray-700">First Name</span>
-              <input
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-                className="mt-1 w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-              />
-            </label>
-            <label className="block">
-              <span className="text-gray-700">Last Name</span>
-              <input
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-                className="mt-1 w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-              />
-            </label>
-            <label className="block">
-              <span className="text-gray-700">Phone</span>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-                className="mt-1 w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-              />
-            </label>
-            <button
-              type="submit"
-              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+        <div className="max-w-2xl mx-auto">
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white rounded-3xl shadow-xl p-8 space-y-8 backdrop-blur-sm bg-opacity-90"
+          >
+            <motion.div 
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              className="flex flex-col items-center gap-2"
             >
-              Save Changes
-            </button>
-          </form>
+              <UserCircleIcon className="w-12 h-12 text-blue-600" />
+              <h1 className="text-3xl font-bold text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                My Profile
+              </h1>
+            </motion.div>
 
-          <hr className="my-6" />
+            <AnimatePresence mode="wait">
+              {profileMessage && (
+                <motion.p
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className={`text-sm text-center p-3 rounded-lg ${
+                    profileMessage.type === 'success' 
+                      ? 'bg-green-50 text-green-600 border border-green-200' 
+                      : 'bg-red-50 text-red-600 border border-red-200'
+                  }`}
+                >
+                  {profileMessage.text}
+                </motion.p>
+              )}
+            </AnimatePresence>
 
-          <h2 className="text-lg font-semibold text-gray-700">🔒 Change Password</h2>
-
-          {passwordMessage && (
-            <p className={`text-sm text-center ${passwordMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-              {passwordMessage.text}
-            </p>
-          )}
-
-          <form onSubmit={handleChangePassword} className="space-y-4">
-            <label className="block">
-              <span className="text-gray-700">Current Password</span>
-              <input
-                type="password"
-                value={oldPassword}
-                onChange={(e) => setOldPassword(e.target.value)}
-                required
-                className="mt-1 w-full p-2 border rounded focus:ring-purple-500 focus:border-purple-500"
-              />
-            </label>
-            <label className="block">
-              <span className="text-gray-700">New Password</span>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                className="mt-1 w-full p-2 border rounded focus:ring-purple-500 focus:border-purple-500"
-              />
-            </label>
-            <button
-              type="submit"
-              disabled={pwdLoading}
-              className={`w-full flex justify-center items-center py-2 rounded-lg text-white font-semibold transition ${
-                pwdLoading ? "bg-gray-400 cursor-not-allowed" : "bg-purple-600 hover:bg-purple-700"
-              }`}
+            <motion.form 
+              onSubmit={handleUpdateProfile} 
+              className="space-y-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
             >
-              {pwdLoading ? "Updating…" : "Update Password"}
-            </button>
-          </form>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <motion.label 
+                  className="block"
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <span className="text-gray-700 font-medium">First Name</span>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                    className="mt-1 w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  />
+                </motion.label>
+                <motion.label 
+                  className="block"
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <span className="text-gray-700 font-medium">Last Name</span>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
+                    className="mt-1 w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  />
+                </motion.label>
+              </div>
+              <motion.label 
+                className="block"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <span className="text-gray-700 font-medium">Phone</span>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                  className="mt-1 w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                />
+              </motion.label>
+              <motion.button
+                type="submit"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300"
+              >
+                Save Changes
+              </motion.button>
+            </motion.form>
+
+            <motion.div 
+              className="relative"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+            >
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center">
+                <span className="px-4 bg-white">
+                  <LockClosedIcon className="w-5 h-5 text-gray-400" />
+                </span>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+            >
+              <h2 className="text-xl font-semibold text-gray-800 mb-6">Change Password</h2>
+
+              <AnimatePresence mode="wait">
+                {passwordMessage && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className={`text-sm text-center p-3 rounded-lg mb-6 ${
+                      passwordMessage.type === 'success' 
+                        ? 'bg-green-50 text-green-600 border border-green-200' 
+                        : 'bg-red-50 text-red-600 border border-red-200'
+                    }`}
+                  >
+                    {passwordMessage.text}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+
+              <form onSubmit={handleChangePassword} className="space-y-6">
+                <motion.label 
+                  className="block"
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <span className="text-gray-700 font-medium">Current Password</span>
+                  <input
+                    type="password"
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    required
+                    className="mt-1 w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                  />
+                </motion.label>
+                <motion.label 
+                  className="block"
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <span className="text-gray-700 font-medium">New Password</span>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    className="mt-1 w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                  />
+                </motion.label>
+                <motion.button
+                  type="submit"
+                  disabled={pwdLoading}
+                  whileHover={{ scale: pwdLoading ? 1 : 1.02 }}
+                  whileTap={{ scale: pwdLoading ? 1 : 0.98 }}
+                  className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 ${
+                    pwdLoading 
+                      ? "bg-gray-300 cursor-not-allowed" 
+                      : "bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:shadow-lg"
+                  }`}
+                >
+                  {pwdLoading ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="w-5 h-5 border-2 border-white border-t-transparent rounded-full mx-auto"
+                    />
+                  ) : (
+                    "Update Password"
+                  )}
+                </motion.button>
+              </form>
+            </motion.div>
+          </motion.div>
         </div>
       </motion.main>
     </>
