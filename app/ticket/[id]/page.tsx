@@ -367,7 +367,7 @@ export default function TicketPage() {
                           <tr className="border-t border-gray-200 bg-white/80">
                             <td className="p-4 text-gray-700 font-medium">Total Taxes</td>
                             <td className="p-4 text-right font-medium">
-                              {(ticket.taxes.reduce((sum, t) => sum + t.amount, 0)).toFixed(2)} {ticket.currency}
+                              {(ticket.taxes.reduce((sum, t) =>  t.amount, 0)).toFixed(2)} {ticket.currency}
                             </td>
                           </tr>
                 </tbody>
