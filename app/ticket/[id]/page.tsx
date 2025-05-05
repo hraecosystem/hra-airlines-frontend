@@ -131,7 +131,7 @@ export default function TicketPage() {
     >
       <div className="mx-auto max-w-5xl">
         {/* Top Bar */}
-        <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-800 px-8 py-6 rounded-t-2xl shadow-lg print:hidden">
+        <div className={`flex items-center justify-between ${styles.animatedGradient} bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6 rounded-t-2xl shadow-lg print:hidden`}>
           <button 
             onClick={() => router.back()} 
             className="text-white hover:text-blue-200 transition-colors duration-200"
@@ -160,10 +160,19 @@ export default function TicketPage() {
 
         <div className="bg-white rounded-b-2xl shadow-lg overflow-hidden print:shadow-none">
           <div className="p-8 space-y-8">
+            {/* Print Header - only shows when printing */}
+            <div className="hidden print:flex print:items-center print:justify-between print:mb-8">
+              <div className="flex items-center gap-3">
+                <Plane className="transform rotate-45 text-blue-600" size={32} />
+                <h1 className={`text-3xl font-bold text-blue-700 ${styles.printMark}`}>HRA Airlines E-Ticket</h1>
+              </div>
+              <p className="text-gray-500">Printed on: {format(new Date(), "PPP")}</p>
+            </div>
+          
           {/* Core Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <motion.div 
-                className="bg-blue-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200"
+                className={`bg-blue-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}
                 whileHover={{ scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
@@ -175,7 +184,7 @@ export default function TicketPage() {
               </motion.div>
 
               <motion.div 
-                className="bg-green-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200"
+                className={`bg-green-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}
                 whileHover={{ scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
@@ -187,7 +196,7 @@ export default function TicketPage() {
               </motion.div>
 
               <motion.div 
-                className="bg-purple-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200"
+                className={`bg-purple-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}
                 whileHover={{ scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
@@ -201,7 +210,7 @@ export default function TicketPage() {
               </motion.div>
 
               <motion.div 
-                className="bg-orange-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200"
+                className={`bg-orange-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}
                 whileHover={{ scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
@@ -216,9 +225,9 @@ export default function TicketPage() {
             </div>
 
           {/* Passengers */}
-            <section className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+            <section className={`bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}>
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-5 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800 !important flex items-center gap-3">
+                <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-3">
                   <User size={22} className="text-blue-600" />
                   Passengers
                 </h2>
@@ -228,7 +237,7 @@ export default function TicketPage() {
                   {ticket.passengers.map((p, i) => (
                     <motion.div 
                       key={i} 
-                      className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200"
+                      className={`bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200 ${styles.cardContainer}`}
                       whileHover={{ scale: 1.02 }}
                       transition={{ type: "spring", stiffness: 300 }}
                     >
@@ -253,9 +262,9 @@ export default function TicketPage() {
             </section>
 
           {/* Itinerary */}
-            <section className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+            <section className={`bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}>
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-5 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800 !important flex items-center gap-3">
+                <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-3">
                   <Plane size={22} className="text-blue-600" />
                   Flight Itinerary
                 </h2>
@@ -265,7 +274,7 @@ export default function TicketPage() {
               {ticket.flightSegments.map((seg, i) => (
                     <motion.div 
                       key={i} 
-                      className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-8 shadow-sm hover:shadow-md transition-all duration-200"
+                      className={`bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-8 shadow-sm hover:shadow-md transition-all duration-200 ${styles.cardContainer}`}
                       whileHover={{ scale: 1.02 }}
                       transition={{ type: "spring", stiffness: 300 }}
                     >
@@ -307,9 +316,9 @@ export default function TicketPage() {
           </section>
 
           {/* Fare Breakdown */}
-            <section className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+            <section className={`bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}>
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-5 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800 !important flex items-center gap-3">
+                <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-3">
                   <CreditCard size={22} className="text-blue-600" />
                   Fare Details
                 </h2>
@@ -384,7 +393,7 @@ export default function TicketPage() {
                   </div>
 
                   {/* Total */}
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 shadow-sm">
+                  <div className={`${styles.animatedGradient} bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-100 rounded-xl p-6 shadow-sm`}>
                     <div className="flex justify-between items-center">
                       <span className="font-semibold text-gray-900 text-lg">Total Amount</span>
                       <span className="text-2xl font-bold text-blue-600">
@@ -401,9 +410,9 @@ export default function TicketPage() {
 
           {/* Fare Rules Link */}
           {ticket.fareRulesUrl && (
-              <section className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+              <section className={`bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}>
                 <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-5 border-b border-gray-200">
-                  <h2 className="text-xl font-semibold text-gray-800 !important flex items-center gap-3">
+                  <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-3">
                     <Info size={22} className="text-blue-600" />
                     Fare Rules
                   </h2>
