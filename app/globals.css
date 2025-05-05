@@ -36,6 +36,7 @@ html {
     margin-bottom: theme('spacing.4');
     font-weight: theme('fontWeight.bold');
     scroll-margin-top: theme('spacing.20');
+    color: rgb(17, 24, 39) !important;
   }
 
   p {
