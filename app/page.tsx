@@ -86,7 +86,7 @@ export default function HomePage() {
                 className="bg-gray-50 p-8 rounded-xl hover:shadow-lg transition"
               >
                 <div className="mb-6">{feature.icon}</div>
-                <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900 !important">{feature.title}</h3>
                 <p className="text-gray-600">{feature.description}</p>
               </motion.div>
             ))}
