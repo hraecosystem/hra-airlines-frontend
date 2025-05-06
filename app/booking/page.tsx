@@ -48,7 +48,7 @@ const digits = (s: string) => s.replace(/\D/g, "");
 export default function BookingPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const [fare, setFare] = useState<any>(null);   //  <-- you removed this by accident
+  const [fare, setFare] = useState<any>(null);   
 
   const [sessionId,   setSessionId]   = useState("");   // search-level token
   const [fareSource,  setFareSource]  = useState("");   // itinerary-level token

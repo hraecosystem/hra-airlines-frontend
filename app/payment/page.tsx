@@ -6,7 +6,16 @@ import Head from "next/head";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
-import { CreditCard, DollarSign, ArrowLeft, Loader2, AlertCircle, Plane, Users, Calendar, CreditCard as CreditCardIcon } from "lucide-react";
+import {
+  CreditCard as CreditCardIcon,
+  DollarSign,
+  ArrowLeft,
+  Loader2,
+  AlertCircle,
+  Plane,
+  Users,
+  Calendar,
+} from "lucide-react";
 import { motion } from "framer-motion";
 
 type Method = "stripe" | "hra-coin";
@@ -40,10 +49,10 @@ interface TaxLine {
 }
 
 interface BookingDetails {
-  segments: FlightSegment[];
+  flightSegments: FlightSegment[];
   passengers: Passenger[];
-  fareBreakdown?: FareLine[];
-  taxes?: TaxLine[];
+  fareBreakdown: FareLine[];
+  taxes: TaxLine[];
   totalPrice: number;
   currency: string;
 }
@@ -59,28 +68,43 @@ export default function PaymentPage() {
   const [checkoutLoading, setCheckoutLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
-  // Redirect if not logged in
+  // Redirect to login if not authenticated
   useEffect(() => {
-    if (!authLoading && !user) router.replace("/auth/login?redirect=/payment");
+    if (!authLoading && !user) {
+      router.replace("/auth/login?redirect=/payment");
+    }
   }, [authLoading, user, router]);
 
   // Fetch booking details
   useEffect(() => {
     if (!user) return;
-    const bookingId = localStorage.getItem("bookingId");
-    if (!bookingId) return router.replace("/dashboard/bookings");
+    const load = async () => {
+      setLoading(true);
+      try {
+        const bookingId = localStorage.getItem("bookingId");
+        if (!bookingId) {
+          router.replace("/dashboard/bookings");
+          return;
+        }
 
-    api
-      .get<{ status: string; data: BookingDetails }>(`/booking/${bookingId}`)
-      .then(({ data }) => {
-        if (data.status === "success" || (data as any).status === undefined) {
-          setBooking((data as any).data ?? data as any);
-        } else {
+        const res = await api.get<{
+          status: string;
+          data: BookingDetails;
+        }>(`/booking/${bookingId}`);
+
+        // unwrap:
+        if (res.data.status !== "success" || !res.data.data) {
           throw new Error();
         }
-      })
-      .catch(() => setError("Failed to load booking details. Please try again."))
-      .finally(() => setLoading(false));
+
+        setBooking(res.data.data);
+      } catch {
+        setError("Failed to load booking details. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [user, router]);
 
   // Create Stripe session
@@ -88,10 +112,23 @@ export default function PaymentPage() {
     if (!booking || method !== "stripe") return;
     setCheckoutLoading(true);
     api
-      .post<{ data: { url: string } }>("/payment/create-checkout-session", { bookingId: localStorage.getItem("bookingId") })
-      .then(res => setStripeUrl(res.data.data.url))
-      .catch(() => setError("Unable to initiate payment. Please retry."))
-      .finally(() => setCheckoutLoading(false));
+      .post<{ status: string; data: { url: string } }>(
+        "/payment/create-checkout-session",
+        { bookingId: localStorage.getItem("bookingId") }
+      )
+      .then((res) => {
+        if (res.data.status === "success") {
+          setStripeUrl(res.data.data.url);
+        } else {
+          throw new Error();
+        }
+      })
+      .catch(() => {
+        setError("Unable to initiate payment. Please retry.");
+      })
+      .finally(() => {
+        setCheckoutLoading(false);
+      });
   }, [booking, method]);
 
   const handlePay = useCallback(() => {
@@ -107,6 +144,7 @@ export default function PaymentPage() {
     }
   }, [method, stripeUrl, checkoutLoading, router]);
 
+  // 1) still loading auth or booking
   if (authLoading || loading) {
     return (
       <div className="flex h-screen items-center justify-center text-gray-500">
@@ -116,16 +154,25 @@ export default function PaymentPage() {
     );
   }
 
+  // 2) error & no booking
   if (error && !booking) {
     return (
       <div className="flex h-screen flex-col items-center justify-center space-y-4 p-4">
         <AlertCircle className="text-red-600" />
         <p className="text-red-600">{error}</p>
-        <button onClick={() => router.push("/dashboard/bookings")} className="text-blue-600 underline">
+        <button
+          onClick={() => router.push("/dashboard/bookings")}
+          className="text-blue-600 underline"
+        >
           Back to Bookings
         </button>
       </div>
     );
+  }
+
+  // 3) guard: if booking somehow still null
+  if (!booking) {
+    return null;
   }
 
   return (
@@ -142,16 +189,21 @@ export default function PaymentPage() {
       >
         <div className="w-full max-w-4xl bg-white rounded-2xl shadow-lg overflow-hidden">
           <header className="flex items-center bg-gradient-to-r from-blue-600 to-blue-800 p-6 text-white">
-            <button onClick={() => router.back()} aria-label="Back" className="hover:bg-blue-700 p-2 rounded-full transition-colors">
+            <button
+              onClick={() => router.back()}
+              aria-label="Back"
+              className="hover:bg-blue-700 p-2 rounded-full transition-colors"
+            >
               <ArrowLeft />
             </button>
-            <h1 className="ml-4 text-2xl font-semibold">Complete Your Payment</h1>
+            <h1 className="ml-4 text-2xl font-semibold">
+              Complete Your Payment
+            </h1>
           </header>
 
           <main className="p-6 space-y-8">
-            {/* Trip Details & Summary */}
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left Column - Trip Details */}
+              {/* Trip Details */}
               <div className="space-y-6">
                 <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
                   <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b">
@@ -161,20 +213,29 @@ export default function PaymentPage() {
                     </h2>
                   </div>
                   <div className="divide-y">
-                    {booking!.segments.map((s, idx) => (
+                    {booking.flightSegments.map((s, idx) => (
                       <div key={idx} className="p-4 hover:bg-gray-50">
                         <div className="flex justify-between items-start">
                           <div>
-                            <p className="font-semibold text-gray-900">{s.origin} → {s.destination}</p>
+                            <p className="font-semibold text-gray-900">
+                              {s.origin} → {s.destination}
+                            </p>
                             <p className="text-sm text-gray-500">
-                              {new Date(s.departureDateTime).toLocaleString()} —{' '}
+                              {new Date(
+                                s.departureDateTime
+                              ).toLocaleString()}{" "}
+                              —{" "}
                               {new Date(s.arrivalDateTime).toLocaleString()}
                             </p>
                           </div>
                           <div className="text-right">
                             <p className="text-sm font-medium">{s.airline}</p>
-                            <p className="text-sm text-gray-500">Flight #{s.flightNumber}</p>
-                            <p className="text-sm text-gray-500">{s.cabinClass}</p>
+                            <p className="text-sm text-gray-500">
+                              Flight #{s.flightNumber}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {s.cabinClass}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -190,20 +251,23 @@ export default function PaymentPage() {
                     </h2>
                   </div>
                   <div className="divide-y">
-                    {booking!.passengers.map((passenger, idx) => (
+                    {booking.passengers.map((p, idx) => (
                       <div key={idx} className="p-4 hover:bg-gray-50">
                         <div className="flex justify-between items-start">
                           <div>
                             <p className="font-medium text-gray-900">
-                              {passenger.title} {passenger.firstName} {passenger.lastName}
+                              {p.title} {p.firstName} {p.lastName}
                             </p>
                             <p className="text-sm text-gray-500">
-                              DOB: {new Date(passenger.dob).toLocaleDateString()}
+                              DOB:{" "}
+                              {new Date(p.dob).toLocaleDateString()}
                             </p>
                           </div>
-                          {passenger.passportNo && (
+                          {p.passportNo && (
                             <div className="text-right">
-                              <p className="text-sm text-gray-500">Passport: {passenger.passportNo}</p>
+                              <p className="text-sm text-gray-500">
+                                Passport: {p.passportNo}
+                              </p>
                             </div>
                           )}
                         </div>
@@ -213,7 +277,7 @@ export default function PaymentPage() {
                 </div>
               </div>
 
-              {/* Right Column - Payment Summary */}
+              {/* Payment Summary */}
               <div className="space-y-6">
                 <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
                   <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b">
@@ -223,23 +287,33 @@ export default function PaymentPage() {
                     </h2>
                   </div>
                   <div className="p-4 space-y-4">
-                    {booking!.fareBreakdown?.map((fare, idx) => (
-                      <div key={idx} className="flex justify-between items-center">
+                    {booking.fareBreakdown.map((fare, idx) => (
+                      <div
+                        key={idx}
+                        className="flex justify-between items-center"
+                      >
                         <span className="text-gray-600">{fare.label}</span>
-                        <span className="font-medium">{booking!.currency} {fare.amount.toFixed(2)}</span>
+                        <span className="font-medium">
+                          {booking.currency} {fare.amount.toFixed(2)}
+                        </span>
                       </div>
                     ))}
-                    {booking!.taxes?.map((tax, idx) => (
-                      <div key={idx} className="flex justify-between items-center text-sm">
+                    {booking.taxes.map((tax, idx) => (
+                      <div
+                        key={idx}
+                        className="flex justify-between items-center text-sm"
+                      >
                         <span className="text-gray-500">{tax.name}</span>
-                        <span className="text-gray-600">{booking!.currency} {tax.amount.toFixed(2)}</span>
+                        <span className="text-gray-600">
+                          {booking.currency} {tax.amount.toFixed(2)}
+                        </span>
                       </div>
                     ))}
                     <div className="pt-4 border-t">
                       <div className="flex justify-between items-center font-semibold text-lg">
                         <span>Total Amount</span>
                         <span className="text-blue-600">
-                          {booking!.currency} {booking!.totalPrice.toFixed(2)}
+                          {booking.currency} {booking.totalPrice.toFixed(2)}
                         </span>
                       </div>
                     </div>
@@ -259,12 +333,18 @@ export default function PaymentPage() {
                       <button
                         onClick={() => setMethod("stripe")}
                         className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-lg text-sm font-medium transition-all duration-200
-                          ${method === "stripe" 
-                            ? "bg-blue-50 border-2 border-blue-600 text-blue-600" 
-                            : "bg-gray-50 border-2 border-gray-200 text-gray-600 hover:border-gray-300"}
+                          ${
+                            method === "stripe"
+                              ? "bg-blue-50 border-2 border-blue-600 text-blue-600"
+                              : "bg-gray-50 border-2 border-gray-200 text-gray-600 hover:border-gray-300"
+                          }
                         `}
                       >
-                        <img src="https://stripe.com/img/v3/home/twitter.png" alt="Stripe" className="h-6" />
+                        <img
+                          src="https://stripe.com/img/v3/home/twitter.png"
+                          alt="Stripe"
+                          className="h-6"
+                        />
                         <span>Stripe</span>
                       </button>
                       <button
@@ -287,9 +367,12 @@ export default function PaymentPage() {
                         disabled={method === "stripe" && !stripeUrl}
                         className="w-full p-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-semibold hover:from-green-700 hover:to-green-800 disabled:opacity-50 transition-all duration-200 shadow-sm hover:shadow-md"
                       >
-                        {method === "stripe" ? "Pay with Stripe" : "HRA-Coin Coming Soon"}
+                        {method === "stripe"
+                          ? "Pay with Stripe"
+                          : "HRA-Coin Coming Soon"}
                       </button>
                     )}
+
                     {error && (
                       <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-center text-sm">
                         {error}
