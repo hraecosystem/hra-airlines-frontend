@@ -247,6 +247,12 @@ if (
   typeof (raw.data.bookingId ?? raw.data.mongoBookingId) === "string"
 ) {
   const id = raw.data.bookingId ?? raw.data.mongoBookingId;
+
+  // clear stale data
+  localStorage.removeItem("selectedFare");
+  localStorage.removeItem("flightSessionId");
+  localStorage.removeItem("fareSourceCode");
+
   localStorage.setItem("bookingId", id);
   return router.push("/payment");
 }

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/api";
 import { Spinner } from "@/components/ui/Spinner";
+import { useAuth } from "@/context/AuthContext";
 
 type BookingStatus = "CONFIRMED" | "PENDING" | "NONE";
 
@@ -12,66 +13,77 @@ export default function ConfirmationPage() {
   const router = useRouter();
   const params = useSearchParams();
   const download = params.get("download") === "true";
+  const { user, loading: authLoading } = useAuth();
 
-  const [pnr, setPnr] = useState<string>("");
+  const [bookingId, setBookingId] = useState<string | null>(null);
+  const [pnr, setPnr] = useState("");
   const [status, setStatus] = useState<BookingStatus>("NONE");
-  const [loadingEmail, setLoadingEmail] = useState<boolean>(false);
-  const [emailSent, setEmailSent] = useState<boolean>(false);
-  const [error, setError] = useState<string>("");
+  const [loadingEmail, setLoadingEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [error, setError] = useState("");
 
-  // 1) On mount: load PNR + status from localStorage (or fallback)
+  // 1) Load bookingId & fetch PNR + status
   useEffect(() => {
-    const stored = localStorage.getItem("bookingResponse");
-    if (!stored) {
+    const id = localStorage.getItem("bookingId");
+    if (!id) {
       setStatus("NONE");
       return;
     }
-    try {
-      const data = JSON.parse(stored);
-      const result = data.BookFlightResult || {};
-      const id = result.UniqueID || "";
-      const st = result.Status === "CONFIRMED" ? "CONFIRMED" : "PENDING";
-      setPnr(id);
-      setStatus(st as BookingStatus);
-    } catch {
-      setStatus("NONE");
-    }
+    setBookingId(id);
+
+    api
+      .get<{ status: string; data: { pnr: string; status: string } }>(`/ticket/${id}`)
+      .then((res) => {
+        if (res.data.status === "success") {
+          setPnr(res.data.data.pnr);
+          // map your DB status to CONFIRMED/PENDING
+          setStatus(
+            res.data.data.status === "Ticketed" ? "CONFIRMED" : "PENDING"
+          );
+        } else {
+          setStatus("NONE");
+        }
+      })
+      .catch(() => {
+        setStatus("NONE");
+      });
   }, []);
 
-  // 2) If confirmed, send the ticket email once
+  // 2) Once confirmed, issue‐and‐send to the user’s email
   useEffect(() => {
-    if (status !== "CONFIRMED" || emailSent) return;
+    if (status !== "CONFIRMED" || emailSent || !bookingId || !user?.email)
+      return;
+
     setLoadingEmail(true);
     api
-      .post("/ticket/send", { bookingId: pnr, email: localStorage.getItem("userEmail") })
+      .post(`/ticket/${bookingId}/issue-and-send`, { email: user.email })
       .then(() => setEmailSent(true))
-      .catch((e) => {
-        console.error(e);
+      .catch(() => {
         setError("Failed to email ticket. You can still download it below.");
       })
       .finally(() => setLoadingEmail(false));
-  }, [status, pnr, emailSent]);
+  }, [status, emailSent, bookingId, user]);
 
-  // 3) If ?download=true, auto‐download PDF
+  // 3) Auto-download PDF if ?download=true
   useEffect(() => {
-    if (download && pnr) {
-      api
-        .get<Blob>(`/ticket/${pnr}/pdf`, { responseType: "blob" })
-        .then((res) => {
-          const url = URL.createObjectURL(res.data);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `HRA-Ticket-${pnr}.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-        })
-        .catch(() => setError("Failed to download PDF."));
-    }
-  }, [download, pnr]);
+    if (!download || !bookingId || !pnr) return;
 
-  // 4) If no booking, redirect home after a moment
+    api
+      .get<Blob>(`/ticket/${bookingId}/pdf`, { responseType: "blob" })
+      .then((res) => {
+        const url = URL.createObjectURL(res.data);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `HRA-Ticket-${pnr}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      })
+      .catch(() => setError("Failed to download PDF."));
+  }, [download, bookingId, pnr]);
+
+  // 4) Redirect home if we never found a booking
   useEffect(() => {
     if (status === "NONE") {
       const t = setTimeout(() => router.replace("/"), 5000);
@@ -80,6 +92,15 @@ export default function ConfirmationPage() {
   }, [status, router]);
 
   const shareText = `I just booked with HRA Airlines! My PNR is ${pnr}.`;
+
+  // still waiting for auth or fetch?
+  if (authLoading || status === "NONE" && !bookingId) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Spinner size={48} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex flex-col items-center justify-center p-6">
@@ -127,7 +148,7 @@ export default function ConfirmationPage() {
 
             <div className="flex flex-wrap gap-3 justify-center mt-4">
               <Link
-                href={`/ticket/${pnr}`}
+                href={`/ticket/${bookingId}`}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
               >
                 View Ticket

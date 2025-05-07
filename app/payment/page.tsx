@@ -21,7 +21,7 @@ import { motion } from "framer-motion";
 type Method = "stripe" | "hra-coin";
 
 interface FlightSegment {
-  airline: string;
+  airlineCode: string;
   flightNumber: string;
   origin: string;
   destination: string;
@@ -90,7 +90,7 @@ export default function PaymentPage() {
         const res = await api.get<{
           status: string;
           data: BookingDetails;
-        }>(`/booking/${bookingId}`);
+        }>(`/ticket/${bookingId}`);
 
         // unwrap:
         if (res.data.status !== "success" || !res.data.data) {
@@ -229,7 +229,7 @@ export default function PaymentPage() {
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-medium">{s.airline}</p>
+                            <p className="text-sm font-medium">{s.airlineCode}</p>
                             <p className="text-sm text-gray-500">
                               Flight #{s.flightNumber}
                             </p>
