@@ -214,9 +214,13 @@ const qtyOf = (code: string) =>
 
       // 3) build booking payload
       const payload = {
+
+        flight_session_id: sessionId,   // search-level
+        fare_source_code : fareSource,  // itinerary-level
+
         flightBookingInfo: {
-          flight_session_id: sessionId,   // search-level
-          fare_source_code : fareSource,  // itinerary-level
+        flight_session_id: sessionId,   // search-level
+        fare_source_code : fareSource,  // itinerary-level
           IsPassportMandatory: "true",          // always send "true"
           areaCode   : digits(phone).slice(0,3) || "971",
           countryCode: digits(phone).slice(0,3) || "971",
