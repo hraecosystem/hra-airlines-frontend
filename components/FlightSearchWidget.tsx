@@ -203,27 +203,45 @@ export default function FlightSearchWidget() {
     setLoading(true);
     try {
       const resp = await api.post("/flights/search", payload);
-      localStorage.setItem(
-        "searchResults",
-        JSON.stringify(resp.data.data)
-      );
-      localStorage.setItem("searchTimestamp", Date.now().toString());
-
-      router.push("/search-results");
+            /* ────────────────────────────────────────────────────────────
+               A)  No-result case  ➜  show a friendly message
+               ──────────────────────────────────────────────────────────── */
+            if (
+              // our backend returns HTTP-404 OR 200 + status:"error"
+              resp.status === 404                                  ||
+              (resp.data.status === "error" &&
+               resp.data.message?.ErrorCode === "FLERSEA022")      ||
+              Array.isArray(resp.data.data) && resp.data.data.length === 0
+            ) {
+              setError("No flights were found for that route / date.");
+              return;
+            }
+      
+            /* ────────────────────────────────────────────────────────────
+               B)  Normal success – cache & navigate
+               ──────────────────────────────────────────────────────────── */
+            localStorage.setItem("searchResults", JSON.stringify(resp.data.data));
+            localStorage.setItem("searchTimestamp", Date.now().toString());
+            router.push("/search-results");
     } catch (err: any) {
             console.error("Flight search error:", err);
-
-            // If Trawex is down (503), show a dedicated message:
+      
+           /* network / 5xx outage */
             if (err.response?.status === 503) {
               setError(
                 "Our flight availability service is temporarily unavailable. " +
                 "Please try again in a few minutes."
               );
-            } else if (err.response?.data?.message) {
-              // any custom backend message
-              setError(err.response.data.message);
+              return;
+            }
+      
+            /* any other backend-supplied message (string OR object) */
+            const raw = err.response?.data?.message;
+            if (typeof raw === "string") {
+              setError(raw);
+            } else if (raw?.ErrorMessage) {
+              setError(raw.ErrorMessage);
             } else {
-              // fallback
               setError("Unable to search flights. Please check your entries and try again.");
             }
             }  finally {
@@ -256,7 +274,8 @@ export default function FlightSearchWidget() {
           className="rounded-xl bg-red-50 px-4 py-3 text-red-800 border border-red-200 text-sm space-y-2"
         >
           <p>{error}</p>
-          {error.includes("temporarily unavailable") && (
+           {typeof error === "string" &&
+  error.includes("temporarily unavailable") && (            
             <button
               onClick={handleSubmit}
               className="inline-block bg-red-600 text-white px-4 py-1.5 rounded-lg hover:bg-red-700 transition text-xs font-medium"
