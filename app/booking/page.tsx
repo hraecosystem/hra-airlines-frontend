@@ -61,6 +61,10 @@ export default function BookingPage() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
 
+  const [fareRules, setFareRules] = useState<any>(null);
+  const [showRulesModal, setShowRulesModal] = useState(false);
+
+
   // Redirect if not logged in
   useEffect(() => {
     if (!authLoading && !user) {
@@ -188,118 +192,99 @@ const qtyOf = (code: string) =>
     passportExpiryDate: arr.map((p) => p.passportExpiryDate),
   });
 
-  // -- HANDLE SUBMIT ---------------------------------------------------------
-  const handleSubmit = async () => {
-    setError("");
-    if (!validate() || !fare) return;
-    setSubmitting(true);
+const handleSubmit = async () => {
+  setError("");
+  if (!validate() || !fare) return;
+  setSubmitting(true);
 
-    try {
-      // 1) revalidate
-      const rev = await api.post("/flights/revalidate", {
+  try {
+    // revalidate…
+    const rev = await api.post("/flights/revalidate", {
+      flight_session_id: sessionId,
+      fare_source_code: fareSource,
+    });
+    const isValid = rev.data?.data?.IsValid ?? rev.data?.data?.Success;
+    if (!isValid) {
+      alert("Fare expired. Please search again.");
+      return router.push("/search-results");
+    }
+
+    // fetch fare rules
+    const resp = await api.post("/flights/fare-rules", {
+      session_id: sessionId,
+      fare_source_code: fareSource,
+    });
+
+    // UNWRAP both layers
+    const payload = resp.data?.data;
+    const rulesData =
+      payload?.FareRules1_1Response?.FareRules1_1Result || {};
+
+    // set state
+    setFareRules(rulesData);
+    setShowRulesModal(true);
+
+  } catch (e: any) {
+    const msg = e.response?.data?.error?.ErrorMessage || e.message;
+    setError(msg);
+    if (msg.toLowerCase().includes("passport")) {
+      setNeedsPassport(true);
+    }
+  } finally {
+    setSubmitting(false);
+  }
+};
+
+
+
+
+const confirmBooking = async () => {
+    setSubmitting(true);           // ← start the spinner/disable
+
+  try {
+    const adults = passengers.filter((p) => p.type === "ADT");
+    const childs = passengers.filter((p) => p.type === "CHD");
+    const infs   = passengers.filter((p) => p.type === "INF");
+
+    const payload = {
+      flight_session_id: sessionId,
+      fare_source_code : fareSource,
+      flightBookingInfo: {
         flight_session_id: sessionId,
         fare_source_code : fareSource,
-      });
-        const isValid = rev.data?.data?.IsValid ?? rev.data?.data?.Success ?? false;
+        IsPassportMandatory: "true",
+        areaCode   : digits(phone).slice(0,3) || "971",
+        countryCode: digits(phone).slice(0,3) || "971",
+        fareType: fare.AirItineraryFareInfo.FareType,
+      },
+      paxInfo: {
+        customerEmail: email.trim(),
+        customerPhone: digits(phone),
+        paxDetails: [
+          { adult: pack(adults), child: pack(childs), infant: pack(infs) },
+        ],
+      },
+      fareItinerary: fare,
+    };
 
-      if (!isValid) {
-        alert("Fare expired. Please search again.");
-        return router.push("/search-results");
-      }
-
-      // 2) split pax types
-      const adults = passengers.filter((p) => p.type === "ADT");
-      const childs = passengers.filter((p) => p.type === "CHD");
-      const infs   = passengers.filter((p) => p.type === "INF");
-
-      // 3) build booking payload
-      const payload = {
-
-        flight_session_id: sessionId,   // search-level
-        fare_source_code : fareSource,  // itinerary-level
-
-        flightBookingInfo: {
-        flight_session_id: sessionId,   // search-level
-        fare_source_code : fareSource,  // itinerary-level
-          IsPassportMandatory: "true",          // always send "true"
-          areaCode   : digits(phone).slice(0,3) || "971",
-          countryCode: digits(phone).slice(0,3) || "971",
-          fareType: fare.AirItineraryFareInfo.FareType,
-        },
-        paxInfo: {
-          customerEmail: email.trim(),
-          customerPhone: digits(phone),   // ← no "+"
-          paxDetails: [
-            { adult: pack(adults), child: pack(childs), infant: pack(infs) },
-          ],
-        },
-        fareItinerary: fare,                 // 👈 add this line
-
-      };
-
-      // 4) book
-      const resp = await api.post("/flights/book", payload);
-
-      // unwrap your helper
-      const raw = (resp as any).data ?? resp;
-      console.log("Raw booking response:", raw);
-
-      // ---- NEW: first check the Booking API wrapper ----
-if (
-  raw.status === "success" &&
-  raw.data &&
-  typeof (raw.data.bookingId ?? raw.data.mongoBookingId) === "string"
-) {
-  const id = raw.data.bookingId ?? raw.data.mongoBookingId;
-
-  // clear stale data
-  localStorage.removeItem("selectedFare");
-  localStorage.removeItem("flightSessionId");
-  localStorage.removeItem("fareSourceCode");
-
-  localStorage.setItem("bookingId", id);
-  return router.push("/payment");
-}
-
-
-      // ---- FALLBACK: old BookFlightResponse logic ----
-      const result =
-        raw.BookFlightResponse?.BookFlightResult ??
-        raw.data?.BookFlightResponse?.BookFlightResult;
-
-      if (!result) {
-        setError("Unexpected booking response. Please try again.");
-        return;
-      }
-
-      if (result.Success) {
-        return router.push("/payment");
-      }
-
-      // collect any errors
-      let msg = "Booking failed.";
-      if (typeof result.Errors === "string" && result.Errors) {
-        msg = result.Errors;
-      } else if (Array.isArray(result.Errors) && result.Errors.length) {
-        msg = result.Errors
-          .map((e: any) => e.Errors?.[0]?.ErrorMessage)
-          .filter(Boolean)
-          .join("; ");
-      } else if (result.Errors?.ErrorMessage) {
-        msg = result.Errors.ErrorMessage;
-      }
-      setError(msg);
-    } catch (e: any) {
-      const msg = e.response?.data?.error?.ErrorMessage || e.message;
-      setError(msg);
-      // if the server suddenly demands passports, show those fields
-      if (msg.toLowerCase().includes("passport")) {
-        setNeedsPassport(true);
-      }
-    } finally {
-      setSubmitting(false);
+    const resp = await api.post("/flights/book", payload);
+    const id = resp.data?.data?.bookingId ?? resp.data?.mongoBookingId;
+    if (id) {
+      localStorage.setItem("bookingId", id);
+      localStorage.removeItem("selectedFare");
+      localStorage.removeItem("flightSessionId");
+      localStorage.removeItem("fareSourceCode");
+      router.push("/payment");
+    } else {
+      throw new Error("Booking failed.");
     }
-  };
+  } catch (err: any) {
+    setError(err.message || "Booking failed.");
+  } finally {
+    setSubmitting(false);
+  }
+};
+
 
   // --------------------------------------------------------------------------
 
@@ -557,6 +542,82 @@ if (
               )}
             </motion.button>
           </main>
+{showRulesModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-lg max-w-2xl w-full p-6 shadow-xl">
+      <h2 className="text-xl font-bold mb-4 text-gray-800">Fare Rules & Conditions</h2>
+
+      {/* FARE RULES SECTION */}
+      <h3 className="text-lg font-semibold mb-2">Fare Rules</h3>
+      {fareRules?.FareRules?.length ? (
+        <ul className="space-y-4 max-h-40 overflow-y-auto text-sm text-gray-700">
+          {fareRules.FareRules.map((ruleObj: any, idx: number) => {
+            const r = ruleObj.FareRule || {};
+            return (
+              <li key={idx} className="border-b pb-3">
+                <div><strong>Airline:</strong> {r.Airline || "—"}</div>
+                <div><strong>Route:</strong> {r.CityPair || "—"}</div>
+                <div><strong>Category:</strong> {r.Category || "—"}</div>
+                <div>
+                  <strong>Rules:</strong>{" "}
+                  {r.Rules?.trim() ? r.Rules.trim() : "No rules provided by airline."}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="text-gray-600 text-sm">No fare rules available.</p>
+      )}
+
+      {/* BAGGAGE SECTION */}
+      <h3 className="mt-6 text-lg font-semibold mb-2">Baggage Allowance</h3>
+      {fareRules?.BaggageInfos?.length ? (
+        <ul className="space-y-2 text-sm text-gray-700">
+          {fareRules.BaggageInfos.map((b: any, idx: number) => {
+            const info = b.BaggageInfo || {};
+            return (
+              <li key={idx}>
+                <div>
+                  <strong>Flight:</strong> {info.FlightNo || "—"}
+                </div>
+                <div>
+                  <strong>Route:</strong> {info.Departure || "—"} → {info.Arrival || "—"}
+                </div>
+                <div>
+                  <strong>Allowance:</strong> {info.Baggage || "—"}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="text-gray-600 text-sm">No baggage info available.</p>
+      )}
+
+      {/* ACTION BUTTONS */}
+      <div className="mt-6 flex justify-end gap-4">
+        <button
+          onClick={() => setShowRulesModal(false)}
+          className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition"
+        >
+          Go Back
+        </button>
+        <button
+          onClick={async () => {
+            setShowRulesModal(false);
+    confirmBooking();  // triggers submitting=true immediately
+          }}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+        >
+          Accept & Book
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
         </motion.div>
       </div>
     </div>
