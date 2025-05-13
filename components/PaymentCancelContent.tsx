@@ -10,13 +10,19 @@ export default function PaymentCancelContent() {
   const router = useRouter();
   const [countdown, setCountdown] = useState(5);
 
+  // 1️⃣ Clear out any stored bookingId so the user starts fresh
+  useEffect(() => {
+    localStorage.removeItem("bookingId");
+  }, []);
+
+  // 2️⃣ Start the countdown → redirect when it reaches zero
   useEffect(() => {
     if (countdown <= 0) {
-      router.replace("/booking");
+      router.replace("/booking");  // back to the booking start
       return;
     }
-    const tid = setTimeout(() => setCountdown((c) => c - 1), 1000);
-    return () => clearTimeout(tid);
+    const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
   }, [countdown, router]);
 
   return (
@@ -33,13 +39,13 @@ export default function PaymentCancelContent() {
           Your payment did not complete successfully.
         </p>
         <p className="text-sm text-gray-500">
-          Redirecting back to booking in <strong>{countdown}</strong>{" "}
-          second{countdown !== 1 && "s"}…
+          Redirecting back to booking in <strong>{countdown}</strong> second
+          {countdown !== 1 && "s"}…
         </p>
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => router.push("/booking")}
+          onClick={() => router.replace("/booking")}
           className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition"
         >
           🔁 Go Back Now

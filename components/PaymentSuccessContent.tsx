@@ -1,23 +1,28 @@
+// components/PaymentSuccessContent.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import api from "@/lib/api";
 
-type Status = "loading" | "success" | "error";
+type Status = "verifying" | "waiting" | "success" | "error";
 
 export default function PaymentSuccessContent() {
   const router = useRouter();
   const params = useSearchParams();
   const sessionId = params.get("session_id");
 
-  const [status, setStatus]     = useState<Status>("loading");
+  const [status, setStatus] = useState<Status>("verifying");
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [countdown, setCountdown] = useState<number>(7);
 
-  // 1. Verify payment session
+  // to limit polling attempts
+  const attemptsRef = useRef(0);
+  const MAX_ATTEMPTS = 15; // 15 polls → ~30s
+
+  // 1️⃣ Verify Stripe session
   useEffect(() => {
     if (!sessionId) {
       setStatus("error");
@@ -25,43 +30,72 @@ export default function PaymentSuccessContent() {
       return;
     }
     api
-    .post<{
-      status: string;
-      data: { bookingId: string };
-    }>("/payment/verify-session", { sessionId })
-    .then(res => {
-      const bookingId = res.data.data.bookingId;
-      if (bookingId) {
-        setStatus("success");
-      } else {
+      .post("/payment/verify-session", { sessionId })
+      .then(() => {
+        setStatus("waiting");
+      })
+      .catch(() => {
         setStatus("error");
-        setErrorMsg("Payment could not be confirmed.");
-      }
-    })
-    .catch(() => {
-      setStatus("error");
-      setErrorMsg("Failed to verify payment. Try again later.");
-    });
-  
+        setErrorMsg("Failed to verify payment. Try again later.");
+      });
   }, [sessionId]);
 
-  // 2a. Decrement countdown once per second (after we switch to "success")
+  // 2️⃣ Poll for ticketNumbers
   useEffect(() => {
-    if (status !== "success") return;
-    const timer = setInterval(() => {
-      setCountdown(c => c - 1);
-    }, 1000);
-    return () => clearInterval(timer);
+    if (status !== "waiting") return;
+    const bookingId = localStorage.getItem("bookingId");
+    if (!bookingId) {
+      setStatus("error");
+      setErrorMsg("Booking not found in storage.");
+      return;
+    }
+
+    let timer: NodeJS.Timeout;
+    const poll = async () => {
+      attemptsRef.current += 1;
+      if (attemptsRef.current > MAX_ATTEMPTS) {
+        setStatus("error");
+        setErrorMsg(
+          "Ticket issuance is taking longer than expected. " +
+          "Please check your bookings page in a moment."
+        );
+        return;
+      }
+
+      try {
+        const res = await api.get<{
+          status: string;
+          data: { ticketNumbers?: any[] };
+        }>(`/ticket/${bookingId}`);
+        const nums = res.data.data.ticketNumbers;
+        if (nums?.length && nums.length > 0) {
+          setStatus("success");
+        } else {
+          timer = setTimeout(poll, 2000);
+        }
+      } catch {
+        timer = setTimeout(poll, 2000);
+      }
+    };
+
+    poll();
+    return () => clearTimeout(timer);
   }, [status]);
 
-  // 2b. When countdown reaches zero, do the navigation
+  // 3️⃣ Countdown on success
+  useEffect(() => {
+    if (status !== "success") return;
+    const id = setInterval(() => setCountdown((c) => c - 1), 1000);
+    return () => clearInterval(id);
+  }, [status]);
+
+  // 4️⃣ Redirect when countdown hits zero
   useEffect(() => {
     if (status === "success" && countdown <= 0) {
       router.replace("/dashboard/bookings");
     }
   }, [status, countdown, router]);
 
-  // ... your existing JSX below, unchanged ...
   return (
     <motion.div
       className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 to-gray-100 p-6"
@@ -70,12 +104,22 @@ export default function PaymentSuccessContent() {
       transition={{ duration: 0.4 }}
     >
       <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-lg text-center space-y-4">
-        {status === "loading" && (
+        {status === "verifying" && (
           <>
-            <Loader2 className="mx-auto h-12 w-12 text-green-500 animate-spin" />
+            <Loader2 className="mx-auto h-12 w-12 text-blue-500 animate-spin" />
             <p className="text-gray-600">Verifying your payment…</p>
           </>
         )}
+
+        {status === "waiting" && (
+          <>
+            <Loader2 className="mx-auto h-12 w-12 text-green-500 animate-spin" />
+            <p className="text-gray-600">
+              Payment confirmed! Issuing your ticket—this may take a few moments…
+            </p>
+          </>
+        )}
+
         {status === "error" && (
           <>
             <AlertCircle className="mx-auto h-12 w-12 text-red-600" />
@@ -91,16 +135,14 @@ export default function PaymentSuccessContent() {
             </motion.button>
           </>
         )}
+
         {status === "success" && (
           <>
             <CheckCircle2 className="mx-auto h-12 w-12 text-green-600" />
-            <h1 className="text-2xl font-bold text-green-700">Payment Successful!</h1>
+            <h1 className="text-2xl font-bold text-green-700">All set!</h1>
             <p className="text-gray-700">
-              Thank you for your payment. Your booking is confirmed.
-            </p>
-            <p className="text-sm text-gray-500">
-              Redirecting to your bookings in <strong>{countdown}</strong> second
-              {countdown !== 1 && "s"}…
+              Your ticket has been issued. Redirecting in <strong>{countdown}</strong>{" "}
+              second{countdown !== 1 && "s"}…
             </p>
             <motion.button
               whileHover={{ scale: 1.02 }}
