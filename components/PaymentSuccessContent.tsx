@@ -22,23 +22,30 @@ export default function PaymentSuccessContent() {
   const attemptsRef = useRef(0);
   const MAX_ATTEMPTS = 15; // 15 polls → ~30s
 
-  // 1️⃣ Verify Stripe session
-  useEffect(() => {
-    if (!sessionId) {
-      setStatus("error");
-      setErrorMsg("Missing payment session.");
-      return;
-    }
-    api
-      .post("/payment/verify-session", { sessionId })
-      .then(() => {
+// 1️⃣ Verify Stripe session
+useEffect(() => {
+  if (!sessionId) {
+    setStatus("error");
+    setErrorMsg("Missing payment session.");
+    return;
+  }
+  api
+    .post("/payment/verify-session", { sessionId })
+    .then(() => {
+      // ✅ payment already paid
+      setStatus("waiting");
+    })
+    .catch((err: any) => {
+      if (err.response?.status === 402) {
+        // ↪️ still waiting on Stripe (user may have just paid)
         setStatus("waiting");
-      })
-      .catch(() => {
+      } else {
         setStatus("error");
         setErrorMsg("Failed to verify payment. Try again later.");
-      });
-  }, [sessionId]);
+      }
+    });
+}, [sessionId]);
+
 
   // 2️⃣ Poll for ticketNumbers
   useEffect(() => {
