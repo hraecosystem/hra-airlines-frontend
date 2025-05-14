@@ -10,116 +10,99 @@ import { motion, AnimatePresence } from "framer-motion";
 
 type Toast = { type: "success" | "error"; message: string };
 
+// shape returned by GET /booking/:pnr
+interface BookingDetail {
+  bookingId:      string;                        // Mongo _id
+  pnr:            string;
+  ticketNumbers:  Array<{ passengerIndex: number; ticketNumber: string }>;
+  reissueStatus:  "None" | "Requested" | "Completed";
+}
+
 type FormState = {
-  uniqueId: string;
-  ptrUniqueID: string;
-  preferenceOption: "1" | "2";
-  remark: string;
+  uniqueId:         string;       // will be booking.bookingId
+  ptrUniqueID:      string;       // one of booking.ticketNumbers[].ticketNumber
+  PreferenceOption: "1" | "2";
+  remark:           string;
 };
 
 export default function ReissueRequestPage() {
   const router = useRouter();
-  const params = useParams();
-  const rawPnr = params.pnr;
-  const pnr =
-    typeof rawPnr === "string"
-      ? rawPnr
-      : Array.isArray(rawPnr)
-      ? rawPnr[0]
-      : "";
+  const { pnr: rawPnr } = useParams();
+  const pnr = Array.isArray(rawPnr) ? rawPnr[0] : rawPnr || "";
 
   const { user, loading: authLoading } = useAuth();
 
+  const [booking, setBooking] = useState<BookingDetail | null>(null);
+  const [bookingLoading, setBookingLoading] = useState(true);
   const [form, setForm] = useState<FormState>({
-    uniqueId: pnr,
-    ptrUniqueID: "",
-    preferenceOption: "1",
-    remark: "Kindly reissue the ticket.",
+    uniqueId:         "", 
+    ptrUniqueID:      "",
+    PreferenceOption: "1",
+    remark:           "Kindly reissue the ticket."
   });
-  const [bookingLoading, setBookingLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [reissueRequested, setReissueRequested] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
 
-  // Redirect unauthenticated users
+  // redirect if not logged in
   useEffect(() => {
     if (!authLoading && !user) {
-      router.replace(
-        `/auth/login?redirect=/dashboard/booking/${encodeURIComponent(
-          pnr
-        )}/reissue`
-      );
+      router.replace(`/auth/login?redirect=/dashboard/booking/${encodeURIComponent(pnr)}/reissue`);
     }
   }, [authLoading, user, router, pnr]);
 
-  // Fetch booking and existing reissue status
+  // fetch the single booking by PNR
   useEffect(() => {
     if (!user || !pnr) return;
     setBookingLoading(true);
-    api
-      .get<{ data: { bookings: any[] } }>("/booking/history")
-      .then((res) => {
-        const booking = res.data.data.bookings.find((b) => b.pnr === pnr);
-        if (!booking) {
-          setToast({ type: "error", message: "❌ Booking not found." });
-          return;
-        }
-        setForm((f) => ({ ...f, uniqueId: booking.bookingId || booking.pnr }));
-        if (booking.reissueStatus === "Requested") {
-          setReissueRequested(true);
-          setToast({
-            type: "error",
-            message: "🔁 A reissue request is already in process.",
-          });
-        }
+    api.get<{ status: string; data: BookingDetail }>(`/booking/${pnr}`)
+      .then(res => {
+        const bk = res.data.data;
+        setBooking(bk);
+        setForm(f => ({
+          ...f,
+          uniqueId:    bk.bookingId,
+          // default to first ticketNumber if present
+          ptrUniqueID: bk.ticketNumbers[0]?.ticketNumber || ""
+        }));
       })
-      .catch(() =>
-        setToast({ type: "error", message: "❌ Unable to fetch booking." })
-      )
+      .catch(() => {
+        setToast({ type: "error", message: "❌ Unable to load booking." });
+      })
       .finally(() => setBookingLoading(false));
   }, [user, pnr]);
 
   const handleChange = <K extends keyof FormState>(key: K, val: string) => {
-    setForm((f) => ({ ...f, [key]: val }));
+    setForm(f => ({ ...f, [key]: val }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setToast(null);
 
-    if (!form.ptrUniqueID.trim()) {
-      return setToast({
-        type: "error",
-        message: "⚠️ Please enter your PTR Unique ID.",
-      });
+    if (!form.ptrUniqueID) {
+      return setToast({ type: "error", message: "⚠️ Please select a PTR Unique ID." });
     }
-    if (reissueRequested) {
-      return setToast({
-        type: "error",
-        message: "⚠️ You’ve already requested a reissue.",
-      });
+    if (booking?.reissueStatus === "Requested") {
+      return setToast({ type: "error", message: "⚠️ A reissue is already in process." });
     }
 
     setSubmitting(true);
     try {
       await api.post("/flights/reissue-request", {
-        UniqueID: form.uniqueId.trim(),
-        ptrUniqueID: form.ptrUniqueID.trim(),
-        PreferenceOption: form.preferenceOption,
-        remark: form.remark.trim(),
+        UniqueID:         form.uniqueId,
+        ptrUniqueID:      form.ptrUniqueID,
+        PreferenceOption: form.PreferenceOption,
+        remark:           form.remark.trim(),
       });
-      setReissueRequested(true);
-      setToast({
-        type: "success",
-        message: "✅ Your reissue request has been submitted.",
-      });
-      setForm((f) => ({ ...f, ptrUniqueID: "" }));
+      setToast({ type: "success", message: "✅ Your reissue request has been submitted." });
+      // flip local state
+      setBooking(b => b && ({ ...b, reissueStatus: "Requested" }));
     } catch (err: any) {
       setToast({
         type: "error",
         message:
-          err.response?.data?.message ||
-          err.response?.data?.error?.ErrorMessage ||
+          err.response?.data?.message ??
+          err.response?.data?.error?.ErrorMessage ??
           "❌ Reissue request failed.",
       });
     } finally {
@@ -142,7 +125,7 @@ export default function ReissueRequestPage() {
           🛫 Reissue Request
         </h1>
         <p className="text-center text-gray-600 mb-6">
-          Request a reissue for your flight ticket.
+          Booking PNR: <span className="font-semibold">{booking?.pnr}</span>
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -164,13 +147,18 @@ export default function ReissueRequestPage() {
             <label className="block text-gray-700 font-medium mb-1">
               PTR Unique ID
             </label>
-            <input
-              type="text"
+            <select
               value={form.ptrUniqueID}
-              onChange={(e) => handleChange("ptrUniqueID", e.target.value)}
-              placeholder="e.g. PTR123456"
+              onChange={e => handleChange("ptrUniqueID", e.target.value)}
               className="w-full px-4 py-2 border rounded-md focus:ring-purple-500 focus:border-purple-500"
-            />
+            >
+              <option value="">— select your ticket # —</option>
+              {booking?.ticketNumbers.map(({ ticketNumber }) => (
+                <option key={ticketNumber} value={ticketNumber}>
+                  {ticketNumber}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Preference Option */}
@@ -179,10 +167,8 @@ export default function ReissueRequestPage() {
               Preference
             </label>
             <select
-              value={form.preferenceOption}
-              onChange={(e) =>
-                handleChange("preferenceOption", e.target.value)
-              }
+              value={form.PreferenceOption}
+              onChange={e => handleChange("PreferenceOption", e.target.value)}
               className="w-full px-4 py-2 border rounded-md focus:ring-purple-500 focus:border-purple-500"
             >
               <option value="1">Same cabin</option>
@@ -198,7 +184,7 @@ export default function ReissueRequestPage() {
             <textarea
               rows={3}
               value={form.remark}
-              onChange={(e) => handleChange("remark", e.target.value)}
+              onChange={e => handleChange("remark", e.target.value)}
               className="w-full px-4 py-2 border rounded-md focus:ring-purple-500 focus:border-purple-500"
             />
           </div>
@@ -206,9 +192,9 @@ export default function ReissueRequestPage() {
           {/* Submit */}
           <button
             type="submit"
-            disabled={submitting || reissueRequested}
+            disabled={submitting || booking?.reissueStatus === "Requested"}
             className={`w-full flex justify-center items-center px-4 py-2 text-white font-semibold rounded-md transition ${
-              submitting || reissueRequested
+              submitting || booking?.reissueStatus === "Requested"
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-purple-600 hover:bg-purple-700"
             }`}

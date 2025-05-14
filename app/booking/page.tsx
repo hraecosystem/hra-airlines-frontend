@@ -192,6 +192,59 @@ const qtyOf = (code: string) =>
     passportExpiryDate: arr.map((p) => p.passportExpiryDate),
   });
 
+
+  /* ------------------------------------------------------------------ */
+/* 🔸 buildBookingPayload – make the exact object you now post to /book */
+/* ------------------------------------------------------------------ */
+const buildBookingPayload = () => {
+  const adults = passengers.filter(p => p.type === "ADT");
+  const childs = passengers.filter(p => p.type === "CHD");
+  const infs   = passengers.filter(p => p.type === "INF");
+
+  return {
+    flight_session_id: sessionId,
+    fare_source_code : fareSource,
+    flightBookingInfo: {
+      flight_session_id: sessionId,
+      fare_source_code : fareSource,
+      IsPassportMandatory: "true",
+      areaCode   : digits(phone).slice(0,3) || "971",
+      countryCode: digits(phone).slice(0,3) || "971",
+      fareType   : fare.AirItineraryFareInfo.FareType,   // Public | Private | WebFare
+    },
+    paxInfo: {
+      customerEmail : email.trim(),
+      customerPhone : digits(phone),
+      paxDetails    : [
+        { adult: pack(adults), child: pack(childs), infant: pack(infs) },
+      ],
+    },
+    fareItinerary: fare,
+  };
+};
+
+/* ------------------------------------------------------------------ */
+/* 🔸 startLccCheckout – create Stripe session for WebFare/LCC          */
+/* ------------------------------------------------------------------ */
+const startLccCheckout = async () => {
+  setSubmitting(true);
+  try {
+    const payload = buildBookingPayload();
+    const tf = fare.AirItineraryFareInfo.ItinTotalFares.TotalFare;
+    const res = await api.post("/payment/create-checkout-session-lcc", {
+      bookingPayload: payload,
+      totalPrice    : Number(tf.Amount),
+      currency      : tf.CurrencyCode || "USD",
+    });
+    window.location.href = res.data.data.url;   // 🔁  full-page redirect to Stripe
+  } catch (e: any) {
+    setError(e.response?.data?.error || e.message || "Payment failed.");
+  } finally {
+    setSubmitting(false);
+  }
+};
+
+
 const handleSubmit = async () => {
   setError("");
   if (!validate() || !fare) return;
@@ -209,6 +262,13 @@ const handleSubmit = async () => {
       return router.push("/search-results");
     }
 
+     // ✏️ grab the up-to-date itinerary (including the correct FareType)
+ const revalItin =
+   rev.data.data.FareItineraries.FareItinerary;
+
+ // overwrite your component state
+ setFare(revalItin);
+ 
     // fetch fare rules
     const resp = await api.post("/flights/fare-rules", {
       session_id: sessionId,
@@ -603,11 +663,17 @@ const confirmBooking = async () => {
         >
           Go Back
         </button>
-        <button
-          onClick={async () => {
-            setShowRulesModal(false);
-    confirmBooking();  // triggers submitting=true immediately
-          }}
+<button
+  onClick={async () => {
+    setShowRulesModal(false);
+    if (fare?.AirItineraryFareInfo?.FareType === "WebFare") {
+      // LCC – pay first, seats are created after Stripe webhook
+      await startLccCheckout();
+    } else {
+      // GDS – current flow
+      confirmBooking();
+    }
+  }}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
         >
           Accept & Book
