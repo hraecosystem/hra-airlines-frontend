@@ -46,6 +46,10 @@ interface Ticket {
   fareBreakdown: FareLine[];
   taxes: TaxLine[];
   fareRulesUrl?: string | null;
+    ticketNumbers?: Array<{
+    passengerIndex: number;
+    ticketNumber:   string;
+  }>;
 }
 
 export default function TicketPage() {
@@ -255,6 +259,16 @@ export default function TicketPage() {
                           <span className="font-medium">Passport:</span> {p.passportNo}
                         </div>
                       )}
+                            {ticket.ticketNumbers
+        ?.find(t => t.passengerIndex === i)
+         ?.ticketNumber && (
+        <p className="mt-2 text-sm text-gray-600">
+          Ticket #: {
+            ticket.ticketNumbers.find(t => t.passengerIndex === i)!.ticketNumber
+          }
+        </p>
+      )}
+                      
                     </motion.div>
                   ))}
                 </div>

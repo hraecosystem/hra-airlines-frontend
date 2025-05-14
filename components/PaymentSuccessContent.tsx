@@ -29,12 +29,16 @@ useEffect(() => {
     setErrorMsg("Missing payment session.");
     return;
   }
-  api
-    .post("/payment/verify-session", { sessionId })
-    .then(() => {
-      // ✅ payment already paid
-      setStatus("waiting");
-    })
+
+api.post("/payment/verify-session", { sessionId })
+  .then(res => {
+    const { bookingStatus } = res.data.data
+    if (bookingStatus === "Ticketed" || bookingStatus === "Confirmed") {
+      setStatus("success")
+    } else {
+      setStatus("waiting")
+    }
+  })
     .catch((err: any) => {
       if (err.response?.status === 402) {
         // ↪️ still waiting on Stripe (user may have just paid)
@@ -50,6 +54,7 @@ useEffect(() => {
   // 2️⃣ Poll for ticketNumbers
   useEffect(() => {
     if (status !== "waiting") return;
+    attemptsRef.current = 0
     const bookingId = localStorage.getItem("bookingId");
     if (!bookingId) {
       setStatus("error");
@@ -122,7 +127,7 @@ useEffect(() => {
           <>
             <Loader2 className="mx-auto h-12 w-12 text-green-500 animate-spin" />
             <p className="text-gray-600">
-              Payment confirmed! Issuing your ticket—this may take a few moments…
+              As soon as your payment is verified, a ticket will be issued.
             </p>
           </>
         )}
