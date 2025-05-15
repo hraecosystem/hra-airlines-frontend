@@ -21,7 +21,7 @@ interface FlightSegment {
   JourneyDuration: number;
   CabinClassCode: string;
   CabinClassText?: string;
-    // ← add these two
+  // ← add these two
   MealCode?: string;
   MarriageGroup?: string;
 
@@ -130,8 +130,23 @@ export default function SearchResultsPage() {
     priceRange: DEFAULT_PRICE_RANGE,
   });
 
+  // ⇢ hold the return-trip choices (Indian domestic RT delivers them separately)
+  const [inboundItins, setInboundItins] = useState<FI[]>([]);
+
+  /** 0 = picking the OUTBOUND, 1 = picking the INBOUND */
+  const [step, setStep] = useState<0 | 1>(0);
+
+  /** when step === 1 this keeps the user-chosen outbound itinerary */
+  const [selectedOutbound, setSelectedOutbound] = useState<FI | undefined>();
+
   const [currentPage, setCurrentPage] = useState(1);
   const [expanded, setExpanded] = useState<number | null>(null);
+
+  // ────────────────────────────────────────────────────────────────
+  // Flags that depend on what the API returned
+  const [hasInboundList, setHasInboundList] = useState(false);
+  const [isOneWayRequest, setIsOneWayRequest] = useState(false);
+  // ────────────────────────────────────────────────────────────────
 
   // 1) Load raw payload & extract FareItineraries
   useEffect(() => {
@@ -140,6 +155,8 @@ export default function SearchResultsPage() {
       if (!raw)
         throw new Error("No search results found. Please search again.");
       const obj = JSON.parse(raw);
+
+      console.log("RAW search object ➡️", obj); // 🟡 NEW
 
       /* 1️⃣ grab the search-level SessionId once */
       const sid =
@@ -153,14 +170,87 @@ export default function SearchResultsPage() {
         localStorage.setItem("flightSessionId", sid);
       }
 
-      /* 2️⃣  normalise itineraries */
-      const rawFi = obj.AirSearchResponse?.AirSearchResult?.FareItineraries;
-      const itins: FI[] = Array.isArray(rawFi)
-        ? rawFi.map((w: any) => w.FareItinerary)
-        : [rawFi.FareItinerary];
+      // ➊ ───────── explicit containers first ──────────────
+      const normalise = (raw: any): FI[] =>
+        raw
+          ? Array.isArray(raw)
+            ? raw.map((w: any) => w.FareItinerary ?? w)
+            : [raw.FareItinerary ?? raw]
+          : [];
 
-      setAllItins(itins);
-      setFiltered(itins);
+      let outbound = normalise(
+        obj.AirSearchResponse?.AirSearchResult?.FareItineraries
+      );
+      let inbound = normalise(
+        obj.AirSearchResponse?.AirSearchResultInbound?.FareItineraries
+      );
+
+      if (outbound.length === 0 && inbound.length === 0) {
+        /* ------------------------------------------------------------------ *
+         *  ONE list → split by DirectionInd
+         * ------------------------------------------------------------------ */
+        const rawFi =
+          obj.AirSearchResponse?.AirSearchResult?.FareItineraries ??
+          obj.AirSearchResult?.FareItineraries; // very old schema
+
+        /* 🔷 Indian-domestic round-trip: inbound list sits in its
+         *     own sibling node AirSearchResultInbound                      */
+        const rawInDomestic =
+          obj.AirSearchResponse?.AirSearchResultInbound?.FareItineraries ??
+          obj.AirSearchResultInbound?.FareItineraries; // very old GDS
+
+        const listInboundDom: FI[] = rawInDomestic
+          ? Array.isArray(rawInDomestic)
+            ? rawInDomestic.map((w: any) => w.FareItinerary ?? w)
+            : [rawInDomestic.FareItinerary ?? rawInDomestic]
+          : [];
+
+        const allFi = normalise(
+          obj.AirSearchResponse?.AirSearchResult?.FareItineraries ??
+            obj.AirSearchResult?.FareItineraries
+        );
+
+        const isOut = (d?: string) => !!d && /out|o\b/i.test(d); // “Outbound”, “O”
+        const isIn = (d?: string) => !!d && /in|ret|r\b/i.test(d); // “Inbound”, “Return”, “R”
+
+        const out = allFi.filter((fi) => isOut(fi.DirectionInd));
+        const inn = [
+          ...allFi.filter((fi) => isIn(fi.DirectionInd)), // ➊ tagged “Return/Inbound”
+          ...listInboundDom, // ➋ separate domestic list
+        ];
+
+        outbound = allFi.filter((fi) => isOut(fi.DirectionInd));
+        inbound = allFi.filter((fi) => isIn(fi.DirectionInd));
+
+        if (outbound.length === 0 && inbound.length === 0) {
+          outbound = allFi;
+        }
+      }
+      // ➌ ───────── helper flags based on final lists ───────
+const inbPresent = inbound.length > 0;
+      setHasInboundList(inbPresent);
+
+      const searchTripTypeRaw =
+        obj.AirSearchResponse?.search_params?.tripType ??
+        obj.AirSearchResponse?.SearchInput?.TripType ??
+        outbound[0]?.DirectionInd ??
+        ""; // last resort
+
+      const oneWay = !inbPresent; // a trip is one-way iff no inbound list
+      setIsOneWayRequest(oneWay);
+
+      if (oneWay || !inbPresent) setStep(0);
+
+      setAllItins(outbound);
+      setInboundItins(inbound); // <- keep inbound aside till step 1
+      setFiltered(outbound);
+
+      console.log(
+        "outbound ↘️",
+        outbound.length,
+        " inbound ↗️",
+        inbound.length
+      ); // 🟡 NEW
     } catch (e: any) {
       setErrorMsg(e.message);
     } finally {
@@ -168,7 +258,15 @@ export default function SearchResultsPage() {
     }
   }, []);
 
-  // 2) Apply filters & sorting whenever filters or allItins change
+  /* ▒▒▒ when user has chosen an outbound, step 1 starts so we display inbound ▒▒▒ */
+  useEffect(() => {
+    if (step === 1) {
+      setAllItins(inboundItins);
+      setFiltered(inboundItins);
+    }
+  }, [step, inboundItins, hasInboundList]);
+
+  // Re-calculate whenever filters _or the list currently displayed_ changes
   useEffect(() => {
     let tmp = [...allItins];
 
@@ -248,7 +346,7 @@ export default function SearchResultsPage() {
       minute: "2-digit",
     });
 
-  const handleSelect = (fi: FareItinerary) => {
+  const handleSelectOutbound = (fi: FareItinerary) => {
     /* ──────────────────────────────────────────────────────────────
      *  Clean the fare before persisting:
      *    – remove passenger-types whose Quantity === 0
@@ -283,10 +381,72 @@ export default function SearchResultsPage() {
     }
     /*  This one token will be sent as both flight_session_id
           and fare_source_code on the booking screen            */
+    if (hasInboundList) {
+      localStorage.setItem(
+        "fareSourceCodeOutbound",
+        fi.AirItineraryFareInfo.FareSourceCode
+      );
+    } else {
+      // ← one-way  OR whole-RT case
+      localStorage.setItem(
+        "fareSourceCode",
+        fi.AirItineraryFareInfo.FareSourceCode
+      ); // booking page expected this
+      localStorage.removeItem("fareSourceCodeInbound");
+    }
+
+    // keep for later & let the UI now render the return flights
+    setSelectedOutbound(cleaned);
+
+    setFilters({
+      // reset all filters for the inbound list
+      airline: "",
+      stops: "all",
+      sortBy: "price-asc",
+      meals: [],
+      baggage: [],
+      priceRange: DEFAULT_PRICE_RANGE,
+    });
+
+    if (hasInboundList && !isOneWayRequest) {
+      // Indian domestic RT: we really have a 2nd list to show
+      setStep(1);
+    } else {
+      // one-way, or whole-RT itineraries: go straight to booking
+      router.push("/booking");
+    }
+  };
+
+  const handleSelectInbound = (fi: FareItinerary) => {
+    // outbound already cleaned; do the same for inbound
+    const cleanedIn: FI = {
+      ...fi,
+      IsPassportMandatory:
+        fi.IsPassportMandatory === true ||
+        String(fi.IsPassportMandatory).toLowerCase() === "true",
+      AirItineraryFareInfo: {
+        ...fi.AirItineraryFareInfo,
+        FareBreakdown: fi.AirItineraryFareInfo.FareBreakdown.filter(
+          (br) => br.PassengerTypeQuantity.Quantity > 0
+        ),
+      },
+    };
+
+    if (!selectedOutbound) return; // should never happen
+
+    /* 🔗  Stitch both directions into one object the booking screen expects */
+    const combined = {
+      Outbound: selectedOutbound,
+      Inbound: cleanedIn,
+    };
+    localStorage.setItem("selectedFareRT", JSON.stringify(combined));
+
+    // save both fare-source codes – booking page will forward them
     localStorage.setItem(
-      "fareSourceCode",
+      "fareSourceCodeInbound",
       fi.AirItineraryFareInfo.FareSourceCode
     );
+
     router.push("/booking");
   };
 
@@ -351,11 +511,18 @@ export default function SearchResultsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="bg-white rounded-xl shadow-sm p-6"
           >
+
             <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-              Search Results
-            </h2>
+  {hasInboundList
+    ? step === 0
+      ? "Step 1 of 2: Select your outbound flight"
+      : "Step 2 of 2: Select your return flight"
+    : "Select your flight"}
+</h2>
+
+
             <p className="text-gray-600 mt-1">
-              Found {filtered.length} flights matching your criteria
+              {filtered.length} option{filtered.length !== 1 && "s"} available
             </p>
           </motion.div>
 
@@ -865,7 +1032,11 @@ export default function SearchResultsPage() {
 
                   {/* Select Button */}
                   <button
-                    onClick={() => handleSelect(fi)}
+                    onClick={() =>
+                      step === 0
+                        ? handleSelectOutbound(fi)
+                        : handleSelectInbound(fi)
+                    }
                     className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-900 transition-all duration-200 shadow-sm hover:shadow-md"
                   >
                     Select Flight

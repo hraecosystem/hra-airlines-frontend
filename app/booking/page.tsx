@@ -24,9 +24,10 @@ interface Passenger {
   passportExpiryDate: string;
 }
 
-
-
-function makePassenger(type: "ADT"|"CHD"|"INF", title: string): Passenger & { type: string } {
+function makePassenger(
+  type: "ADT" | "CHD" | "INF",
+  title: string
+): Passenger & { type: string } {
   return {
     type,
     title,
@@ -41,17 +42,16 @@ function makePassenger(type: "ADT"|"CHD"|"INF", title: string): Passenger & { ty
   };
 }
 
-
 const countryOptions = countryList().getData();
 const digits = (s: string) => s.replace(/\D/g, "");
 
 export default function BookingPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const [fare, setFare] = useState<any>(null);   
+  const [fare, setFare] = useState<any>(null);
 
-  const [sessionId,   setSessionId]   = useState("");   // search-level token
-  const [fareSource,  setFareSource]  = useState("");   // itinerary-level token
+  const [sessionId, setSessionId] = useState(""); // search-level token
+  const [fareSource, setFareSource] = useState(""); // itinerary-level token
   const [needsPassport, setNeedsPassport] = useState(true);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [email, setEmail] = useState("");
@@ -64,7 +64,6 @@ export default function BookingPage() {
   const [fareRules, setFareRules] = useState<any>(null);
   const [showRulesModal, setShowRulesModal] = useState(false);
 
-
   // Redirect if not logged in
   useEffect(() => {
     if (!authLoading && !user) {
@@ -76,39 +75,41 @@ export default function BookingPage() {
   useEffect(() => {
     (async () => {
       try {
-        const rawFare        = localStorage.getItem("selectedFare");
-        const rawSession     = localStorage.getItem("flightSessionId");
-        const rawFareSource  = localStorage.getItem("fareSourceCode");
+        const rawFare = localStorage.getItem("selectedFare");
+        const rawSession = localStorage.getItem("flightSessionId");
+        const rawFareSource = localStorage.getItem("fareSourceCode");
         if (!rawFare || !rawSession || !rawFareSource) {
           throw new Error("No flight selected.");
         }
 
-        const parsed = JSON.parse(rawFare);     // parse only once
-        setFare(parsed);                        // keep the full itinerary in state
-        setSessionId(rawSession);               // search-level token (unchanged)
-        setFareSource(rawFareSource);           // itinerary-level token (NEW)
-        
+        const parsed = JSON.parse(rawFare); // parse only once
+        setFare(parsed); // keep the full itinerary in state
+        setSessionId(rawSession); // search-level token (unchanged)
+        setFareSource(rawFareSource); // itinerary-level token (NEW)
 
+        // ── passenger array ──
+        const qtyOf = (code: string) =>
+          parsed.AirItineraryFareInfo.FareBreakdown.find(
+            (b: any) => b.PassengerTypeQuantity.Code === code
+          )?.PassengerTypeQuantity.Quantity || 0;
 
-
-// ── passenger array ──
-const qtyOf = (code: string) =>
-  parsed.AirItineraryFareInfo.FareBreakdown.find(
-    (b: any) => b.PassengerTypeQuantity.Code === code
-  )?.PassengerTypeQuantity.Quantity || 0;
-
-  setPassengers([
-    ...Array(qtyOf("ADT")).fill(0).map(() => makePassenger("ADT","Mr")),
-    ...Array(qtyOf("CHD")).fill(0).map(() => makePassenger("CHD","Master")),
-    ...Array(qtyOf("INF")).fill(0).map(() => makePassenger("INF","Master")),
-  ]);
+        setPassengers([
+          ...Array(qtyOf("ADT"))
+            .fill(0)
+            .map(() => makePassenger("ADT", "Mr")),
+          ...Array(qtyOf("CHD"))
+            .fill(0)
+            .map(() => makePassenger("CHD", "Master")),
+          ...Array(qtyOf("INF"))
+            .fill(0)
+            .map(() => makePassenger("INF", "Master")),
+        ]);
 
         // prefill contact
         const prof = await api.get("/profile");
         const { email = "", phone = "" } = prof?.data?.data ?? {};
         setEmail(email);
         setPhone(phone);
-        
       } catch (e: any) {
         setError(e.message || "Failed to load booking details.");
       } finally {
@@ -163,14 +164,11 @@ const qtyOf = (code: string) =>
       if (needsPassport) {
         if (!p.passportNo) (errs[base + "passportNo"] = true), (ok = false);
         if (!p.passportIssueCountry)
-          (errs[base + "passportIssueCountry"] = true),
-            (ok = false);
+          (errs[base + "passportIssueCountry"] = true), (ok = false);
         if (!p.passportIssueDate)
-          (errs[base + "passportIssueDate"] = true),
-            (ok = false);
+          (errs[base + "passportIssueDate"] = true), (ok = false);
         if (!p.passportExpiryDate)
-          (errs[base + "passportExpiryDate"] = true),
-            (ok = false);
+          (errs[base + "passportExpiryDate"] = true), (ok = false);
       }
     });
 
@@ -192,130 +190,24 @@ const qtyOf = (code: string) =>
     passportExpiryDate: arr.map((p) => p.passportExpiryDate),
   });
 
-
   /* ------------------------------------------------------------------ */
-/* 🔸 buildBookingPayload – make the exact object you now post to /book */
-/* ------------------------------------------------------------------ */
-const buildBookingPayload = () => {
-  const adults = passengers.filter(p => p.type === "ADT");
-  const childs = passengers.filter(p => p.type === "CHD");
-  const infs   = passengers.filter(p => p.type === "INF");
-
-  return {
-    flight_session_id: sessionId,
-    fare_source_code : fareSource,
-    flightBookingInfo: {
-      flight_session_id: sessionId,
-      fare_source_code : fareSource,
-      IsPassportMandatory: "true",
-      areaCode   : digits(phone).slice(0,3) || "971",
-      countryCode: digits(phone).slice(0,3) || "971",
-      fareType   : fare.AirItineraryFareInfo.FareType,   // Public | Private | WebFare
-    },
-    paxInfo: {
-      customerEmail : email.trim(),
-      customerPhone : digits(phone),
-      paxDetails    : [
-        { adult: pack(adults), child: pack(childs), infant: pack(infs) },
-      ],
-    },
-    fareItinerary: fare,
-  };
-};
-
-/* ------------------------------------------------------------------ */
-/* 🔸 startLccCheckout – create Stripe session for WebFare/LCC          */
-/* ------------------------------------------------------------------ */
-const startLccCheckout = async () => {
-  setSubmitting(true);
-  try {
-    const payload = buildBookingPayload();
-    const tf = fare.AirItineraryFareInfo.ItinTotalFares.TotalFare;
-    const res = await api.post("/payment/create-checkout-session-lcc", {
-      bookingPayload: payload,
-      totalPrice    : Number(tf.Amount),
-      currency      : tf.CurrencyCode || "USD",
-    });
-    window.location.href = res.data.data.url;   // 🔁  full-page redirect to Stripe
-  } catch (e: any) {
-    setError(e.response?.data?.error || e.message || "Payment failed.");
-  } finally {
-    setSubmitting(false);
-  }
-};
-
-
-const handleSubmit = async () => {
-  setError("");
-  if (!validate() || !fare) return;
-  setSubmitting(true);
-
-  try {
-    // revalidate…
-    const rev = await api.post("/flights/revalidate", {
-      flight_session_id: sessionId,
-      fare_source_code: fareSource,
-    });
-    const isValid = rev.data?.data?.IsValid ?? rev.data?.data?.Success;
-    if (!isValid) {
-      alert("Fare expired. Please search again.");
-      return router.push("/search-results");
-    }
-
-     // ✏️ grab the up-to-date itinerary (including the correct FareType)
- const revalItin =
-   rev.data.data.FareItineraries.FareItinerary;
-
- // overwrite your component state
- setFare(revalItin);
- 
-    // fetch fare rules
-    const resp = await api.post("/flights/fare-rules", {
-      session_id: sessionId,
-      fare_source_code: fareSource,
-    });
-
-    // UNWRAP both layers
-    const payload = resp.data?.data;
-    const rulesData =
-      payload?.FareRules1_1Response?.FareRules1_1Result || {};
-
-    // set state
-    setFareRules(rulesData);
-    setShowRulesModal(true);
-
-  } catch (e: any) {
-    const msg = e.response?.data?.error?.ErrorMessage || e.message;
-    setError(msg);
-    if (msg.toLowerCase().includes("passport")) {
-      setNeedsPassport(true);
-    }
-  } finally {
-    setSubmitting(false);
-  }
-};
-
-
-
-
-const confirmBooking = async () => {
-    setSubmitting(true);           // ← start the spinner/disable
-
-  try {
+  /* 🔸 buildBookingPayload – make the exact object you now post to /book */
+  /* ------------------------------------------------------------------ */
+  const buildBookingPayload = () => {
     const adults = passengers.filter((p) => p.type === "ADT");
     const childs = passengers.filter((p) => p.type === "CHD");
-    const infs   = passengers.filter((p) => p.type === "INF");
+    const infs = passengers.filter((p) => p.type === "INF");
 
-    const payload = {
+    return {
       flight_session_id: sessionId,
-      fare_source_code : fareSource,
+      fare_source_code: fareSource,
       flightBookingInfo: {
         flight_session_id: sessionId,
-        fare_source_code : fareSource,
+        fare_source_code: fareSource,
         IsPassportMandatory: "true",
-        areaCode   : digits(phone).slice(0,3) || "971",
-        countryCode: digits(phone).slice(0,3) || "971",
-        fareType: fare.AirItineraryFareInfo.FareType,
+        areaCode: digits(phone).slice(0, 3) || "971",
+        countryCode: digits(phone).slice(0, 3) || "971",
+        fareType: fare.AirItineraryFareInfo.FareType, // Public | Private | WebFare
       },
       paxInfo: {
         customerEmail: email.trim(),
@@ -326,25 +218,122 @@ const confirmBooking = async () => {
       },
       fareItinerary: fare,
     };
+  };
 
-    const resp = await api.post("/flights/book", payload);
-    const id = resp.data?.data?.bookingId ?? resp.data?.mongoBookingId;
-    if (id) {
-      localStorage.setItem("bookingId", id);
-      localStorage.removeItem("selectedFare");
-      localStorage.removeItem("flightSessionId");
-      localStorage.removeItem("fareSourceCode");
-      router.push("/payment");
-    } else {
-      throw new Error("Booking failed.");
+  /* ------------------------------------------------------------------ */
+  /* 🔸 startLccCheckout – create Stripe session for WebFare/LCC          */
+  /* ------------------------------------------------------------------ */
+  const startLccCheckout = async () => {
+    setSubmitting(true);
+    try {
+      const payload = buildBookingPayload();
+      const tf = fare.AirItineraryFareInfo.ItinTotalFares.TotalFare;
+      const res = await api.post("/payment/create-checkout-session-lcc", {
+        bookingPayload: payload,
+        totalPrice: Number(tf.Amount),
+        currency: tf.CurrencyCode || "USD",
+      });
+      window.location.href = res.data.data.url; // 🔁  full-page redirect to Stripe
+    } catch (e: any) {
+      setError(e.response?.data?.error || e.message || "Payment failed.");
+    } finally {
+      setSubmitting(false);
     }
-  } catch (err: any) {
-    setError(err.message || "Booking failed.");
-  } finally {
-    setSubmitting(false);
-  }
-};
+  };
 
+  const handleSubmit = async () => {
+    setError("");
+    if (!validate() || !fare) return;
+    setSubmitting(true);
+
+    try {
+      // revalidate…
+      const rev = await api.post("/flights/revalidate", {
+        flight_session_id: sessionId,
+        fare_source_code: fareSource,
+      });
+      const isValid = rev.data?.data?.IsValid ?? rev.data?.data?.Success;
+      if (!isValid) {
+        alert("Fare expired. Please search again.");
+        return router.push("/search-results");
+      }
+
+      // ✏️ grab the up-to-date itinerary (including the correct FareType)
+      const revalItin = rev.data.data.FareItineraries.FareItinerary;
+
+      // overwrite your component state
+      setFare(revalItin);
+
+      // fetch fare rules
+      const resp = await api.post("/flights/fare-rules", {
+        session_id: sessionId,
+        fare_source_code: fareSource,
+      });
+
+      // UNWRAP both layers
+      const payload = resp.data?.data;
+      const rulesData = payload?.FareRules1_1Response?.FareRules1_1Result || {};
+
+      // set state
+      setFareRules(rulesData);
+      setShowRulesModal(true);
+    } catch (e: any) {
+      const msg = e.response?.data?.error?.ErrorMessage || e.message;
+      setError(msg);
+      if (msg.toLowerCase().includes("passport")) {
+        setNeedsPassport(true);
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const confirmBooking = async () => {
+    setSubmitting(true); // ← start the spinner/disable
+
+    try {
+      const adults = passengers.filter((p) => p.type === "ADT");
+      const childs = passengers.filter((p) => p.type === "CHD");
+      const infs = passengers.filter((p) => p.type === "INF");
+
+      const payload = {
+        flight_session_id: sessionId,
+        fare_source_code: fareSource,
+        flightBookingInfo: {
+          flight_session_id: sessionId,
+          fare_source_code: fareSource,
+          IsPassportMandatory: "true",
+          areaCode: digits(phone).slice(0, 3) || "971",
+          countryCode: digits(phone).slice(0, 3) || "971",
+          fareType: fare.AirItineraryFareInfo.FareType,
+        },
+        paxInfo: {
+          customerEmail: email.trim(),
+          customerPhone: digits(phone),
+          paxDetails: [
+            { adult: pack(adults), child: pack(childs), infant: pack(infs) },
+          ],
+        },
+        fareItinerary: fare,
+      };
+
+      const resp = await api.post("/flights/book", payload);
+      const id = resp.data?.data?.bookingId ?? resp.data?.mongoBookingId;
+      if (id) {
+        localStorage.setItem("bookingId", id);
+        localStorage.removeItem("selectedFare");
+        localStorage.removeItem("flightSessionId");
+        localStorage.removeItem("fareSourceCode");
+        router.push("/payment");
+      } else {
+        throw new Error("Booking failed.");
+      }
+    } catch (err: any) {
+      setError(err.message || "Booking failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   // --------------------------------------------------------------------------
 
@@ -369,10 +358,10 @@ const confirmBooking = async () => {
           className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300"
         >
           <header className="bg-gradient-to-r from-blue-600 to-blue-800 px-8 py-6">
-            <h1 className="text-3xl font-bold text-white">
-              Booking Details
-            </h1>
-            <p className="text-blue-100 mt-1">Please fill in your information to complete the booking</p>
+            <h1 className="text-3xl font-bold text-white">Booking Details</h1>
+            <p className="text-blue-100 mt-1">
+              Please fill in your information to complete the booking
+            </p>
           </header>
           <main className="p-8 space-y-8">
             {error && (
@@ -395,10 +384,14 @@ const confirmBooking = async () => {
 
             {/* Contact inputs */}
             <div className="bg-gray-50 rounded-xl p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Contact Information</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                Contact Information
+              </h2>
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-gray-700 font-medium mb-2">Email</label>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    Email
+                  </label>
                   <input
                     type="email"
                     value={email}
@@ -410,7 +403,9 @@ const confirmBooking = async () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-700 font-medium mb-2">Phone</label>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    Phone
+                  </label>
                   <input
                     type="tel"
                     value={phone}
@@ -439,12 +434,20 @@ const confirmBooking = async () => {
                     <span className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold">
                       {idx + 1}
                     </span>
-                    Passenger {idx + 1} ({p.type === "ADT" ? "Adult" : p.type === "CHD" ? "Child" : "Infant"})
+                    Passenger {idx + 1} (
+                    {p.type === "ADT"
+                      ? "Adult"
+                      : p.type === "CHD"
+                      ? "Child"
+                      : "Infant"}
+                    )
                   </h2>
                   <div className="grid md:grid-cols-4 gap-6">
                     {/* Title */}
                     <div>
-                      <label className="block text-gray-700 font-medium mb-2">Title</label>
+                      <label className="block text-gray-700 font-medium mb-2">
+                        Title
+                      </label>
                       <select
                         value={p.title}
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
@@ -452,7 +455,10 @@ const confirmBooking = async () => {
                         }
                         className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                       >
-                        {(p.type === "ADT" ? ["Mr", "Mrs", "Miss"] : ["Master", "Miss"]).map((t) => (
+                        {(p.type === "ADT"
+                          ? ["Mr", "Mrs", "Miss"]
+                          : ["Master", "Miss"]
+                        ).map((t) => (
                           <option key={t} value={t}>
                             {t}
                           </option>
@@ -461,35 +467,45 @@ const confirmBooking = async () => {
                     </div>
                     {/* First Name */}
                     <div>
-                      <label className="block text-gray-700 font-medium mb-2">First Name</label>
+                      <label className="block text-gray-700 font-medium mb-2">
+                        First Name
+                      </label>
                       <input
                         value={p.firstName}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           updatePassenger(idx, "firstName", e.target.value)
                         }
                         className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                          fieldErrors[base + "firstName"] ? "border-red-500" : "border-gray-300"
+                          fieldErrors[base + "firstName"]
+                            ? "border-red-500"
+                            : "border-gray-300"
                         }`}
                         placeholder="John"
                       />
                     </div>
                     {/* Last Name */}
                     <div>
-                      <label className="block text-gray-700 font-medium mb-2">Last Name</label>
+                      <label className="block text-gray-700 font-medium mb-2">
+                        Last Name
+                      </label>
                       <input
                         value={p.lastName}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           updatePassenger(idx, "lastName", e.target.value)
                         }
                         className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                          fieldErrors[base + "lastName"] ? "border-red-500" : "border-gray-300"
+                          fieldErrors[base + "lastName"]
+                            ? "border-red-500"
+                            : "border-gray-300"
                         }`}
                         placeholder="Doe"
                       />
                     </div>
                     {/* DOB */}
                     <div>
-                      <label className="block text-gray-700 font-medium mb-2">Date of Birth</label>
+                      <label className="block text-gray-700 font-medium mb-2">
+                        Date of Birth
+                      </label>
                       <input
                         type="date"
                         value={p.dob}
@@ -497,18 +513,26 @@ const confirmBooking = async () => {
                           updatePassenger(idx, "dob", e.target.value)
                         }
                         className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                          fieldErrors[base + "dob"] ? "border-red-500" : "border-gray-300"
+                          fieldErrors[base + "dob"]
+                            ? "border-red-500"
+                            : "border-gray-300"
                         }`}
                       />
                     </div>
                     {/* Nationality */}
                     <div className="md:col-span-2">
-                      <label className="block text-gray-700 font-medium mb-2">Nationality</label>
+                      <label className="block text-gray-700 font-medium mb-2">
+                        Nationality
+                      </label>
                       <Select
                         options={countryOptions}
                         value={p.nationality}
                         onChange={(val) =>
-                          updatePassenger(idx, "nationality", val as CountryOption)
+                          updatePassenger(
+                            idx,
+                            "nationality",
+                            val as CountryOption
+                          )
                         }
                         className="mt-1"
                         classNamePrefix="select"
@@ -520,25 +544,37 @@ const confirmBooking = async () => {
                     {needsPassport && (
                       <>
                         <div>
-                          <label className="block text-gray-700 font-medium mb-2">Passport Number</label>
+                          <label className="block text-gray-700 font-medium mb-2">
+                            Passport Number
+                          </label>
                           <input
                             value={p.passportNo}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            onChange={(
+                              e: React.ChangeEvent<HTMLInputElement>
+                            ) =>
                               updatePassenger(idx, "passportNo", e.target.value)
                             }
                             className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                              fieldErrors[base + "passportNo"] ? "border-red-500" : "border-gray-300"
+                              fieldErrors[base + "passportNo"]
+                                ? "border-red-500"
+                                : "border-gray-300"
                             }`}
                             placeholder="AB123456"
                           />
                         </div>
                         <div className="md:col-span-2">
-                          <label className="block text-gray-700 font-medium mb-2">Passport Issue Country</label>
+                          <label className="block text-gray-700 font-medium mb-2">
+                            Passport Issue Country
+                          </label>
                           <Select
                             options={countryOptions}
                             value={p.passportIssueCountry}
                             onChange={(val) =>
-                              updatePassenger(idx, "passportIssueCountry", val as CountryOption)
+                              updatePassenger(
+                                idx,
+                                "passportIssueCountry",
+                                val as CountryOption
+                              )
                             }
                             className="mt-1"
                             classNamePrefix="select"
@@ -546,28 +582,48 @@ const confirmBooking = async () => {
                           />
                         </div>
                         <div>
-                          <label className="block text-gray-700 font-medium mb-2">Issue Date</label>
+                          <label className="block text-gray-700 font-medium mb-2">
+                            Issue Date
+                          </label>
                           <input
                             type="date"
                             value={p.passportIssueDate}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                              updatePassenger(idx, "passportIssueDate", e.target.value)
+                            onChange={(
+                              e: React.ChangeEvent<HTMLInputElement>
+                            ) =>
+                              updatePassenger(
+                                idx,
+                                "passportIssueDate",
+                                e.target.value
+                              )
                             }
                             className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                              fieldErrors[base + "passportIssueDate"] ? "border-red-500" : "border-gray-300"
+                              fieldErrors[base + "passportIssueDate"]
+                                ? "border-red-500"
+                                : "border-gray-300"
                             }`}
                           />
                         </div>
                         <div>
-                          <label className="block text-gray-700 font-medium mb-2">Expiry Date</label>
+                          <label className="block text-gray-700 font-medium mb-2">
+                            Expiry Date
+                          </label>
                           <input
                             type="date"
                             value={p.passportExpiryDate}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                              updatePassenger(idx, "passportExpiryDate", e.target.value)
+                            onChange={(
+                              e: React.ChangeEvent<HTMLInputElement>
+                            ) =>
+                              updatePassenger(
+                                idx,
+                                "passportExpiryDate",
+                                e.target.value
+                              )
                             }
                             className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                              fieldErrors[base + "passportExpiryDate"] ? "border-red-500" : "border-gray-300"
+                              fieldErrors[base + "passportExpiryDate"]
+                                ? "border-red-500"
+                                : "border-gray-300"
                             }`}
                           />
                         </div>
@@ -591,9 +647,25 @@ const confirmBooking = async () => {
             >
               {submitting ? (
                 <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Processing...
                 </span>
@@ -602,88 +674,103 @@ const confirmBooking = async () => {
               )}
             </motion.button>
           </main>
-{showRulesModal && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className="bg-white rounded-lg max-w-2xl w-full p-6 shadow-xl">
-      <h2 className="text-xl font-bold mb-4 text-gray-800">Fare Rules & Conditions</h2>
+          {showRulesModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg max-w-2xl w-full p-6 shadow-xl">
+                <h2 className="text-xl font-bold mb-4 text-gray-800">
+                  Fare Rules & Conditions
+                </h2>
 
-      {/* FARE RULES SECTION */}
-      <h3 className="text-lg font-semibold mb-2">Fare Rules</h3>
-      {fareRules?.FareRules?.length ? (
-        <ul className="space-y-4 max-h-40 overflow-y-auto text-sm text-gray-700">
-          {fareRules.FareRules.map((ruleObj: any, idx: number) => {
-            const r = ruleObj.FareRule || {};
-            return (
-              <li key={idx} className="border-b pb-3">
-                <div><strong>Airline:</strong> {r.Airline || "—"}</div>
-                <div><strong>Route:</strong> {r.CityPair || "—"}</div>
-                <div><strong>Category:</strong> {r.Category || "—"}</div>
-                <div>
-                  <strong>Rules:</strong>{" "}
-                  {r.Rules?.trim() ? r.Rules.trim() : "No rules provided by airline."}
+                {/* FARE RULES SECTION */}
+                <h3 className="text-lg font-semibold mb-2">Fare Rules</h3>
+                {fareRules?.FareRules?.length ? (
+                  <ul className="space-y-4 max-h-40 overflow-y-auto text-sm text-gray-700">
+                    {fareRules.FareRules.map((ruleObj: any, idx: number) => {
+                      const r = ruleObj.FareRule || {};
+                      return (
+                        <li key={idx} className="border-b pb-3">
+                          <div>
+                            <strong>Airline:</strong> {r.Airline || "—"}
+                          </div>
+                          <div>
+                            <strong>Route:</strong> {r.CityPair || "—"}
+                          </div>
+                          <div>
+                            <strong>Category:</strong> {r.Category || "—"}
+                          </div>
+                          <div>
+                            <strong>Rules:</strong>{" "}
+                            {r.Rules?.trim()
+                              ? r.Rules.trim()
+                              : "No rules provided by airline."}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className="text-gray-600 text-sm">
+                    No fare rules available.
+                  </p>
+                )}
+
+                {/* BAGGAGE SECTION */}
+                <h3 className="mt-6 text-lg font-semibold mb-2">
+                  Baggage Allowance
+                </h3>
+                {fareRules?.BaggageInfos?.length ? (
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    {fareRules.BaggageInfos.map((b: any, idx: number) => {
+                      const info = b.BaggageInfo || {};
+                      return (
+                        <li key={idx}>
+                          <div>
+                            <strong>Flight:</strong> {info.FlightNo || "—"}
+                          </div>
+                          <div>
+                            <strong>Route:</strong> {info.Departure || "—"} →{" "}
+                            {info.Arrival || "—"}
+                          </div>
+                          <div>
+                            <strong>Allowance:</strong> {info.Baggage || "—"}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className="text-gray-600 text-sm">
+                    No baggage info available.
+                  </p>
+                )}
+
+                {/* ACTION BUTTONS */}
+                <div className="mt-6 flex justify-end gap-4">
+                  <button
+                    onClick={() => setShowRulesModal(false)}
+                    className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition"
+                  >
+                    Go Back
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setShowRulesModal(false);
+                      if (fare?.AirItineraryFareInfo?.FareType === "WebFare") {
+                        // LCC – pay first, seats are created after Stripe webhook
+                        await startLccCheckout();
+                      } else {
+                        // GDS – current flow
+                        confirmBooking();
+                      }
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                  >
+                    Accept & Book
+                  </button>
                 </div>
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <p className="text-gray-600 text-sm">No fare rules available.</p>
-      )}
-
-      {/* BAGGAGE SECTION */}
-      <h3 className="mt-6 text-lg font-semibold mb-2">Baggage Allowance</h3>
-      {fareRules?.BaggageInfos?.length ? (
-        <ul className="space-y-2 text-sm text-gray-700">
-          {fareRules.BaggageInfos.map((b: any, idx: number) => {
-            const info = b.BaggageInfo || {};
-            return (
-              <li key={idx}>
-                <div>
-                  <strong>Flight:</strong> {info.FlightNo || "—"}
-                </div>
-                <div>
-                  <strong>Route:</strong> {info.Departure || "—"} → {info.Arrival || "—"}
-                </div>
-                <div>
-                  <strong>Allowance:</strong> {info.Baggage || "—"}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <p className="text-gray-600 text-sm">No baggage info available.</p>
-      )}
-
-      {/* ACTION BUTTONS */}
-      <div className="mt-6 flex justify-end gap-4">
-        <button
-          onClick={() => setShowRulesModal(false)}
-          className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition"
-        >
-          Go Back
-        </button>
-<button
-  onClick={async () => {
-    setShowRulesModal(false);
-    if (fare?.AirItineraryFareInfo?.FareType === "WebFare") {
-      // LCC – pay first, seats are created after Stripe webhook
-      await startLccCheckout();
-    } else {
-      // GDS – current flow
-      confirmBooking();
-    }
-  }}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-        >
-          Accept & Book
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-
+              </div>
+            </div>
+          )}
         </motion.div>
       </div>
     </div>
