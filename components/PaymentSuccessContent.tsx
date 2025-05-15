@@ -30,18 +30,19 @@ useEffect(() => {
     return;
   }
 
-api.post("/payment/verify-session", { sessionId })
-  .then(res => {
-    const { bookingStatus } = res.data.data
-    if (bookingStatus === "Ticketed" || bookingStatus === "Confirmed") {
-      setStatus("success")
-    } else {
-      setStatus("waiting")
-    }
-  })
+  api.post<{
+        status: string;
+        data: { bookingId: string; paymentStatus: string; bookingStatus?: string };
+      }>("/payment/verify-session", { sessionId })
+      .then(response => {
+        // grab the bookingId that your backend returned
+        const bookingId = response.data.data.bookingId;
+        localStorage.setItem("bookingId", bookingId);
+        setStatus("waiting");
+      })
     .catch((err: any) => {
       if (err.response?.status === 402) {
-        // ↪️ still waiting on Stripe (user may have just paid)
+        // still waiting on Stripe
         setStatus("waiting");
       } else {
         setStatus("error");
