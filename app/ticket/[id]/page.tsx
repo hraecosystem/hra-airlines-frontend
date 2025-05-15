@@ -89,7 +89,7 @@ export default function TicketPage() {
       const url = URL.createObjectURL(res.data);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `HRA-Ticket-${ticket?.pnr}.pdf`;
+a.download = `HRA-Airlines-Ticket-${ticketNumber}.pdf`;
       document.body.appendChild(a);
       a.click();
       URL.revokeObjectURL(url);
@@ -123,6 +123,12 @@ export default function TicketPage() {
       </div>
     );
   }
+
+  const ticketNumber =
+  ticket.ticketNumbers?.length && ticket.ticketNumbers[0]?.ticketNumber
+    ? ticket.ticketNumbers[0].ticketNumber
+    : "N/A";
+
 
   const issuedDate = new Date(ticket.createdAt);
 
@@ -182,9 +188,9 @@ export default function TicketPage() {
               >
                 <div className="flex items-center gap-3 text-blue-800 mb-3">
                   <Info size={22} />
-                  <h3 className="font-semibold">PNR</h3>
+<h3 className="font-semibold">Ticket #</h3>
                 </div>
-                <p className="text-xl font-bold tracking-wide text-blue-900">{ticket.pnr}</p>
+<p className="text-xl font-bold tracking-wide text-blue-900">{ticketNumber}</p>
               </motion.div>
 
               <motion.div 
