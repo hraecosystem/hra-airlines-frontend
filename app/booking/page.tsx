@@ -64,6 +64,11 @@ export default function BookingPage() {
   const [fareRules, setFareRules] = useState<any>(null);
   const [showRulesModal, setShowRulesModal] = useState(false);
 
+  const [rawFareRT, setRawFareRT] = useState<string | null>(null);
+  const [rawFareSourceInbound, setRawFareSourceInbound] = useState<
+    string | null
+  >(null);
+
   // Redirect if not logged in
   useEffect(() => {
     if (!authLoading && !user) {
@@ -75,23 +80,38 @@ export default function BookingPage() {
   useEffect(() => {
     (async () => {
       try {
+        const fareRT = localStorage.getItem("selectedFareRT");
+
         const rawFare = localStorage.getItem("selectedFare");
         const rawSession = localStorage.getItem("flightSessionId");
         const rawFareSource = localStorage.getItem("fareSourceCode");
-        if (!rawFare || !rawSession || !rawFareSource) {
+        const fareInbound = localStorage.getItem("fareSourceCodeInbound");
+
+        setRawFareRT(fareRT);
+        setRawFareSourceInbound(fareInbound);
+
+        if (!rawSession || !rawFareSource)
           throw new Error("No flight selected.");
+
+        const parsed = fareRT ? JSON.parse(fareRT) : JSON.parse(rawFare!); // add ! to assert non-null
+        const fullFare = fareRT ? parsed.Outbound : parsed;
+
+        setFare(fullFare);
+        setSessionId(rawSession);
+        setFareSource(rawFareSource);
+
+        if (rawFareRT && rawFareSourceInbound) {
+          localStorage.setItem(
+            "bookingInboundFare",
+            JSON.stringify(parsed.Inbound)
+          );
         }
 
-        const parsed = JSON.parse(rawFare); // parse only once
-        setFare(parsed); // keep the full itinerary in state
-        setSessionId(rawSession); // search-level token (unchanged)
-        setFareSource(rawFareSource); // itinerary-level token (NEW)
-
-        // ── passenger array ──
-        const qtyOf = (code: string) =>
-          parsed.AirItineraryFareInfo.FareBreakdown.find(
-            (b: any) => b.PassengerTypeQuantity.Code === code
-          )?.PassengerTypeQuantity.Quantity || 0;
+const qtyOf = (code: string) =>
+  fullFare.AirItineraryFareInfo.FareBreakdown.find(
+    (b: any) => b.PassengerTypeQuantity.Code === code
+  )?.PassengerTypeQuantity.Quantity || 0;
+  
 
         setPassengers([
           ...Array(qtyOf("ADT"))
@@ -198,16 +218,25 @@ export default function BookingPage() {
     const childs = passengers.filter((p) => p.type === "CHD");
     const infs = passengers.filter((p) => p.type === "INF");
 
+    const inboundFareSource = localStorage.getItem("fareSourceCodeInbound");
+
     return {
       flight_session_id: sessionId,
       fare_source_code: fareSource,
+      fare_source_code_inbound: inboundFareSource || undefined,
+
       flightBookingInfo: {
         flight_session_id: sessionId,
         fare_source_code: fareSource,
+        fare_source_code_inbound: inboundFareSource || undefined,
+
         IsPassportMandatory: "true",
         areaCode: digits(phone).slice(0, 3) || "971",
         countryCode: digits(phone).slice(0, 3) || "971",
-        fareType: fare.AirItineraryFareInfo.FareType, // Public | Private | WebFare
+        fareType: (
+          fare?.AirItineraryFareInfo || fare?.Outbound?.AirItineraryFareInfo
+        )?.FareType,
+        // Public | Private | WebFare
       },
       paxInfo: {
         customerEmail: email.trim(),
@@ -227,7 +256,19 @@ export default function BookingPage() {
     setSubmitting(true);
     try {
       const payload = buildBookingPayload();
-      const tf = fare.AirItineraryFareInfo.ItinTotalFares.TotalFare;
+      const getTotalFare = () => {
+        if (fare?.AirItineraryFareInfo?.ItinTotalFares?.TotalFare) {
+          return fare.AirItineraryFareInfo.ItinTotalFares.TotalFare;
+        }
+        if (fare?.Outbound?.AirItineraryFareInfo?.ItinTotalFares?.TotalFare) {
+          return fare.Outbound.AirItineraryFareInfo.ItinTotalFares.TotalFare;
+        }
+        // fallback for single one-way
+        return { Amount: "0", CurrencyCode: "USD" };
+      };
+
+      const tf = getTotalFare();
+
       const res = await api.post("/payment/create-checkout-session-lcc", {
         bookingPayload: payload,
         totalPrice: Number(tf.Amount),
@@ -245,23 +286,51 @@ export default function BookingPage() {
     setError("");
     if (!validate() || !fare) return;
     setSubmitting(true);
+    const activeFare = fare?.AirItineraryFareInfo ? fare : fare?.Outbound;
+    const tf = activeFare?.AirItineraryFareInfo?.ItinTotalFares?.TotalFare;
 
     try {
       // revalidate…
-      const rev = await api.post("/flights/revalidate", {
+      const revOut = await api.post("/flights/revalidate", {
         flight_session_id: sessionId,
         fare_source_code: fareSource,
       });
-      const isValid = rev.data?.data?.IsValid ?? rev.data?.data?.Success;
-      if (!isValid) {
-        alert("Fare expired. Please search again.");
+
+      const isValidOut =
+        revOut.data?.data?.IsValid ?? revOut.data?.data?.Success ?? false;
+
+      if (!isValidOut) {
+        alert("Outbound fare expired. Please search again.");
         return router.push("/search-results");
       }
 
-      // ✏️ grab the up-to-date itinerary (including the correct FareType)
-      const revalItin = rev.data.data.FareItineraries.FareItinerary;
+      let revalItin = revOut.data?.data?.FareItineraries?.FareItinerary;
 
-      // overwrite your component state
+      if (rawFareRT && rawFareSourceInbound) {
+        const revIn = await api.post("/flights/revalidate", {
+          flight_session_id: sessionId,
+          fare_source_code: rawFareSourceInbound,
+        });
+
+        const isValidIn =
+          revIn.data?.data?.IsValid ?? revIn.data?.data?.Success ?? false;
+
+        if (!isValidIn) {
+          alert("Return fare expired. Please search again.");
+          return router.push("/search-results");
+        }
+
+        const revalInItin = revIn.data?.data?.FareItineraries?.FareItinerary;
+        revalItin = {
+          Outbound: revalItin,
+          Inbound: revalInItin,
+        };
+
+        localStorage.setItem("selectedFareRT", JSON.stringify(revalItin));
+      } else {
+        localStorage.setItem("selectedFare", JSON.stringify(revalItin));
+      }
+
       setFare(revalItin);
 
       // fetch fare rules
@@ -290,22 +359,31 @@ export default function BookingPage() {
 
   const confirmBooking = async () => {
     setSubmitting(true); // ← start the spinner/disable
+    const activeFare = fare?.AirItineraryFareInfo ? fare : fare?.Outbound;
+    const tf = activeFare?.AirItineraryFareInfo?.ItinTotalFares?.TotalFare;
 
     try {
       const adults = passengers.filter((p) => p.type === "ADT");
       const childs = passengers.filter((p) => p.type === "CHD");
       const infs = passengers.filter((p) => p.type === "INF");
 
+      const fareSourceInbound =
+        localStorage.getItem("fareSourceCodeInbound") || "";
+
       const payload = {
         flight_session_id: sessionId,
         fare_source_code: fareSource,
+        fare_source_code_inbound: fareSourceInbound || undefined,
+
         flightBookingInfo: {
           flight_session_id: sessionId,
           fare_source_code: fareSource,
+          fare_source_code_inbound: fareSourceInbound || undefined,
+
           IsPassportMandatory: "true",
           areaCode: digits(phone).slice(0, 3) || "971",
           countryCode: digits(phone).slice(0, 3) || "971",
-          fareType: fare.AirItineraryFareInfo.FareType,
+          fareType: activeFare?.AirItineraryFareInfo?.FareType,
         },
         paxInfo: {
           customerEmail: email.trim(),
@@ -755,7 +833,9 @@ export default function BookingPage() {
                   <button
                     onClick={async () => {
                       setShowRulesModal(false);
-                      if (fare?.AirItineraryFareInfo?.FareType === "WebFare") {
+if (
+  (fare?.AirItineraryFareInfo?.FareType ?? fare?.Outbound?.AirItineraryFareInfo?.FareType) ===
+  "WebFare") {
                         // LCC – pay first, seats are created after Stripe webhook
                         await startLccCheckout();
                       } else {

@@ -381,19 +381,19 @@ const inbPresent = inbound.length > 0;
     }
     /*  This one token will be sent as both flight_session_id
           and fare_source_code on the booking screen            */
-    if (hasInboundList) {
-      localStorage.setItem(
-        "fareSourceCodeOutbound",
-        fi.AirItineraryFareInfo.FareSourceCode
-      );
-    } else {
-      // ← one-way  OR whole-RT case
-      localStorage.setItem(
-        "fareSourceCode",
-        fi.AirItineraryFareInfo.FareSourceCode
-      ); // booking page expected this
-      localStorage.removeItem("fareSourceCodeInbound");
-    }
+if (hasInboundList && !isOneWayRequest) {
+  localStorage.setItem(
+    "fareSourceCode",
+    fi.AirItineraryFareInfo.FareSourceCode
+  ); // this will be treated as outbound
+} else {
+  localStorage.setItem(
+    "fareSourceCode",
+    fi.AirItineraryFareInfo.FareSourceCode
+  );
+  localStorage.removeItem("fareSourceCodeInbound");
+}
+
 
     // keep for later & let the UI now render the return flights
     setSelectedOutbound(cleaned);
@@ -439,15 +439,19 @@ const inbPresent = inbound.length > 0;
       Outbound: selectedOutbound,
       Inbound: cleanedIn,
     };
-    localStorage.setItem("selectedFareRT", JSON.stringify(combined));
 
-    // save both fare-source codes – booking page will forward them
-    localStorage.setItem(
-      "fareSourceCodeInbound",
-      fi.AirItineraryFareInfo.FareSourceCode
-    );
+localStorage.setItem(
+  "fareSourceCode",
+  selectedOutbound.AirItineraryFareInfo.FareSourceCode
+);
+localStorage.setItem(
+  "fareSourceCodeInbound",
+  fi.AirItineraryFareInfo.FareSourceCode
+);
+localStorage.setItem("selectedFareRT", JSON.stringify(combined));
 
-    router.push("/booking");
+router.push("/booking");
+
   };
 
   // Pagination
