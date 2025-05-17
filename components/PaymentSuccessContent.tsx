@@ -53,6 +53,13 @@ useEffect(() => {
         setTimeout(tryVerify, 2000);
       } else {
         setStatus("error");
+        -  setErrorMsg("Failed to verify payment. Try again later.");
+  if (attempts < MAX_VERIFY) {
+    setTimeout(tryVerify, 2000);
+  } else {
+    setStatus("error");
+    setErrorMsg("Failed to verify payment. Try again later.");
+  }
         setErrorMsg(
           "Booking is taking longer than expected. " +
           "Please check your bookings page in a moment."
