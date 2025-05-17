@@ -31,7 +31,7 @@ useEffect(() => {
   }
 
   let attempts = 0;
-  const MAX_VERIFY = 15;
+  const MAX_VERIFY = 45;
 
   const tryVerify = async () => {
     attempts++;
@@ -50,13 +50,15 @@ useEffect(() => {
 
       // still pending? try again after a delay (202 / status="pending")
       if (attempts < MAX_VERIFY) {
-        setTimeout(tryVerify, 2000);
-      } else {
+  const delay = attempts < 20 ? 2000 : 5000;  // 40 s fast, 50 s slow
+  setTimeout(tryVerify, delay);  
+    } else {
         setStatus("error");
         -  setErrorMsg("Failed to verify payment. Try again later.");
   if (attempts < MAX_VERIFY) {
-    setTimeout(tryVerify, 2000);
-  } else {
+  const delay = attempts < 20 ? 2000 : 5000;  // 40 s fast, 50 s slow
+  setTimeout(tryVerify, delay); 
+ } else {
     setStatus("error");
     setErrorMsg("Failed to verify payment. Try again later.");
   }
