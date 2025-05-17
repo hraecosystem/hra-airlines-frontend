@@ -31,47 +31,40 @@ useEffect(() => {
   }
 
   let attempts = 0;
-  const MAX_VERIFY = 45;
+  const MAX_VERIFY = 45;           // ~90 s total
 
-  const tryVerify = async () => {
-    attempts++;
-    try {
-      const res = await api.post<{
-        status: string;
-        data?: { bookingId: string; paymentStatus: string; bookingStatus?: string };
-      }>("/payment/verify-session", { sessionId });
+const tryVerify = async () => {
+  attempts++;
+  try {
+    const res = await api.post("/payment/verify-session", { sessionId });
 
-      // if we get a bookingId back → move on
-      if (res.data.status === "success" && res.data.data?.bookingId) {
-        localStorage.setItem("bookingId", res.data.data.bookingId);
-        setStatus("waiting");      // now kick off your ticket-poller
-        return;
-      }
+    if (res.data.status === "success" && res.data.data?.bookingId) {
+      localStorage.setItem("bookingId", res.data.data.bookingId);
+      setStatus("waiting");
+      return;
+    }
 
-      // still pending? try again after a delay (202 / status="pending")
-      if (attempts < MAX_VERIFY) {
-  const delay = attempts < 20 ? 2000 : 5000;  // 40 s fast, 50 s slow
-  setTimeout(tryVerify, delay);  
+    if (attempts < MAX_VERIFY) {
+      const delay = attempts < 20 ? 2000 : 5000;
+      setTimeout(tryVerify, delay);
     } else {
-        setStatus("error");
-        -  setErrorMsg("Failed to verify payment. Try again later.");
-  if (attempts < MAX_VERIFY) {
-  const delay = attempts < 20 ? 2000 : 5000;  // 40 s fast, 50 s slow
-  setTimeout(tryVerify, delay); 
- } else {
-    setStatus("error");
-    setErrorMsg("Failed to verify payment. Try again later.");
-  }
-        setErrorMsg(
-          "Booking is taking longer than expected. " +
-          "Please check your bookings page in a moment."
-        );
-      }
-    } catch (err) {
+      setStatus("error");
+      setErrorMsg(
+        "Booking is taking longer than expected. " +
+        "Please check your bookings page in a moment."
+      );
+    }
+  } catch {
+    if (attempts < MAX_VERIFY) {
+      const delay = attempts < 20 ? 2000 : 5000;
+      setTimeout(tryVerify, delay);
+    } else {
       setStatus("error");
       setErrorMsg("Failed to verify payment. Try again later.");
     }
-  };
+  }
+};
+
 
   tryVerify();
 
