@@ -93,25 +93,33 @@ export default function BookingPage() {
         if (!rawSession || !rawFareSource)
           throw new Error("No flight selected.");
 
-        const parsed = fareRT ? JSON.parse(fareRT) : JSON.parse(rawFare!); // add ! to assert non-null
-        const fullFare = fareRT ? parsed.Outbound : parsed;
+        // parsed = either { Outbound, Inbound } OR a single FareItinerary
+        const parsed = fareRT ? JSON.parse(fareRT) : JSON.parse(rawFare!);
+        setFare(parsed); // ← IMPORTANT: keep the entire object
 
-        setFare(fullFare);
         setSessionId(rawSession);
         setFareSource(rawFareSource);
 
-        if (rawFareRT && rawFareSourceInbound) {
-          localStorage.setItem(
-            "bookingInboundFare",
-            JSON.stringify(parsed.Inbound)
-          );
-        }
+        // if (rawFareRT && rawFareSourceInbound) {
+        //   localStorage.setItem(
+        //     "bookingInboundFare",
+        //     JSON.stringify(parsed.Inbound)
+        //   );
+        // }
 
-const qtyOf = (code: string) =>
-  fullFare.AirItineraryFareInfo.FareBreakdown.find(
-    (b: any) => b.PassengerTypeQuantity.Code === code
-  )?.PassengerTypeQuantity.Quantity || 0;
-  
+        // const qtyOf = (code: string) =>
+        //   parsed.AirItineraryFareInfo.FareBreakdown.find(
+        //     (b: any) => b.PassengerTypeQuantity.Code === code
+        //   )?.PassengerTypeQuantity.Quantity || 0;
+
+        // support both single-leg and RT shapes
+        const fareInfo =
+          parsed.AirItineraryFareInfo ??
+          parsed.Outbound?.AirItineraryFareInfo;
+        const qtyOf = (code: string) =>
+          fareInfo?.FareBreakdown.find(
+            (b: any) => b.PassengerTypeQuantity.Code === code
+          )?.PassengerTypeQuantity.Quantity || 0;
 
         setPassengers([
           ...Array(qtyOf("ADT"))
@@ -220,6 +228,21 @@ const qtyOf = (code: string) =>
 
     const inboundFareSource = localStorage.getItem("fareSourceCodeInbound");
 
+        // ➊ pick outbound vs combined shape
+    const outboundItin = (fare as any).Outbound ?? fare;
+    const inboundItin = (fare as any).Inbound;
+
+    // ➋ merge both legs in one FareItinerary object
+    const mergedItin = inboundItin
+      ? {
+          ...outboundItin,
+          OriginDestinationOptions: [
+            ...outboundItin.OriginDestinationOptions,
+            ...inboundItin.OriginDestinationOptions,
+          ],
+        }
+      : outboundItin;
+
     return {
       flight_session_id: sessionId,
       fare_source_code: fareSource,
@@ -245,7 +268,7 @@ const qtyOf = (code: string) =>
           { adult: pack(adults), child: pack(childs), infant: pack(infs) },
         ],
       },
-      fareItinerary: fare,
+      fareItinerary: mergedItin,
     };
   };
 
@@ -833,9 +856,11 @@ const qtyOf = (code: string) =>
                   <button
                     onClick={async () => {
                       setShowRulesModal(false);
-if (
-  (fare?.AirItineraryFareInfo?.FareType ?? fare?.Outbound?.AirItineraryFareInfo?.FareType) ===
-  "WebFare") {
+                      if (
+                        (fare?.AirItineraryFareInfo?.FareType ??
+                          fare?.Outbound?.AirItineraryFareInfo?.FareType) ===
+                        "WebFare"
+                      ) {
                         // LCC – pay first, seats are created after Stripe webhook
                         await startLccCheckout();
                       } else {

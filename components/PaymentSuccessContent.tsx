@@ -22,7 +22,7 @@ export default function PaymentSuccessContent() {
   const attemptsRef = useRef(0);
   const MAX_ATTEMPTS = 15; // 15 polls → ~30s
 
-// 1️⃣ Verify Stripe session
+// step 1: poll verify-session until we get bookingId
 useEffect(() => {
   if (!sessionId) {
     setStatus("error");
@@ -30,26 +30,46 @@ useEffect(() => {
     return;
   }
 
-  api.post<{
+  let attempts = 0;
+  const MAX_VERIFY = 15;
+
+  const tryVerify = async () => {
+    attempts++;
+    try {
+      const res = await api.post<{
         status: string;
-        data: { bookingId: string; paymentStatus: string; bookingStatus?: string };
-      }>("/payment/verify-session", { sessionId })
-      .then(response => {
-        // grab the bookingId that your backend returned
-        const bookingId = response.data.data.bookingId;
-        localStorage.setItem("bookingId", bookingId);
-        setStatus("waiting");
-      })
-    .catch((err: any) => {
-      if (err.response?.status === 402) {
-        // still waiting on Stripe
-        setStatus("waiting");
+        data?: { bookingId: string; paymentStatus: string; bookingStatus?: string };
+      }>("/payment/verify-session", { sessionId });
+
+      // if we get a bookingId back → move on
+      if (res.data.status === "success" && res.data.data?.bookingId) {
+        localStorage.setItem("bookingId", res.data.data.bookingId);
+        setStatus("waiting");      // now kick off your ticket-poller
+        return;
+      }
+
+      // still pending? try again after a delay (202 / status="pending")
+      if (attempts < MAX_VERIFY) {
+        setTimeout(tryVerify, 2000);
       } else {
         setStatus("error");
-        setErrorMsg("Failed to verify payment. Try again later.");
+        setErrorMsg(
+          "Booking is taking longer than expected. " +
+          "Please check your bookings page in a moment."
+        );
       }
-    });
+    } catch (err) {
+      setStatus("error");
+      setErrorMsg("Failed to verify payment. Try again later.");
+    }
+  };
+
+  tryVerify();
+
+  // no cleanup needed—this is self-terminating
 }, [sessionId]);
+
+
 
 
   // 2️⃣ Poll for ticketNumbers

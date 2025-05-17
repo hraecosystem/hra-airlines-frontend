@@ -227,7 +227,7 @@ export default function SearchResultsPage() {
         }
       }
       // ➌ ───────── helper flags based on final lists ───────
-const inbPresent = inbound.length > 0;
+      const inbPresent = inbound.length > 0;
       setHasInboundList(inbPresent);
 
       const searchTripTypeRaw =
@@ -244,13 +244,6 @@ const inbPresent = inbound.length > 0;
       setAllItins(outbound);
       setInboundItins(inbound); // <- keep inbound aside till step 1
       setFiltered(outbound);
-
-      console.log(
-        "outbound ↘️",
-        outbound.length,
-        " inbound ↗️",
-        inbound.length
-      ); // 🟡 NEW
     } catch (e: any) {
       setErrorMsg(e.message);
     } finally {
@@ -381,19 +374,18 @@ const inbPresent = inbound.length > 0;
     }
     /*  This one token will be sent as both flight_session_id
           and fare_source_code on the booking screen            */
-if (hasInboundList && !isOneWayRequest) {
-  localStorage.setItem(
-    "fareSourceCode",
-    fi.AirItineraryFareInfo.FareSourceCode
-  ); // this will be treated as outbound
-} else {
-  localStorage.setItem(
-    "fareSourceCode",
-    fi.AirItineraryFareInfo.FareSourceCode
-  );
-  localStorage.removeItem("fareSourceCodeInbound");
-}
-
+    if (hasInboundList && !isOneWayRequest) {
+      localStorage.setItem(
+        "fareSourceCode",
+        fi.AirItineraryFareInfo.FareSourceCode
+      ); // this will be treated as outbound
+    } else {
+      localStorage.setItem(
+        "fareSourceCode",
+        fi.AirItineraryFareInfo.FareSourceCode
+      );
+      localStorage.removeItem("fareSourceCodeInbound");
+    }
 
     // keep for later & let the UI now render the return flights
     setSelectedOutbound(cleaned);
@@ -434,24 +426,22 @@ if (hasInboundList && !isOneWayRequest) {
 
     if (!selectedOutbound) return; // should never happen
 
-    /* 🔗  Stitch both directions into one object the booking screen expects */
     const combined = {
-      Outbound: selectedOutbound,
+      Outbound: selectedOutbound!,
       Inbound: cleanedIn,
     };
 
-localStorage.setItem(
-  "fareSourceCode",
-  selectedOutbound.AirItineraryFareInfo.FareSourceCode
-);
-localStorage.setItem(
-  "fareSourceCodeInbound",
-  fi.AirItineraryFareInfo.FareSourceCode
-);
-localStorage.setItem("selectedFareRT", JSON.stringify(combined));
+    localStorage.setItem("selectedFareRT", JSON.stringify(combined));
+    localStorage.setItem(
+      "fareSourceCode",
+      selectedOutbound!.AirItineraryFareInfo.FareSourceCode
+    );
+    localStorage.setItem(
+      "fareSourceCodeInbound",
+      cleanedIn.AirItineraryFareInfo.FareSourceCode
+    );
 
-router.push("/booking");
-
+    router.push("/booking");
   };
 
   // Pagination
@@ -515,15 +505,13 @@ router.push("/booking");
             animate={{ opacity: 1, y: 0 }}
             className="bg-white rounded-xl shadow-sm p-6"
           >
-
             <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-  {hasInboundList
-    ? step === 0
-      ? "Step 1 of 2: Select your outbound flight"
-      : "Step 2 of 2: Select your return flight"
-    : "Select your flight"}
-</h2>
-
+              {hasInboundList
+                ? step === 0
+                  ? "Step 1 of 2: Select your outbound flight"
+                  : "Step 2 of 2: Select your return flight"
+                : "Select your flight"}
+            </h2>
 
             <p className="text-gray-600 mt-1">
               {filtered.length} option{filtered.length !== 1 && "s"} available
