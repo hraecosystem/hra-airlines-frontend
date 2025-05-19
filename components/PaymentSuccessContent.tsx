@@ -20,7 +20,7 @@ export default function PaymentSuccessContent() {
 
   // to limit polling attempts
   const attemptsRef = useRef(0);
-  const MAX_ATTEMPTS = 15; // 15 polls → ~30s
+  const MAX_ATTEMPTS = 45; // 45 polls → ~90s
 
 // step 1: poll verify-session until we get bookingId
 useEffect(() => {

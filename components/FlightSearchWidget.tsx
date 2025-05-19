@@ -152,7 +152,6 @@ export default function FlightSearchWidget() {
 localStorage.removeItem("selectedFareRT");
 localStorage.removeItem("fareSourceCode");
 localStorage.removeItem("fareSourceCodeInbound");
-localStorage.removeItem("bookingId");
 
         
     // Basic passenger validation

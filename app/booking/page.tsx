@@ -114,27 +114,30 @@ export default function BookingPage() {
 
         // support both single-leg and RT shapes
 
-
         const fareInfo =
-  parsed.AirItineraryFareInfo ?? parsed.Outbound?.AirItineraryFareInfo;
+          parsed.AirItineraryFareInfo ?? parsed.Outbound?.AirItineraryFareInfo;
 
-const breakdown: any[] = Array.isArray(fareInfo?.FareBreakdown)
-  ? fareInfo.FareBreakdown
-  : fareInfo?.FareBreakdown
-  ? [fareInfo.FareBreakdown]
-  : [];
+        const breakdown: any[] = Array.isArray(fareInfo?.FareBreakdown)
+          ? fareInfo.FareBreakdown
+          : fareInfo?.FareBreakdown
+          ? [fareInfo.FareBreakdown]
+          : [];
 
-const qtyOf = (code: string) =>
-  breakdown.find((b) => b.PassengerTypeQuantity.Code === code)
-    ?.PassengerTypeQuantity.Quantity || 0;
+        const qtyOf = (code: string) =>
+          breakdown.find((b) => b.PassengerTypeQuantity.Code === code)
+            ?.PassengerTypeQuantity.Quantity || 0;
 
-setPassengers([
-  ...Array(qtyOf("ADT")).fill(0).map(() => makePassenger("ADT", "Mr")),
-  ...Array(qtyOf("CHD")).fill(0).map(() => makePassenger("CHD", "Master")),
-  ...Array(qtyOf("INF")).fill(0).map(() => makePassenger("INF", "Master")),
-]);
-
-
+        setPassengers([
+          ...Array(qtyOf("ADT"))
+            .fill(0)
+            .map(() => makePassenger("ADT", "Mr")),
+          ...Array(qtyOf("CHD"))
+            .fill(0)
+            .map(() => makePassenger("CHD", "Master")),
+          ...Array(qtyOf("INF"))
+            .fill(0)
+            .map(() => makePassenger("INF", "Master")),
+        ]);
 
         // prefill contact
         const prof = await api.get("/profile");
@@ -158,35 +161,34 @@ setPassengers([
 
   const formatDateInput = (date: Date) => date.toISOString().split("T")[0];
 
-const getDepartureDate = (): Date => {
-  try {
-    const odoOptions =
-      fare?.OriginDestinationOptions ??
-      fare?.Outbound?.OriginDestinationOptions;
+  const getDepartureDate = (): Date => {
+    try {
+      const odoOptions =
+        fare?.OriginDestinationOptions ??
+        fare?.Outbound?.OriginDestinationOptions;
 
-    const firstOption =
-      Array.isArray(odoOptions) && odoOptions.length > 0
-        ? odoOptions[0]
-        : null;
+      const firstOption =
+        Array.isArray(odoOptions) && odoOptions.length > 0
+          ? odoOptions[0]
+          : null;
 
-    const segments = firstOption?.OriginDestinationOption;
+      const segments = firstOption?.OriginDestinationOption;
 
-    const firstSegment =
-      Array.isArray(segments) && segments.length > 0
-        ? segments[0]?.FlightSegment
-        : segments?.FlightSegment;
+      const firstSegment =
+        Array.isArray(segments) && segments.length > 0
+          ? segments[0]?.FlightSegment
+          : segments?.FlightSegment;
 
-    const departureTime =
-      typeof firstSegment?.DepartureDateTime === "string"
-        ? firstSegment.DepartureDateTime
-        : null;
+      const departureTime =
+        typeof firstSegment?.DepartureDateTime === "string"
+          ? firstSegment.DepartureDateTime
+          : null;
 
-    return departureTime ? new Date(departureTime) : new Date(NaN);
-  } catch (err) {
-    return new Date(NaN); // fallback for safety
-  }
-};
-
+      return departureTime ? new Date(departureTime) : new Date(NaN);
+    } catch (err) {
+      return new Date(NaN); // fallback for safety
+    }
+  };
 
   // passenger field updater
   const updatePassenger = <K extends keyof Passenger>(
@@ -579,15 +581,38 @@ const getDepartureDate = (): Date => {
 
   const departureDate = getDepartureDate();
 
-const maxAdultDob = formatDateInput(new Date(departureDate.getFullYear() - 12, departureDate.getMonth(), departureDate.getDate()));
-const maxChildDob = formatDateInput(new Date(departureDate.getFullYear() - 2, departureDate.getMonth(), departureDate.getDate()));
-const minChildDob = formatDateInput(new Date(departureDate.getFullYear() - 12, departureDate.getMonth(), departureDate.getDate()));
-const maxInfantDob = formatDateInput(departureDate);
-const minInfantDob = formatDateInput(new Date(departureDate.getFullYear() - 2, departureDate.getMonth(), departureDate.getDate()));
+  const maxAdultDob = formatDateInput(
+    new Date(
+      departureDate.getFullYear() - 12,
+      departureDate.getMonth(),
+      departureDate.getDate()
+    )
+  );
+  const maxChildDob = formatDateInput(
+    new Date(
+      departureDate.getFullYear() - 2,
+      departureDate.getMonth(),
+      departureDate.getDate()
+    )
+  );
+  const minChildDob = formatDateInput(
+    new Date(
+      departureDate.getFullYear() - 12,
+      departureDate.getMonth(),
+      departureDate.getDate()
+    )
+  );
+  const maxInfantDob = formatDateInput(departureDate);
+  const minInfantDob = formatDateInput(
+    new Date(
+      departureDate.getFullYear() - 2,
+      departureDate.getMonth(),
+      departureDate.getDate()
+    )
+  );
 
-const maxPassportIssue = formatDateInput(departureDate);
-const minPassportExpiry = formatDateInput(departureDate);
-
+  const maxPassportIssue = formatDateInput(departureDate);
+  const minPassportExpiry = formatDateInput(departureDate);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
@@ -747,28 +772,31 @@ const minPassportExpiry = formatDateInput(departureDate);
                         Date of Birth
                       </label>
                       <input
-  type="date"
-  value={p.dob}
-  onChange={(e) => updatePassenger(idx, "dob", e.target.value)}
-  className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-    fieldErrors[base + "dob"] ? "border-red-500" : "border-gray-300"
-  }`}
-  min={
-    p.type === "INF"
-      ? minInfantDob
-      : p.type === "CHD"
-      ? minChildDob
-      : "1900-01-01"
-  }
-  max={
-    p.type === "INF"
-      ? maxInfantDob
-      : p.type === "CHD"
-      ? maxChildDob
-      : maxAdultDob
-  }
-/>
-
+                        type="date"
+                        value={p.dob}
+                        onChange={(e) =>
+                          updatePassenger(idx, "dob", e.target.value)
+                        }
+                        className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                          fieldErrors[base + "dob"]
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        }`}
+                        min={
+                          p.type === "INF"
+                            ? minInfantDob
+                            : p.type === "CHD"
+                            ? minChildDob
+                            : "1900-01-01"
+                        }
+                        max={
+                          p.type === "INF"
+                            ? maxInfantDob
+                            : p.type === "CHD"
+                            ? maxChildDob
+                            : maxAdultDob
+                        }
+                      />
                     </div>
                     {/* Nationality */}
                     <div className="md:col-span-2">
@@ -836,39 +864,45 @@ const minPassportExpiry = formatDateInput(departureDate);
                           <label className="block text-gray-700 font-medium mb-2">
                             Issue Date
                           </label>
-                         <input
-  type="date"
-  value={p.passportIssueDate}
-  onChange={(e) =>
-    updatePassenger(idx, "passportIssueDate", e.target.value)
-  }
-  className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-    fieldErrors[base + "passportIssueDate"]
-      ? "border-red-500"
-      : "border-gray-300"
-  }`}
-  max={maxPassportIssue}
-/>
-
+                          <input
+                            type="date"
+                            value={p.passportIssueDate}
+                            onChange={(e) =>
+                              updatePassenger(
+                                idx,
+                                "passportIssueDate",
+                                e.target.value
+                              )
+                            }
+                            className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                              fieldErrors[base + "passportIssueDate"]
+                                ? "border-red-500"
+                                : "border-gray-300"
+                            }`}
+                            max={maxPassportIssue}
+                          />
                         </div>
                         <div>
                           <label className="block text-gray-700 font-medium mb-2">
                             Expiry Date
                           </label>
-                         <input
-  type="date"
-  value={p.passportExpiryDate}
-  onChange={(e) =>
-    updatePassenger(idx, "passportExpiryDate", e.target.value)
-  }
-  className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-    fieldErrors[base + "passportExpiryDate"]
-      ? "border-red-500"
-      : "border-gray-300"
-  }`}
-  min={minPassportExpiry}
-/>
-
+                          <input
+                            type="date"
+                            value={p.passportExpiryDate}
+                            onChange={(e) =>
+                              updatePassenger(
+                                idx,
+                                "passportExpiryDate",
+                                e.target.value
+                              )
+                            }
+                            className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                              fieldErrors[base + "passportExpiryDate"]
+                                ? "border-red-500"
+                                : "border-gray-300"
+                            }`}
+                            min={minPassportExpiry}
+                          />
                         </div>
                       </>
                     )}
