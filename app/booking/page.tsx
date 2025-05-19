@@ -113,25 +113,28 @@ export default function BookingPage() {
         //   )?.PassengerTypeQuantity.Quantity || 0;
 
         // support both single-leg and RT shapes
-        const fareInfo =
-          parsed.AirItineraryFareInfo ??
-          parsed.Outbound?.AirItineraryFareInfo;
-        const qtyOf = (code: string) =>
-          fareInfo?.FareBreakdown.find(
-            (b: any) => b.PassengerTypeQuantity.Code === code
-          )?.PassengerTypeQuantity.Quantity || 0;
 
-        setPassengers([
-          ...Array(qtyOf("ADT"))
-            .fill(0)
-            .map(() => makePassenger("ADT", "Mr")),
-          ...Array(qtyOf("CHD"))
-            .fill(0)
-            .map(() => makePassenger("CHD", "Master")),
-          ...Array(qtyOf("INF"))
-            .fill(0)
-            .map(() => makePassenger("INF", "Master")),
-        ]);
+
+        const fareInfo =
+  parsed.AirItineraryFareInfo ?? parsed.Outbound?.AirItineraryFareInfo;
+
+const breakdown: any[] = Array.isArray(fareInfo?.FareBreakdown)
+  ? fareInfo.FareBreakdown
+  : fareInfo?.FareBreakdown
+  ? [fareInfo.FareBreakdown]
+  : [];
+
+const qtyOf = (code: string) =>
+  breakdown.find((b) => b.PassengerTypeQuantity.Code === code)
+    ?.PassengerTypeQuantity.Quantity || 0;
+
+setPassengers([
+  ...Array(qtyOf("ADT")).fill(0).map(() => makePassenger("ADT", "Mr")),
+  ...Array(qtyOf("CHD")).fill(0).map(() => makePassenger("CHD", "Master")),
+  ...Array(qtyOf("INF")).fill(0).map(() => makePassenger("INF", "Master")),
+]);
+
+
 
         // prefill contact
         const prof = await api.get("/profile");
@@ -152,6 +155,38 @@ export default function BookingPage() {
     }, 15 * 60 * 1000);
     return () => clearTimeout(timer);
   }, [router]);
+
+  const formatDateInput = (date: Date) => date.toISOString().split("T")[0];
+
+const getDepartureDate = (): Date => {
+  try {
+    const odoOptions =
+      fare?.OriginDestinationOptions ??
+      fare?.Outbound?.OriginDestinationOptions;
+
+    const firstOption =
+      Array.isArray(odoOptions) && odoOptions.length > 0
+        ? odoOptions[0]
+        : null;
+
+    const segments = firstOption?.OriginDestinationOption;
+
+    const firstSegment =
+      Array.isArray(segments) && segments.length > 0
+        ? segments[0]?.FlightSegment
+        : segments?.FlightSegment;
+
+    const departureTime =
+      typeof firstSegment?.DepartureDateTime === "string"
+        ? firstSegment.DepartureDateTime
+        : null;
+
+    return departureTime ? new Date(departureTime) : new Date(NaN);
+  } catch (err) {
+    return new Date(NaN); // fallback for safety
+  }
+};
+
 
   // passenger field updater
   const updatePassenger = <K extends keyof Passenger>(
@@ -174,9 +209,46 @@ export default function BookingPage() {
   };
 
   // validate contact + pax
+  // const validate = () => {
+  //   const errs: Record<string, boolean> = {};
+  //   let ok = true;
+
+  //   if (!email.trim() || !phone.trim()) {
+  //     setError("Email and phone are required.");
+  //     ok = false;
+  //   }
+
+  //   passengers.forEach((p, i) => {
+  //     const base = `pax-${i}-`;
+  //     if (!p.firstName) (errs[base + "firstName"] = true), (ok = false);
+  //     if (!p.lastName) (errs[base + "lastName"] = true), (ok = false);
+  //     if (!p.dob) (errs[base + "dob"] = true), (ok = false);
+  //     if (!p.nationality) (errs[base + "nationality"] = true), (ok = false);
+  //     if (needsPassport) {
+  //       if (!p.passportNo) (errs[base + "passportNo"] = true), (ok = false);
+  //       if (!p.passportIssueCountry)
+  //         (errs[base + "passportIssueCountry"] = true), (ok = false);
+  //       if (!p.passportIssueDate)
+  //         (errs[base + "passportIssueDate"] = true), (ok = false);
+  //       if (!p.passportExpiryDate)
+  //         (errs[base + "passportExpiryDate"] = true), (ok = false);
+  //     }
+  //   });
+
+  //   setFieldErrors(errs);
+  //   if (!ok) setError("Please fix the highlighted fields.");
+  //   return ok;
+  // };
+
   const validate = () => {
     const errs: Record<string, boolean> = {};
     let ok = true;
+
+    const departureDate = getDepartureDate();
+    if (!departureDate || isNaN(+departureDate)) {
+      setError("Invalid departure date.");
+      return false;
+    }
 
     if (!email.trim() || !phone.trim()) {
       setError("Email and phone are required.");
@@ -185,23 +257,78 @@ export default function BookingPage() {
 
     passengers.forEach((p, i) => {
       const base = `pax-${i}-`;
+      const dob = new Date(p.dob);
+      const ageAtDeparture =
+        (departureDate.getTime() - dob.getTime()) / (1000 * 3600 * 24 * 365.25);
+
       if (!p.firstName) (errs[base + "firstName"] = true), (ok = false);
       if (!p.lastName) (errs[base + "lastName"] = true), (ok = false);
-      if (!p.dob) (errs[base + "dob"] = true), (ok = false);
+      if (!p.dob || isNaN(+dob)) (errs[base + "dob"] = true), (ok = false);
+      else {
+        if (p.type === "ADT" && ageAtDeparture < 12) {
+          setError(
+            `Passenger ${
+              i + 1
+            } (Adult) must be older than 12 years at departure.`
+          );
+          errs[base + "dob"] = true;
+          ok = false;
+        }
+        if (p.type === "CHD" && (ageAtDeparture <= 2 || ageAtDeparture > 12)) {
+          setError(
+            `Passenger ${
+              i + 1
+            } (Child) must be between 2–12 years at departure.`
+          );
+          errs[base + "dob"] = true;
+          ok = false;
+        }
+        if (p.type === "INF" && (ageAtDeparture <= 0 || ageAtDeparture > 2)) {
+          setError(
+            `Passenger ${
+              i + 1
+            } (Infant) must be between 0–2 years at departure.`
+          );
+          errs[base + "dob"] = true;
+          ok = false;
+        }
+      }
+
       if (!p.nationality) (errs[base + "nationality"] = true), (ok = false);
+
       if (needsPassport) {
+        const issueDate = new Date(p.passportIssueDate);
+        const expiryDate = new Date(p.passportExpiryDate);
+
         if (!p.passportNo) (errs[base + "passportNo"] = true), (ok = false);
         if (!p.passportIssueCountry)
           (errs[base + "passportIssueCountry"] = true), (ok = false);
-        if (!p.passportIssueDate)
-          (errs[base + "passportIssueDate"] = true), (ok = false);
-        if (!p.passportExpiryDate)
-          (errs[base + "passportExpiryDate"] = true), (ok = false);
+        if (!p.passportIssueDate || isNaN(+issueDate)) {
+          errs[base + "passportIssueDate"] = true;
+          ok = false;
+        } else if (issueDate > departureDate) {
+          setError(
+            `Passenger ${i + 1}: Passport issue date cannot be after departure.`
+          );
+          errs[base + "passportIssueDate"] = true;
+          ok = false;
+        }
+
+        if (!p.passportExpiryDate || isNaN(+expiryDate)) {
+          errs[base + "passportExpiryDate"] = true;
+          ok = false;
+        } else if (expiryDate < departureDate) {
+          setError(
+            `Passenger ${i + 1}: Passport must be valid on the departure date.`
+          );
+          errs[base + "passportExpiryDate"] = true;
+          ok = false;
+        }
       }
     });
 
     setFieldErrors(errs);
-    if (!ok) setError("Please fix the highlighted fields.");
+    if (!ok && !error) setError("Please fix the highlighted fields.");
     return ok;
   };
 
@@ -228,7 +355,7 @@ export default function BookingPage() {
 
     const inboundFareSource = localStorage.getItem("fareSourceCodeInbound");
 
-        // ➊ pick outbound vs combined shape
+    // ➊ pick outbound vs combined shape
     const outboundItin = (fare as any).Outbound ?? fare;
     const inboundItin = (fare as any).Inbound;
 
@@ -323,7 +450,7 @@ export default function BookingPage() {
         revOut.data?.data?.IsValid ?? revOut.data?.data?.Success ?? false;
 
       if (!isValidOut) {
-        alert("Outbound fare expired. Please search again.");
+        alert(" Fare expired. Please search again.");
         return router.push("/search-results");
       }
 
@@ -339,7 +466,7 @@ export default function BookingPage() {
           revIn.data?.data?.IsValid ?? revIn.data?.data?.Success ?? false;
 
         if (!isValidIn) {
-          alert("Return fare expired. Please search again.");
+          alert(" Fare expired. Please search again.");
           return router.push("/search-results");
         }
 
@@ -449,6 +576,18 @@ export default function BookingPage() {
       </div>
     );
   }
+
+  const departureDate = getDepartureDate();
+
+const maxAdultDob = formatDateInput(new Date(departureDate.getFullYear() - 12, departureDate.getMonth(), departureDate.getDate()));
+const maxChildDob = formatDateInput(new Date(departureDate.getFullYear() - 2, departureDate.getMonth(), departureDate.getDate()));
+const minChildDob = formatDateInput(new Date(departureDate.getFullYear() - 12, departureDate.getMonth(), departureDate.getDate()));
+const maxInfantDob = formatDateInput(departureDate);
+const minInfantDob = formatDateInput(new Date(departureDate.getFullYear() - 2, departureDate.getMonth(), departureDate.getDate()));
+
+const maxPassportIssue = formatDateInput(departureDate);
+const minPassportExpiry = formatDateInput(departureDate);
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
@@ -608,17 +747,28 @@ export default function BookingPage() {
                         Date of Birth
                       </label>
                       <input
-                        type="date"
-                        value={p.dob}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          updatePassenger(idx, "dob", e.target.value)
-                        }
-                        className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                          fieldErrors[base + "dob"]
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        }`}
-                      />
+  type="date"
+  value={p.dob}
+  onChange={(e) => updatePassenger(idx, "dob", e.target.value)}
+  className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+    fieldErrors[base + "dob"] ? "border-red-500" : "border-gray-300"
+  }`}
+  min={
+    p.type === "INF"
+      ? minInfantDob
+      : p.type === "CHD"
+      ? minChildDob
+      : "1900-01-01"
+  }
+  max={
+    p.type === "INF"
+      ? maxInfantDob
+      : p.type === "CHD"
+      ? maxChildDob
+      : maxAdultDob
+  }
+/>
+
                     </div>
                     {/* Nationality */}
                     <div className="md:col-span-2">
@@ -686,47 +836,39 @@ export default function BookingPage() {
                           <label className="block text-gray-700 font-medium mb-2">
                             Issue Date
                           </label>
-                          <input
-                            type="date"
-                            value={p.passportIssueDate}
-                            onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
-                            ) =>
-                              updatePassenger(
-                                idx,
-                                "passportIssueDate",
-                                e.target.value
-                              )
-                            }
-                            className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                              fieldErrors[base + "passportIssueDate"]
-                                ? "border-red-500"
-                                : "border-gray-300"
-                            }`}
-                          />
+                         <input
+  type="date"
+  value={p.passportIssueDate}
+  onChange={(e) =>
+    updatePassenger(idx, "passportIssueDate", e.target.value)
+  }
+  className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+    fieldErrors[base + "passportIssueDate"]
+      ? "border-red-500"
+      : "border-gray-300"
+  }`}
+  max={maxPassportIssue}
+/>
+
                         </div>
                         <div>
                           <label className="block text-gray-700 font-medium mb-2">
                             Expiry Date
                           </label>
-                          <input
-                            type="date"
-                            value={p.passportExpiryDate}
-                            onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
-                            ) =>
-                              updatePassenger(
-                                idx,
-                                "passportExpiryDate",
-                                e.target.value
-                              )
-                            }
-                            className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                              fieldErrors[base + "passportExpiryDate"]
-                                ? "border-red-500"
-                                : "border-gray-300"
-                            }`}
-                          />
+                         <input
+  type="date"
+  value={p.passportExpiryDate}
+  onChange={(e) =>
+    updatePassenger(idx, "passportExpiryDate", e.target.value)
+  }
+  className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+    fieldErrors[base + "passportExpiryDate"]
+      ? "border-red-500"
+      : "border-gray-300"
+  }`}
+  min={minPassportExpiry}
+/>
+
                         </div>
                       </>
                     )}

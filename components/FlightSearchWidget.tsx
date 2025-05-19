@@ -147,6 +147,13 @@ export default function FlightSearchWidget() {
     localStorage.removeItem("flightSessionId");
     localStorage.removeItem("selectedFare");
     localStorage.removeItem("bookingId");
+
+    // Clear previous selection before saving new search
+localStorage.removeItem("selectedFareRT");
+localStorage.removeItem("fareSourceCode");
+localStorage.removeItem("fareSourceCodeInbound");
+localStorage.removeItem("bookingId");
+
         
     // Basic passenger validation
     if (infants > adults)
