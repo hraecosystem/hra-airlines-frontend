@@ -73,6 +73,7 @@ export default function RootLayout({
           href="https://fonts.gstatic.com"
           crossOrigin=""
         />
+        
 
         {/* Google Tag Manager */}
         <Script
@@ -89,7 +90,7 @@ export default function RootLayout({
               j.async=true;
               j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
               f.parentNode.insertBefore(j,f);
-            })(window,document,'script','dataLayer','GTM-XXXXXXX');
+            })(window,document,'script','dataLayer','GT-MB6TCTGV');
           `,
           }}
         />
@@ -102,7 +103,7 @@ export default function RootLayout({
         {/* GTM no-script fallback */}
         <noscript>
           <iframe
-            src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXXX"
+            src="https://www.googletagmanager.com/ns.html?id=GT-MB6TCTGV"
             height="0"
             width="0"
             style={{ display: "none", visibility: "hidden" }}
