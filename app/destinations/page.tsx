@@ -109,7 +109,7 @@ export default function DestinationsPage() {
                 placeholder="Search destinations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
               />
             </div>
             <div className="flex gap-2 overflow-x-auto pb-2">

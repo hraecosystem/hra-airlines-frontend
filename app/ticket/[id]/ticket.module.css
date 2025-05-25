@@ -19,9 +19,12 @@
   will-change: transform, box-shadow;
 }
 
-.cardContainer:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+/* Désactiver les effets de hover sur mobile pour de meilleures performances */
+@media (hover: hover) {
+  .cardContainer:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
 }
 
 .animatedGradient {
@@ -39,10 +42,78 @@
   display: none;
 }
 
+/* Styles spécifiques pour les petits écrans */
+@media screen and (max-width: 640px) {
+  .cardContainer {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  
+  /* Optimisation pour les tableaux sur mobile */
+  table {
+    font-size: 0.875rem;
+  }
+  
+  /* Ajustements supplémentaires pour mobile */
+  h1 {
+    font-size: 1.25rem;
+  }
+  
+  h2 {
+    font-size: 1.125rem;
+  }
+  
+  h3 {
+    font-size: 1rem;
+  }
+  
+  p {
+    font-size: 0.875rem;
+  }
+  
+  /* Meilleure gestion des défilements horizontaux */
+  .overflow-x-auto {
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+/* Styles spécifiques pour l'impression */
 @media print {
   .printMark {
     display: block;
     color: #1e40af;
     font-weight: 600;
   }
+  
+  .cardContainer {
+    box-shadow: none !important;
+    margin-bottom: 1.5rem;
+    break-inside: avoid;
+  }
+  
+  /* Force le fond blanc pour l'impression */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  /* S'assurer que les tableaux s'impriment correctement */
+  table {
+    width: 100% !important;
+    border-collapse: collapse;
+  }
+  
+  /* Éviter les coupures de page à l'intérieur des sections importantes */
+  section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+/* Titres blancs forcés */
+.whiteHeading {
+  color: white !important;
 } 

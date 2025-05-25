@@ -189,7 +189,7 @@ export default function FAQsPage() {
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.3 }}
-                          className="px-6 pb-4"
+                          className="px-8 py-6"
                         >
                           <p className="text-gray-600">{faq.answer}</p>
                         </motion.div>

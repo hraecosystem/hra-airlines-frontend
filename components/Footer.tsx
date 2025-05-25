@@ -15,7 +15,6 @@ import {
   Facebook,
   Instagram,
   Twitter,
-  Linkedin,
 } from "lucide-react";
 
 export default function Footer() {
@@ -108,7 +107,23 @@ export default function Footer() {
                 { icon: Facebook, href: "https://facebook.com" },
                 { icon: Twitter, href: "https://twitter.com" },
                 { icon: Instagram, href: "https://instagram.com" },
-                { icon: Linkedin, href: "https://linkedin.com" },
+                { icon: () => (
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="w-5 h-5 text-gray-400 group-hover:text-blue-300 transition-colors duration-300"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M9 12a9 9 0 0 0 9 9" />
+                    <path d="M9 3a9 9 0 0 1 9 9" />
+                    <path d="M8.5 20.5L14 13l-5.5-7.5" />
+                    <path d="M14 13h7" />
+                    <path d="M14 13H7" />
+                  </svg>
+                ), href: "https://tiktok.com" },
               ].map(({ icon: Icon, href }, index) => (
                 <Link
                   key={href}

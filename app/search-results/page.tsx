@@ -210,12 +210,12 @@ export default function SearchResultsPage() {
             obj.AirSearchResult?.FareItineraries
         );
 
-        const isOut = (d?: string) => !!d && /out|o\b/i.test(d); // “Outbound”, “O”
-        const isIn = (d?: string) => !!d && /in|ret|r\b/i.test(d); // “Inbound”, “Return”, “R”
+        const isOut = (d?: string) => !!d && /out|o\b/i.test(d); // "Outbound", "O"
+        const isIn = (d?: string) => !!d && /in|ret|r\b/i.test(d); // "Inbound", "Return", "R"
 
         const out = allFi.filter((fi) => isOut(fi.DirectionInd));
         const inn = [
-          ...allFi.filter((fi) => isIn(fi.DirectionInd)), // ➊ tagged “Return/Inbound”
+          ...allFi.filter((fi) => isIn(fi.DirectionInd)), // ➊ tagged "Return/Inbound"
           ...listInboundDom, // ➋ separate domestic list
         ];
 
@@ -331,13 +331,23 @@ export default function SearchResultsPage() {
     fi.OriginDestinationOptions[0].TotalStops;
   const formatMoney = (amt: string, cur: string) =>
     `${numeral(amt).format("0,0.00")} ${cur}`;
-  const formatDateTime = (iso: string) =>
-    new Date(iso).toLocaleString([], {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const formatDateTime = (iso: string, locationCode: string = '') => {
+    // Créer un objet date à partir de l'ISO string
+    const date = new Date(iso);
+    
+    // Formater la date selon les paramètres locaux, en incluant le fuseau horaire
+    return (
+      <span className="text-gray-900 !important">
+        {date.toLocaleString([], {
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })}
+        <span className="text-xs ml-1 text-gray-600">(Local Time)</span>
+      </span>
+    );
+  };
 
   const handleSelectOutbound = (fi: FareItinerary) => {
     /* ──────────────────────────────────────────────────────────────
@@ -601,8 +611,8 @@ export default function SearchResultsPage() {
                             <div className="text-sm text-gray-500">
                               Departure
                             </div>
-                            <div className="font-medium">
-                              {formatDateTime(firstSeg.DepartureDateTime)}
+                            <div className="font-medium text-gray-900">
+                              {formatDateTime(firstSeg.DepartureDateTime, firstSeg.DepartureAirportLocationCode)}
                             </div>
                           </div>
                           <div className="w-6 h-6 text-gray-600 flex items-center">
@@ -633,13 +643,18 @@ export default function SearchResultsPage() {
                         <div className="flex-1 flex items-center gap-2">
                           <div className="flex flex-col justify-center">
                             <div className="text-sm text-gray-500">Arrival</div>
-                            <div className="font-medium">
+                            <div className="font-medium text-gray-900">
                               {formatDateTime(
                                 fi.OriginDestinationOptions[0]
                                   .OriginDestinationOption[
                                   fi.OriginDestinationOptions[0]
                                     .OriginDestinationOption.length - 1
-                                ].FlightSegment.ArrivalDateTime
+                                ].FlightSegment.ArrivalDateTime,
+                                fi.OriginDestinationOptions[0]
+                                  .OriginDestinationOption[
+                                  fi.OriginDestinationOptions[0]
+                                    .OriginDestinationOption.length - 1
+                                ].FlightSegment.ArrivalAirportLocationCode
                               )}
                             </div>
                           </div>
@@ -737,8 +752,8 @@ export default function SearchResultsPage() {
                             {firstSeg.DepartureAirportLocationCode}
                           </span>
                         </div>
-                        <div className="text-sm text-gray-600">
-                          {formatDateTime(firstSeg.DepartureDateTime)}
+                        <div className="text-sm text-gray-900">
+                          {formatDateTime(firstSeg.DepartureDateTime, firstSeg.DepartureAirportLocationCode)}
                         </div>
                       </div>
                       <div className="flex-1 flex items-center justify-center">
@@ -758,13 +773,18 @@ export default function SearchResultsPage() {
                             }
                           </span>
                         </div>
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-gray-900">
                           {formatDateTime(
                             fi.OriginDestinationOptions[0]
                               .OriginDestinationOption[
                               fi.OriginDestinationOptions[0]
                                 .OriginDestinationOption.length - 1
-                            ].FlightSegment.ArrivalDateTime
+                            ].FlightSegment.ArrivalDateTime,
+                            fi.OriginDestinationOptions[0]
+                              .OriginDestinationOption[
+                              fi.OriginDestinationOptions[0]
+                                .OriginDestinationOption.length - 1
+                            ].FlightSegment.ArrivalAirportLocationCode
                           )}
                         </div>
                       </div>

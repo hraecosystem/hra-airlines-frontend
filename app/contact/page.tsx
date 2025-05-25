@@ -51,9 +51,11 @@ export default function ContactPage() {
               transition={{ duration: 0.5 }}
               className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition"
             >
-              <Mail className="w-12 h-12 text-blue-600 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Email Us</h3>
-              <p className="text-gray-600">support@hra-airlines.com</p>
+              <a href="mailto:support@hra-airlines.com" className="block">
+                <Mail className="w-12 h-12 text-blue-600 mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Email Us</h3>
+                <p className="text-gray-600">support@hra-airlines.com</p>
+              </a>
             </motion.div>
 
             <motion.div
@@ -62,9 +64,11 @@ export default function ContactPage() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition"
             >
-              <Phone className="w-12 h-12 text-blue-600 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Call Us</h3>
-              <p className="text-gray-600">+971 26 322 569</p>
+              <a href="tel:+97126322569" className="block">
+                <Phone className="w-12 h-12 text-blue-600 mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Call Us</h3>
+                <p className="text-gray-600">+971 26 322 569</p>
+              </a>
             </motion.div>
 
             <motion.div
@@ -73,9 +77,11 @@ export default function ContactPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition"
             >
-              <MapPin className="w-12 h-12 text-blue-600 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Visit Us</h3>
-              <p className="text-gray-600">404, C34 Building Khalifa Street Abu Dhabi, UAE</p>
+              <a href="https://maps.google.com/?q=404+C34+Building+Khalifa+Street+Abu+Dhabi+UAE" target="_blank" rel="noopener noreferrer" className="block">
+                <MapPin className="w-12 h-12 text-blue-600 mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Visit Us</h3>
+                <p className="text-gray-600">404, C34 Building Khalifa Street Abu Dhabi, UAE</p>
+              </a>
             </motion.div>
 
             <motion.div
@@ -157,7 +163,7 @@ export default function ContactPage() {
                     id="subject"
                     value={formData.subject}
                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                     required
                   />
                 </div>
@@ -170,7 +176,7 @@ export default function ContactPage() {
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     rows={6}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                     required
                   />
                 </div>

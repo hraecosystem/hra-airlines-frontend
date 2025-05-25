@@ -50,7 +50,7 @@ export default function AboutPage() {
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-black/40" />
         </div>
         <div className="relative z-10 text-center text-white px-6 max-w-4xl mx-auto">
-          <h1 className="text-5xl sm:text-6xl font-extrabold mb-6 animate-fade-in">
+          <h1 className="text-5xl sm:text-6xl font-extrabold mb-6 animate-fade-in text-white">
             About HRA Airlines
           </h1>
           <p className="text-xl sm:text-2xl mb-8 animate-fade-in-up">

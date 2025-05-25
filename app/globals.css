@@ -36,7 +36,20 @@ html {
     margin-bottom: theme('spacing.4');
     font-weight: theme('fontWeight.bold');
     scroll-margin-top: theme('spacing.20');
-    color: rgb(17, 24, 39) !important;
+    color: rgb(17, 24, 39);
+  }
+
+  /* Exception pour les titres dans les sections avec un fond coloré */
+  section[class*="bg-blue-"], 
+  section[class*="bg-indigo-"], 
+  section[class*="bg-purple-"],
+  section[class*="bg-gray-900"],
+  section[class*="bg-black"],
+  .text-white h1,
+  .text-white h2,
+  .text-white h3,
+  div[class*="from-blue-"] h1 {
+    color: white !important;
   }
 
   p {
@@ -122,6 +135,44 @@ html {
   /* Améliore la lisibilité des textes */
   p, span, div {
     text-rendering: optimizeLegibility;
+  }
+
+  /* Force le rendu des textes */
+  .text-gray-900, h1, h2, h3, h4, h5, h6, p, span, div {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Assurer la cohérence des couleurs de texte entre macOS et Windows */
+  .text-gray-900 {
+    color: rgb(17, 24, 39) !important;
+  }
+
+  .text-white {
+    color: rgb(255, 255, 255) !important;
+  }
+
+  /* Normaliser les couleurs de texte entre les différentes plateformes */
+  @media screen and (-webkit-min-device-pixel-ratio: 0) {
+    /* Safari & Chrome specifics */
+    .text-gray-900 {
+      color: rgb(17, 24, 39) !important;
+    }
+    
+    .text-white {
+      color: rgb(255, 255, 255) !important;
+    }
+  }
+
+  /* Firefox specific rules */
+  @-moz-document url-prefix() {
+    .text-gray-900 {
+      color: rgb(17, 24, 39) !important;
+    }
+    
+    .text-white {
+      color: rgb(255, 255, 255) !important;
+    }
   }
 }
 

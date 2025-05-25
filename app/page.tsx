@@ -285,31 +285,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Newsletter Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            Stay Updated
-          </h2>
-          <p className="text-xl text-gray-600 mb-8">
-            Subscribe to our newsletter for exclusive offers and travel updates
-          </p>
-          <form className="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 px-6 py-4 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-            <button
-              type="submit"
-              className="px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Subscribe
-            </button>
-          </form>
-        </div>
-      </section>
     </main>
   );
 }

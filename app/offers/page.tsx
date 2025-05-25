@@ -190,7 +190,7 @@ export default function OffersPage() {
                   <input
                     type="email"
                     placeholder="Enter your email"
-                    className="w-full px-4 py-2 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-white"
+                    className="w-full px-4 py-2 rounded-lg text-white placeholder-white/70 bg-white/20 focus:outline-none focus:ring-2 focus:ring-white"
                   />
                   <button className="w-full sm:w-auto bg-white text-blue-600 px-6 py-2 rounded-lg font-medium hover:bg-gray-100 transition">
                     Subscribe

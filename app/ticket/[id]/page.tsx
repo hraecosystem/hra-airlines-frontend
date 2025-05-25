@@ -134,34 +134,34 @@ a.download = `HRA-Airlines-Ticket-${ticketNumber}.pdf`;
 
   return (
     <motion.div
-      className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-10 px-4 print:bg-white"
+      className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-6 sm:py-10 px-3 sm:px-4 print:bg-white"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
       <div className="mx-auto max-w-5xl">
         {/* Top Bar */}
-        <div className={`flex items-center justify-between ${styles.animatedGradient} bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6 rounded-t-2xl shadow-lg print:hidden`}>
+        <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0 ${styles.animatedGradient} bg-gradient-to-r from-blue-600 to-indigo-700 px-4 sm:px-8 py-4 sm:py-6 rounded-t-2xl shadow-lg print:hidden`}>
           <button 
             onClick={() => router.back()} 
             className="text-white hover:text-blue-200 transition-colors duration-200"
           >
             <ChevronLeft size={24} />
           </button>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+          <h1 className={`text-xl sm:text-2xl font-bold text-white flex items-center gap-3 ${styles.whiteHeading}`}>
             <Plane className="transform rotate-45" size={24} />
             E-Ticket
           </h1>
-          <div className="flex gap-4">
+          <div className="flex gap-2 sm:gap-4">
             <button 
               onClick={handlePrint}
-              className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-all duration-200 backdrop-blur-sm"
+              className="inline-flex items-center gap-1 sm:gap-2 bg-white/10 hover:bg-white/20 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all duration-200 backdrop-blur-sm text-xs sm:text-base"
             >
               <Printer size={16} /> Print
             </button>
             <button 
               onClick={handleDownload}
-              className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-400 text-white px-4 py-2 rounded-lg transition-all duration-200"
+              className="inline-flex items-center gap-1 sm:gap-2 bg-green-500 hover:bg-green-400 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all duration-200 text-xs sm:text-base"
             >
               <Download size={16} /> Download
             </button>
@@ -169,7 +169,7 @@ a.download = `HRA-Airlines-Ticket-${ticketNumber}.pdf`;
         </div>
 
         <div className="bg-white rounded-b-2xl shadow-lg overflow-hidden print:shadow-none">
-          <div className="p-8 space-y-8">
+          <div className="p-3 sm:p-8 space-y-4 sm:space-y-8">
             {/* Print Header - only shows when printing */}
             <div className="hidden print:flex print:items-center print:justify-between print:mb-8">
               <div className="flex items-center gap-3">
@@ -180,55 +180,55 @@ a.download = `HRA-Airlines-Ticket-${ticketNumber}.pdf`;
             </div>
           
           {/* Core Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6">
               <motion.div 
-                className={`bg-blue-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}
+                className={`bg-blue-100 rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}
                 whileHover={{ scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <div className="flex items-center gap-3 text-blue-800 mb-3">
-                  <Info size={22} />
-<h3 className="font-semibold">Ticket #</h3>
+                <div className="flex items-center gap-2 sm:gap-3 text-blue-800 mb-1 sm:mb-3">
+                  <Info size={20} className="min-w-[20px]" />
+                  <h3 className="font-semibold text-sm sm:text-base">Ticket #</h3>
                 </div>
-<p className="text-xl font-bold tracking-wide text-blue-900">{ticketNumber}</p>
+                <p className="text-lg sm:text-xl font-bold tracking-wide text-blue-900 break-all">{ticketNumber}</p>
               </motion.div>
 
               <motion.div 
-                className={`bg-green-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}
+                className={`bg-green-100 rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}
                 whileHover={{ scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <div className="flex items-center gap-3 text-green-800 mb-3">
-                  <Calendar size={22} />
-                  <h3 className="font-semibold">Issued</h3>
+                <div className="flex items-center gap-2 sm:gap-3 text-green-800 mb-1 sm:mb-3">
+                  <Calendar size={20} className="min-w-[20px]" />
+                  <h3 className="font-semibold text-sm sm:text-base">Issued</h3>
                 </div>
-                <p className="text-xl font-bold tracking-wide text-green-900">{format(issuedDate, "PPP p")}</p>
+                <p className="text-lg sm:text-xl font-bold tracking-wide text-green-900">{format(issuedDate, "PPP")}</p>
               </motion.div>
 
               <motion.div 
-                className={`bg-purple-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}
+                className={`bg-purple-100 rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}
                 whileHover={{ scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <div className="flex items-center gap-3 text-purple-800 mb-3">
-                  <Clock size={22} />
-                  <h3 className="font-semibold">Status</h3>
+                <div className="flex items-center gap-2 sm:gap-3 text-purple-800 mb-1 sm:mb-3">
+                  <Clock size={20} className="min-w-[20px]" />
+                  <h3 className="font-semibold text-sm sm:text-base">Status</h3>
                 </div>
-                <p className={`text-xl font-bold tracking-wide ${styles.statusText}`}>
+                <p className={`text-lg sm:text-xl font-bold tracking-wide ${styles.statusText}`}>
                   {ticket.status}
                 </p>
               </motion.div>
 
               <motion.div 
-                className={`bg-orange-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}
+                className={`bg-orange-100 rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}
                 whileHover={{ scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <div className="flex items-center gap-3 text-orange-800 mb-3">
-                  <CreditCard size={22} />
-                  <h3 className="font-semibold">Payment</h3>
+                <div className="flex items-center gap-2 sm:gap-3 text-orange-800 mb-1 sm:mb-3">
+                  <CreditCard size={20} className="min-w-[20px]" />
+                  <h3 className="font-semibold text-sm sm:text-base">Payment</h3>
                 </div>
-                <p className={`text-xl font-bold tracking-wide ${styles.paymentText}`}>
+                <p className={`text-lg sm:text-xl font-bold tracking-wide ${styles.paymentText}`}>
                   {ticket.paymentStatus}
                 </p>
               </motion.div>
@@ -236,45 +236,44 @@ a.download = `HRA-Airlines-Ticket-${ticketNumber}.pdf`;
 
           {/* Passengers */}
             <section className={`bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}>
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-5 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-3">
-                  <User size={22} className="text-blue-600" />
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-3 sm:px-8 py-3 sm:py-5 border-b border-gray-200">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center gap-2 sm:gap-3">
+                  <User size={20} className="text-blue-600 min-w-[20px]" />
                   Passengers
                 </h2>
               </div>
-              <div className="p-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-3 sm:p-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
                   {ticket.passengers.map((p, i) => (
                     <motion.div 
                       key={i} 
-                      className={`bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200 ${styles.cardContainer}`}
+                      className={`bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-all duration-200 ${styles.cardContainer}`}
                       whileHover={{ scale: 1.02 }}
                       transition={{ type: "spring", stiffness: 300 }}
                     >
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold text-lg">
+                      <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold text-base sm:text-lg flex-shrink-0">
                           {i + 1}
                         </div>
-                        <div>
-                          <p className="font-semibold text-gray-900 text-lg">{p.title} {p.firstName} {p.lastName}</p>
-                          <p className="text-sm text-gray-600">DOB: {format(new Date(p.dob), "MM/dd/yyyy")}</p>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-gray-900 text-base sm:text-lg truncate">{p.title} {p.firstName} {p.lastName}</p>
+                          <p className="text-xs sm:text-sm text-gray-600">DOB: {format(new Date(p.dob), "MM/dd/yyyy")}</p>
                         </div>
                       </div>
                       {p.passportNo && (
-                        <div className="text-sm text-gray-600 bg-white/50 rounded-lg p-3">
+                        <div className="text-xs sm:text-sm text-gray-600 bg-white/50 rounded-lg p-2 sm:p-3">
                           <span className="font-medium">Passport:</span> {p.passportNo}
                         </div>
                       )}
-                            {ticket.ticketNumbers
-        ?.find(t => t.passengerIndex === i)
-         ?.ticketNumber && (
-        <p className="mt-2 text-sm text-gray-600">
-          Ticket #: {
-            ticket.ticketNumbers.find(t => t.passengerIndex === i)!.ticketNumber
-          }
-        </p>
-      )}
-                      
+                      {ticket.ticketNumbers
+                        ?.find(t => t.passengerIndex === i)
+                        ?.ticketNumber && (
+                        <p className="mt-2 text-xs sm:text-sm text-gray-600 break-all">
+                          Ticket #: {
+                            ticket.ticketNumbers.find(t => t.passengerIndex === i)!.ticketNumber
+                          }
+                        </p>
+                      )}
                     </motion.div>
                   ))}
                 </div>
@@ -283,50 +282,50 @@ a.download = `HRA-Airlines-Ticket-${ticketNumber}.pdf`;
 
           {/* Itinerary */}
             <section className={`bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}>
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-5 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-3">
-                  <Plane size={22} className="text-blue-600" />
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-3 sm:px-8 py-3 sm:py-5 border-b border-gray-200">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center gap-2 sm:gap-3">
+                  <Plane size={20} className="text-blue-600 min-w-[20px]" />
                   Flight Itinerary
                 </h2>
               </div>
-              <div className="p-8">
-                <div className="space-y-6">
-              {ticket.flightSegments.map((seg, i) => (
+              <div className="p-3 sm:p-8">
+                <div className="space-y-4 sm:space-y-6">
+                  {ticket.flightSegments.map((seg, i) => (
                     <motion.div 
                       key={i} 
-                      className={`bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-8 shadow-sm hover:shadow-md transition-all duration-200 ${styles.cardContainer}`}
+                      className={`bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-3 sm:p-8 shadow-sm hover:shadow-md transition-all duration-200 ${styles.cardContainer}`}
                       whileHover={{ scale: 1.02 }}
                       transition={{ type: "spring", stiffness: 300 }}
                     >
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold text-lg">
+                      <div className="flex items-center justify-between mb-2 sm:mb-6">
+                        <div className="flex items-center gap-3 sm:gap-4">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold text-base sm:text-lg flex-shrink-0">
                             {i + 1}
                           </div>
-                          <div>
-                            <p className="font-semibold text-gray-900 text-lg">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-gray-900 text-base sm:text-lg truncate">
                               {seg.airlineName || seg.airlineCode} {seg.flightNumber}
                             </p>
-                            <p className="text-sm text-gray-600">{seg.cabinClass}</p>
+                            <p className="text-xs sm:text-sm text-gray-600">{seg.cabinClass}</p>
                           </div>
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-3 text-gray-600">
-                            <MapPin size={18} className="text-blue-600" />
-                            <span className="font-medium">Departure</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-8">
+                        <div className="space-y-2 sm:space-y-3">
+                          <div className="flex items-center gap-2 sm:gap-3 text-gray-600">
+                            <MapPin size={16} className="text-blue-600 min-w-[16px]" />
+                            <span className="font-medium text-sm sm:text-base">Departure</span>
                           </div>
-                          <p className="text-xl font-semibold">{seg.origin}</p>
-                          <p className="text-gray-600">{format(new Date(seg.departureDateTime), "PPP p")}</p>
+                          <p className="text-lg sm:text-xl font-semibold">{seg.origin}</p>
+                          <p className="text-xs sm:text-sm text-gray-600">{format(new Date(seg.departureDateTime), "PPP p")}</p>
                         </div>
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-3 text-gray-600">
-                            <MapPin size={18} className="text-green-600" />
-                            <span className="font-medium">Arrival</span>
+                        <div className="space-y-2 sm:space-y-3">
+                          <div className="flex items-center gap-2 sm:gap-3 text-gray-600">
+                            <MapPin size={16} className="text-green-600 min-w-[16px]" />
+                            <span className="font-medium text-sm sm:text-base">Arrival</span>
                           </div>
-                          <p className="text-xl font-semibold">{seg.destination}</p>
-                          <p className="text-gray-600">{format(new Date(seg.arrivalDateTime), "PPP p")}</p>
+                          <p className="text-lg sm:text-xl font-semibold">{seg.destination}</p>
+                          <p className="text-xs sm:text-sm text-gray-600">{format(new Date(seg.arrivalDateTime), "PPP p")}</p>
                         </div>
                       </div>
                     </motion.div>
@@ -337,90 +336,94 @@ a.download = `HRA-Airlines-Ticket-${ticketNumber}.pdf`;
 
           {/* Fare Breakdown */}
             <section className={`bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}>
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-5 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-3">
-                  <CreditCard size={22} className="text-blue-600" />
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-3 sm:px-8 py-3 sm:py-5 border-b border-gray-200">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center gap-2 sm:gap-3">
+                  <CreditCard size={20} className="text-blue-600 min-w-[20px]" />
                   Fare Details
                 </h2>
               </div>
-              <div className="p-8">
-                <div className="space-y-8">
+              <div className="p-3 sm:p-8">
+                <div className="space-y-6 sm:space-y-8">
                   {/* Fare Breakdown */}
                   <div>
-                    <h3 className="font-semibold text-gray-800 mb-4 text-lg">Fare Breakdown</h3>
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden shadow-sm">
-                      <table className="w-full">
-                <tbody>
-                  {ticket.fareBreakdown.map((f, i) => (
-                            <tr key={i} className={i % 2 === 0 ? "bg-white/50" : "bg-gray-50/50"}>
-                              <td className="p-4 text-gray-700">{f.label}</td>
-                              <td className="p-4 text-right font-medium">
-                                {f.amount.toFixed(2)} {ticket.currency}
+                    <h3 className="font-semibold text-gray-800 mb-3 sm:mb-4 text-base sm:text-lg">Fare Breakdown</h3>
+                    <div className="overflow-x-auto -mx-3 sm:mx-0">
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden shadow-sm min-w-full sm:min-w-0">
+                        <table className="w-full min-w-[500px]">
+                          <tbody>
+                            {ticket.fareBreakdown.map((f, i) => (
+                              <tr key={i} className={i % 2 === 0 ? "bg-white/50" : "bg-gray-50/50"}>
+                                <td className="p-3 sm:p-4 text-xs sm:text-sm text-gray-700">{f.label}</td>
+                                <td className="p-3 sm:p-4 text-xs sm:text-sm text-right font-medium">
+                                  {f.amount.toFixed(2)} {ticket.currency}
+                                </td>
+                              </tr>
+                            ))}
+                            <tr className="border-t border-gray-200 bg-white/80">
+                              <td className="p-3 sm:p-4 text-xs sm:text-sm text-gray-700 font-medium">Subtotal</td>
+                              <td className="p-3 sm:p-4 text-xs sm:text-sm text-right font-medium">
+                                {(ticket.fareBreakdown.reduce((sum, f) => sum + f.amount, 0)).toFixed(2)} {ticket.currency}
                               </td>
-                    </tr>
-                  ))}
-                          <tr className="border-t border-gray-200 bg-white/80">
-                            <td className="p-4 text-gray-700 font-medium">Subtotal</td>
-                            <td className="p-4 text-right font-medium">
-                              {(ticket.fareBreakdown.reduce((sum, f) => sum + f.amount, 0)).toFixed(2)} {ticket.currency}
-                            </td>
-                  </tr>
-                </tbody>
-              </table>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
 
-          {/* Taxes & Fees */}
+                  {/* Taxes & Fees */}
                   <div>
-                    <h3 className="font-semibold text-gray-800 mb-4 text-lg">Taxes & Fees</h3>
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden shadow-sm">
-                      <table className="w-full">
-                <tbody>
-                  {ticket.taxes.map((t, i) => (
-                            <tr key={i} className={i % 2 === 0 ? "bg-white/50" : "bg-gray-50/50"}>
-                              <td className="p-4 text-gray-700">{t.name}</td>
-                              <td className="p-4 text-right font-medium">
-                                {t.amount.toFixed(2)} {ticket.currency}
+                    <h3 className="font-semibold text-gray-800 mb-3 sm:mb-4 text-base sm:text-lg">Taxes & Fees</h3>
+                    <div className="overflow-x-auto -mx-3 sm:mx-0">
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden shadow-sm min-w-full sm:min-w-0">
+                        <table className="w-full min-w-[500px]">
+                          <tbody>
+                            {ticket.taxes.map((t, i) => (
+                              <tr key={i} className={i % 2 === 0 ? "bg-white/50" : "bg-gray-50/50"}>
+                                <td className="p-3 sm:p-4 text-xs sm:text-sm text-gray-700">{t.name}</td>
+                                <td className="p-3 sm:p-4 text-xs sm:text-sm text-right font-medium">
+                                  {t.amount.toFixed(2)} {ticket.currency}
+                                </td>
+                              </tr>
+                            ))}
+                            <tr className="border-t border-gray-200 bg-white/80">
+                              <td className="p-3 sm:p-4 text-xs sm:text-sm text-gray-700 font-medium">Total Taxes</td>
+                              <td className="p-3 sm:p-4 text-xs sm:text-sm text-right font-medium">
+                                {(ticket.taxes.reduce((sum, t) => sum + t.amount, 0)).toFixed(2)} {ticket.currency}
                               </td>
-                    </tr>
-                  ))}
-                          <tr className="border-t border-gray-200 bg-white/80">
-                            <td className="p-4 text-gray-700 font-medium">Total Taxes</td>
-                            <td className="p-4 text-right font-medium">
-                              {(ticket.taxes.reduce((sum, t) =>  t.amount, 0)).toFixed(2)} {ticket.currency}
-                            </td>
-                          </tr>
-                </tbody>
-              </table>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
 
                   {/* Additional Fees */}
                   <div>
-                    <h3 className="font-semibold text-gray-800 mb-4 text-lg">Additional Fees</h3>
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 shadow-sm">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-white/50 rounded-lg p-4">
-                          <p className="text-sm text-gray-600 mb-2">Service Fee</p>
-                          <p className="font-medium text-gray-900">Included in Total</p>
+                    <h3 className="font-semibold text-gray-800 mb-3 sm:mb-4 text-base sm:text-lg">Additional Fees</h3>
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 sm:p-6 shadow-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        <div className="bg-white/50 rounded-lg p-3 sm:p-4">
+                          <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Service Fee</p>
+                          <p className="font-medium text-gray-900 text-sm sm:text-base">Included in Total</p>
                         </div>
-                        <div className="bg-white/50 rounded-lg p-4">
-                          <p className="text-sm text-gray-600 mb-2">Processing Fee</p>
-                          <p className="font-medium text-gray-900">Included in Total</p>
+                        <div className="bg-white/50 rounded-lg p-3 sm:p-4">
+                          <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Processing Fee</p>
+                          <p className="font-medium text-gray-900 text-sm sm:text-base">Included in Total</p>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   {/* Total */}
-                  <div className={`${styles.animatedGradient} bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-100 rounded-xl p-6 shadow-sm`}>
+                  <div className={`${styles.animatedGradient} bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-100 rounded-xl p-4 sm:p-6 shadow-sm`}>
                     <div className="flex justify-between items-center">
-                      <span className="font-semibold text-gray-900 text-lg">Total Amount</span>
-                      <span className="text-2xl font-bold text-blue-600">
+                      <span className="font-semibold text-gray-900 text-sm sm:text-lg">Total Amount</span>
+                      <span className="text-xl sm:text-2xl font-bold text-blue-600">
                         {ticket.totalPrice.toFixed(2)} {ticket.currency}
                       </span>
                     </div>
-                    <div className="mt-3 text-sm text-gray-600">
+                    <div className="mt-2 sm:mt-3 text-xs sm:text-sm text-gray-600">
                       <p>Includes all taxes, fees, and charges</p>
                     </div>
                   </div>
@@ -431,38 +434,38 @@ a.download = `HRA-Airlines-Ticket-${ticketNumber}.pdf`;
           {/* Fare Rules Link */}
           {ticket.fareRulesUrl && (
               <section className={`bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 ${styles.cardContainer}`}>
-                <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-5 border-b border-gray-200">
-                  <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-3">
-                    <Info size={22} className="text-blue-600" />
+                <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 sm:px-8 py-4 sm:py-5 border-b border-gray-200">
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center gap-2 sm:gap-3">
+                    <Info size={20} className="text-blue-600 min-w-[20px]" />
                     Fare Rules
                   </h2>
                 </div>
-                <div className="p-8">
-                  <p className="text-gray-700">
+                <div className="p-4 sm:p-8">
+                  <p className="text-xs sm:text-sm text-gray-700">
                     For full fare rules and conditions,{" "}
-                <a
-                  href={ticket.fareRulesUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                    <a
+                      href={ticket.fareRulesUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200"
-                >
-                  click here
+                    >
+                      click here
                     </a>
-              </p>
+                  </p>
                 </div>
             </section>
           )}
         </div>
 
         {/* Footer Back Link */}
-          <div className="p-8 text-center print:hidden">
-          <Link
-            href="/dashboard/bookings"
-              className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors duration-200 font-medium"
-          >
-              <ChevronLeft size={18} className="mr-2" />
-            Back to My Bookings
-          </Link>
+          <div className="p-4 sm:p-8 text-center print:hidden">
+            <Link
+              href="/dashboard/bookings"
+              className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors duration-200 font-medium text-sm sm:text-base"
+            >
+              <ChevronLeft size={16} className="mr-1 sm:mr-2" />
+              Back to My Bookings
+            </Link>
           </div>
         </div>
       </div>
