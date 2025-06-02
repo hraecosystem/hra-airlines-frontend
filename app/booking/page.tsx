@@ -69,6 +69,27 @@ export default function BookingPage() {
     string | null
   >(null);
 
+
+
+    /**
+   * Pulls a user-friendly message out of any Trawex error response.
+   */
+  const extractMessage = (err: any): string => {
+    const data = err.response?.data;
+    // top-level `{ error: { ErrorMessage } }`
+    if (data?.error?.ErrorMessage) {
+      return data.error.ErrorMessage;
+    }
+    // nested `{ error: { Errors: { ErrorMessage } } }`
+    if (data?.error?.Errors?.ErrorMessage) {
+      return data.error.Errors.ErrorMessage;
+    }
+    // fallback
+    return err.message || "An unexpected error occurred. Please try again.";
+  };
+
+
+
   // Redirect if not logged in
   useEffect(() => {
     if (!authLoading && !user) {
@@ -428,7 +449,9 @@ export default function BookingPage() {
       });
       window.location.href = res.data.data.url; // 🔁  full-page redirect to Stripe
     } catch (e: any) {
-      setError(e.response?.data?.error || e.message || "Payment failed.");
+      // setError(e.response?.data?.error || e.message || "Payment failed.");
+      setError(extractMessage(e));
+
     } finally {
       setSubmitting(false);
     }
@@ -499,7 +522,9 @@ export default function BookingPage() {
       setFareRules(rulesData);
       setShowRulesModal(true);
     } catch (e: any) {
-      const msg = e.response?.data?.error?.ErrorMessage || e.message;
+      // const msg = e.response?.data?.error?.ErrorMessage || e.message;
+      // setError(msg);
+     const msg = extractMessage(e);
       setError(msg);
       if (msg.toLowerCase().includes("passport")) {
         setNeedsPassport(true);
@@ -559,7 +584,9 @@ export default function BookingPage() {
         throw new Error("Booking failed.");
       }
     } catch (err: any) {
-      setError(err.message || "Booking failed.");
+      // setError(err.message || "Booking failed.");
+     setError(extractMessage(err));
+
     } finally {
       setSubmitting(false);
     }
