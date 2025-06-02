@@ -50,24 +50,24 @@
   }
   
   /* Optimisation pour les tableaux sur mobile */
-  table {
+  .mobileTableStyles table {
     font-size: 0.875rem;
   }
   
   /* Ajustements supplémentaires pour mobile */
-  h1 {
+  .mobileStyles h1 {
     font-size: 1.25rem;
   }
   
-  h2 {
+  .mobileStyles h2 {
     font-size: 1.125rem;
   }
   
-  h3 {
+  .mobileStyles h3 {
     font-size: 1rem;
   }
   
-  p {
+  .mobileStyles p {
     font-size: 0.875rem;
   }
   
@@ -95,19 +95,19 @@
   }
   
   /* Force le fond blanc pour l'impression */
-  body {
+  .printStyles body {
     background: white !important;
     color: black !important;
   }
   
   /* S'assurer que les tableaux s'impriment correctement */
-  table {
+  .printStyles table {
     width: 100% !important;
     border-collapse: collapse;
   }
   
   /* Éviter les coupures de page à l'intérieur des sections importantes */
-  section {
+  .printStyles section {
     break-inside: avoid;
     page-break-inside: avoid;
   }

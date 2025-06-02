@@ -134,7 +134,7 @@ a.download = `HRA-Airlines-Ticket-${ticketNumber}.pdf`;
 
   return (
     <motion.div
-      className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-6 sm:py-10 px-3 sm:px-4 print:bg-white"
+      className={`min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-6 sm:py-10 px-3 sm:px-4 print:bg-white ${styles.mobileStyles} ${styles.printStyles}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
@@ -347,7 +347,7 @@ a.download = `HRA-Airlines-Ticket-${ticketNumber}.pdf`;
                   {/* Fare Breakdown */}
                   <div>
                     <h3 className="font-semibold text-gray-800 mb-3 sm:mb-4 text-base sm:text-lg">Fare Breakdown</h3>
-                    <div className="overflow-x-auto -mx-3 sm:mx-0">
+                    <div className={`overflow-x-auto -mx-3 sm:mx-0 ${styles.mobileTableStyles}`}>
                       <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden shadow-sm min-w-full sm:min-w-0">
                         <table className="w-full min-w-[500px]">
                           <tbody>
@@ -374,7 +374,7 @@ a.download = `HRA-Airlines-Ticket-${ticketNumber}.pdf`;
                   {/* Taxes & Fees */}
                   <div>
                     <h3 className="font-semibold text-gray-800 mb-3 sm:mb-4 text-base sm:text-lg">Taxes & Fees</h3>
-                    <div className="overflow-x-auto -mx-3 sm:mx-0">
+                    <div className={`overflow-x-auto -mx-3 sm:mx-0 ${styles.mobileTableStyles}`}>
                       <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden shadow-sm min-w-full sm:min-w-0">
                         <table className="w-full min-w-[500px]">
                           <tbody>
