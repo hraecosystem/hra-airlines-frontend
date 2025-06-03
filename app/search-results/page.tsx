@@ -338,7 +338,7 @@ export default function SearchResultsPage() {
     // Formater la date selon les paramètres locaux, en incluant le fuseau horaire
     return (
       <span className="text-gray-900 !important">
-        {date.toLocaleString([], {
+        {date.toLocaleString('en-US', {
           month: "short",
           day: "numeric",
           hour: "2-digit",
@@ -699,7 +699,7 @@ export default function SearchResultsPage() {
                         </div>
                         <div className="flex-1">
                           <div className="text-sm text-gray-500">Duration</div>
-                          <div className="font-medium">
+                          <div className="font-medium text-gray-900">
                             {(() => {
                               const firstDeparture = new Date(
                                 firstSeg.DepartureDateTime
@@ -732,7 +732,7 @@ export default function SearchResultsPage() {
                           <div className="text-sm text-gray-500">
                             Cabin Class
                           </div>
-                          <div className="font-medium">
+                          <div className="font-medium text-gray-900">
                             {firstSeg.CabinClassText || firstSeg.CabinClassCode}
                           </div>
                         </div>
