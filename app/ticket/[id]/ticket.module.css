@@ -57,18 +57,22 @@
   /* Ajustements supplémentaires pour mobile */
   .mobileStyles h1 {
     font-size: 1.25rem;
+    line-height: 1.5;
   }
   
   .mobileStyles h2 {
     font-size: 1.125rem;
+    line-height: 1.4;
   }
   
   .mobileStyles h3 {
     font-size: 1rem;
+    line-height: 1.4;
   }
   
   .mobileStyles p {
     font-size: 0.875rem;
+    line-height: 1.4;
   }
   
   /* Meilleure gestion des défilements horizontaux */
@@ -77,6 +81,22 @@
     margin-right: -0.75rem;
     padding-left: 0.75rem;
     padding-right: 0.75rem;
+  }
+
+  /* Style pour la barre supérieure sur mobile */
+  .whiteHeading {
+    margin: 0.5rem 0;
+  }
+}
+
+/* Optimisations pour très petits écrans */
+@media screen and (max-width: 375px) {
+  .mobileStyles h1 {
+    font-size: 1.125rem;
+  }
+  
+  .mobileStyles h2 {
+    font-size: 1rem;
   }
 }
 
@@ -116,4 +136,5 @@
 /* Titres blancs forcés */
 .whiteHeading {
   color: white !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 } 

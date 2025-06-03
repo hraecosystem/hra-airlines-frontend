@@ -134,36 +134,36 @@ a.download = `HRA-Airlines-Ticket-${ticketNumber}.pdf`;
 
   return (
     <motion.div
-      className={`min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-6 sm:py-10 px-3 sm:px-4 print:bg-white ${styles.mobileStyles} ${styles.printStyles}`}
+      className={`min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-4 sm:py-8 px-3 sm:px-6 print:bg-white ${styles.mobileStyles} ${styles.printStyles}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
       <div className="mx-auto max-w-5xl">
         {/* Top Bar */}
-        <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0 ${styles.animatedGradient} bg-gradient-to-r from-blue-600 to-indigo-700 px-4 sm:px-8 py-4 sm:py-6 rounded-t-2xl shadow-lg print:hidden`}>
+        <div className={`flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0 ${styles.animatedGradient} bg-gradient-to-r from-blue-600 to-indigo-700 px-4 sm:px-8 py-4 sm:py-6 rounded-t-2xl shadow-lg print:hidden`}>
           <button 
             onClick={() => router.back()} 
-            className="text-white hover:text-blue-200 transition-colors duration-200"
+            className="text-white hover:text-blue-200 transition-colors duration-200 self-start sm:self-auto"
           >
-            <ChevronLeft size={24} />
+            <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
-          <h1 className={`text-xl sm:text-2xl font-bold text-white flex items-center gap-3 ${styles.whiteHeading}`}>
-            <Plane className="transform rotate-45" size={24} />
+          <h1 className={`text-xl sm:text-2xl font-bold text-white flex items-center gap-2 sm:gap-3 ${styles.whiteHeading}`}>
+            <Plane className="transform rotate-45 h-5 w-5 sm:h-6 sm:w-6" />
             E-Ticket
           </h1>
-          <div className="flex gap-2 sm:gap-4">
+          <div className="flex gap-2 sm:gap-4 self-end sm:self-auto">
             <button 
               onClick={handlePrint}
               className="inline-flex items-center gap-1 sm:gap-2 bg-white/10 hover:bg-white/20 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all duration-200 backdrop-blur-sm text-xs sm:text-base"
             >
-              <Printer size={16} /> Print
+              <Printer className="h-4 w-4 sm:h-5 sm:w-5" /> <span>Print</span>
             </button>
             <button 
               onClick={handleDownload}
               className="inline-flex items-center gap-1 sm:gap-2 bg-green-500 hover:bg-green-400 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all duration-200 text-xs sm:text-base"
             >
-              <Download size={16} /> Download
+              <Download className="h-4 w-4 sm:h-5 sm:w-5" /> <span>Download</span>
             </button>
           </div>
         </div>
