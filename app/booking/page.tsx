@@ -45,6 +45,26 @@ function makePassenger(
 const countryOptions = countryList().getData();
 const digits = (s: string) => s.replace(/\D/g, "");
 
+// Styles pour les composants Select
+const selectStyles = {
+  control: (base: any) => ({
+    ...base,
+    color: "#111827", // text-gray-900 équivalent
+  }),
+  option: (base: any) => ({
+    ...base,
+    color: "#111827", // text-gray-900 équivalent
+  }),
+  singleValue: (base: any) => ({
+    ...base,
+    color: "#111827", // text-gray-900 équivalent
+  }),
+  input: (base: any) => ({
+    ...base,
+    color: "#111827", // text-gray-900 équivalent
+  }),
+};
+
 export default function BookingPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
@@ -69,9 +89,7 @@ export default function BookingPage() {
     string | null
   >(null);
 
-
-
-    /**
+  /**
    * Pulls a user-friendly message out of any Trawex error response.
    */
   const extractMessage = (err: any): string => {
@@ -87,8 +105,6 @@ export default function BookingPage() {
     // fallback
     return err.message || "An unexpected error occurred. Please try again.";
   };
-
-
 
   // Redirect if not logged in
   useEffect(() => {
@@ -230,38 +246,6 @@ export default function BookingPage() {
       return next;
     });
   };
-
-  // validate contact + pax
-  // const validate = () => {
-  //   const errs: Record<string, boolean> = {};
-  //   let ok = true;
-
-  //   if (!email.trim() || !phone.trim()) {
-  //     setError("Email and phone are required.");
-  //     ok = false;
-  //   }
-
-  //   passengers.forEach((p, i) => {
-  //     const base = `pax-${i}-`;
-  //     if (!p.firstName) (errs[base + "firstName"] = true), (ok = false);
-  //     if (!p.lastName) (errs[base + "lastName"] = true), (ok = false);
-  //     if (!p.dob) (errs[base + "dob"] = true), (ok = false);
-  //     if (!p.nationality) (errs[base + "nationality"] = true), (ok = false);
-  //     if (needsPassport) {
-  //       if (!p.passportNo) (errs[base + "passportNo"] = true), (ok = false);
-  //       if (!p.passportIssueCountry)
-  //         (errs[base + "passportIssueCountry"] = true), (ok = false);
-  //       if (!p.passportIssueDate)
-  //         (errs[base + "passportIssueDate"] = true), (ok = false);
-  //       if (!p.passportExpiryDate)
-  //         (errs[base + "passportExpiryDate"] = true), (ok = false);
-  //     }
-  //   });
-
-  //   setFieldErrors(errs);
-  //   if (!ok) setError("Please fix the highlighted fields.");
-  //   return ok;
-  // };
 
   const validate = () => {
     const errs: Record<string, boolean> = {};
@@ -690,7 +674,7 @@ export default function BookingPage() {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setEmail(e.target.value)
                     }
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900"
                     placeholder="you@example.com"
                   />
                 </div>
@@ -704,7 +688,7 @@ export default function BookingPage() {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setPhone(e.target.value)
                     }
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900"
                     placeholder="+1 (555) 000-0000"
                   />
                 </div>
@@ -745,7 +729,7 @@ export default function BookingPage() {
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                           updatePassenger(idx, "title", e.target.value)
                         }
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900"
                       >
                         {(p.type === "ADT"
                           ? ["Mr", "Mrs", "Miss"]
@@ -771,7 +755,7 @@ export default function BookingPage() {
                           fieldErrors[base + "firstName"]
                             ? "border-red-500"
                             : "border-gray-300"
-                        }`}
+                        } text-gray-900`}
                         placeholder="John"
                       />
                     </div>
@@ -789,7 +773,7 @@ export default function BookingPage() {
                           fieldErrors[base + "lastName"]
                             ? "border-red-500"
                             : "border-gray-300"
-                        }`}
+                        } text-gray-900`}
                         placeholder="Doe"
                       />
                     </div>
@@ -808,7 +792,7 @@ export default function BookingPage() {
                           fieldErrors[base + "dob"]
                             ? "border-red-500"
                             : "border-gray-300"
-                        }`}
+                        } text-gray-900 date-input-text-fix`}
                         min={
                           p.type === "INF"
                             ? minInfantDob
@@ -843,6 +827,7 @@ export default function BookingPage() {
                         className="mt-1"
                         classNamePrefix="select"
                         placeholder="Select country..."
+                        styles={selectStyles}
                       />
                     </div>
 
@@ -864,7 +849,7 @@ export default function BookingPage() {
                               fieldErrors[base + "passportNo"]
                                 ? "border-red-500"
                                 : "border-gray-300"
-                            }`}
+                            } text-gray-900`}
                             placeholder="AB123456"
                           />
                         </div>
@@ -885,6 +870,7 @@ export default function BookingPage() {
                             className="mt-1"
                             classNamePrefix="select"
                             placeholder="Select country..."
+                            styles={selectStyles}
                           />
                         </div>
                         <div>
@@ -905,7 +891,7 @@ export default function BookingPage() {
                               fieldErrors[base + "passportIssueDate"]
                                 ? "border-red-500"
                                 : "border-gray-300"
-                            }`}
+                            } text-gray-900 date-input-text-fix`}
                             max={maxPassportIssue}
                           />
                         </div>
@@ -927,7 +913,7 @@ export default function BookingPage() {
                               fieldErrors[base + "passportExpiryDate"]
                                 ? "border-red-500"
                                 : "border-gray-300"
-                            }`}
+                            } text-gray-900 date-input-text-fix`}
                             min={minPassportExpiry}
                           />
                         </div>

@@ -332,10 +332,10 @@ export default function SearchResultsPage() {
   const formatMoney = (amt: string, cur: string) =>
     `${numeral(amt).format("0,0.00")} ${cur}`;
   const formatDateTime = (iso: string, locationCode: string = '') => {
-    // Créer un objet date à partir de l'ISO string
+    // Create a date object from the ISO string
     const date = new Date(iso);
     
-    // Formater la date selon les paramètres locaux, en incluant le fuseau horaire
+    // Format the date according to locale settings, including the timezone
     return (
       <span className="text-gray-900 !important">
         {date.toLocaleString('en-US', {
@@ -347,6 +347,43 @@ export default function SearchResultsPage() {
         <span className="text-xs ml-1 text-gray-600">(Local Time)</span>
       </span>
     );
+  };
+
+  // Helper to calculate flight duration considering time zones
+  const calculateFlightDuration = (segment: FlightSegment) => {
+    // Use the JourneyDuration field directly from the API if available
+    if (segment.JourneyDuration) {
+      const hours = Math.floor(segment.JourneyDuration / 60);
+      const minutes = segment.JourneyDuration % 60;
+      return { hours, minutes };
+    }
+    
+    // Fallback calculation - but this doesn't account for time zones correctly
+    const departure = new Date(segment.DepartureDateTime);
+    const arrival = new Date(segment.ArrivalDateTime);
+    const totalMinutes = Math.round((arrival.getTime() - departure.getTime()) / (1000 * 60));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return { hours, minutes };
+  };
+
+  // Helper to calculate total journey duration with all segments
+  const calculateTotalJourneyDuration = (segments: Array<FlightSegment>) => {
+    // First check if we can use the JourneyDuration fields
+    const totalMinutes = segments.reduce((total, segment) => total + (segment.JourneyDuration || 0), 0);
+    
+    if (totalMinutes > 0) {
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      return { hours, minutes, totalMinutes };
+    }
+    
+    // Fallback - calculate from first departure to last arrival (less accurate with time zones)
+    const firstDeparture = new Date(segments[0].DepartureDateTime);
+    const lastArrival = new Date(segments[segments.length - 1].ArrivalDateTime);
+    const minutes = Math.round((lastArrival.getTime() - firstDeparture.getTime()) / (1000 * 60));
+    const hours = Math.floor(minutes / 60);
+    return { hours, minutes: minutes % 60, totalMinutes: minutes };
   };
 
   const handleSelectOutbound = (fi: FareItinerary) => {
@@ -677,22 +714,12 @@ export default function SearchResultsPage() {
                         <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center">
                           <span className="text-purple-600 font-semibold text-sm">
                             {(() => {
-                              const firstDeparture = new Date(
-                                firstSeg.DepartureDateTime
+                              // Récupérer tous les segments de vol
+                              const segments = fi.OriginDestinationOptions[0].OriginDestinationOption.map(
+                                odo => odo.FlightSegment
                               );
-                              const lastArrival = new Date(
-                                fi.OriginDestinationOptions[0].OriginDestinationOption[
-                                  fi.OriginDestinationOptions[0]
-                                    .OriginDestinationOption.length - 1
-                                ].FlightSegment.ArrivalDateTime
-                              );
-                              const totalMinutes = Math.round(
-                                (lastArrival.getTime() -
-                                  firstDeparture.getTime()) /
-                                  (1000 * 60)
-                              );
-                              const hours = Math.floor(totalMinutes / 60);
-                              const minutes = totalMinutes % 60;
+                              // Calculer la durée totale avec notre nouvelle fonction
+                              const { hours, minutes } = calculateTotalJourneyDuration(segments);
                               return `${hours}h${minutes}m`;
                             })()}
                           </span>
@@ -701,22 +728,12 @@ export default function SearchResultsPage() {
                           <div className="text-sm text-gray-500">Duration</div>
                           <div className="font-medium text-gray-900">
                             {(() => {
-                              const firstDeparture = new Date(
-                                firstSeg.DepartureDateTime
+                              // Récupérer tous les segments de vol
+                              const segments = fi.OriginDestinationOptions[0].OriginDestinationOption.map(
+                                odo => odo.FlightSegment
                               );
-                              const lastArrival = new Date(
-                                fi.OriginDestinationOptions[0].OriginDestinationOption[
-                                  fi.OriginDestinationOptions[0]
-                                    .OriginDestinationOption.length - 1
-                                ].FlightSegment.ArrivalDateTime
-                              );
-                              const totalMinutes = Math.round(
-                                (lastArrival.getTime() -
-                                  firstDeparture.getTime()) /
-                                  (1000 * 60)
-                              );
-                              const hours = Math.floor(totalMinutes / 60);
-                              const minutes = totalMinutes % 60;
+                              // Calculer la durée totale avec notre nouvelle fonction
+                              const { hours, minutes } = calculateTotalJourneyDuration(segments);
                               return `${hours}h ${minutes}m total (including stops)`;
                             })()}
                           </div>
@@ -948,6 +965,15 @@ export default function SearchResultsPage() {
                                                   s.ArrivalDateTime
                                                 )}
                                               </div>
+                                            </div>
+                                            <div className="text-sm text-gray-600">
+                                              <span className="font-medium">
+                                                Duration:
+                                              </span>{" "}
+                                              {(() => {
+                                                const { hours, minutes } = calculateFlightDuration(s);
+                                                return `${hours}h ${minutes}m`;
+                                              })()}
                                             </div>
                                           </div>
                                           {/* ─── Booking / Seats / Meal / Marriage info ─── */}

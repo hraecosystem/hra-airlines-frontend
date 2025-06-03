@@ -137,7 +137,7 @@ export default function VerifyOtpPage() {
               value={digit}
               onChange={(e) => handleChange(i, e.target.value)}
               disabled={loading || !!lockoutUntil}
-              className={`w-12 h-12 text-xl text-center border rounded-lg ${
+              className={`w-12 h-12 text-xl text-center border rounded-lg text-gray-900 ${
                 lockoutUntil ? "bg-gray-100 cursor-not-allowed" : "focus:ring-2 focus:ring-pink-200 border-gray-300"
               }`}
               aria-label={`Digit ${i + 1}`}
