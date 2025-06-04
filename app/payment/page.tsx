@@ -17,6 +17,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useCurrency } from "@/context/CurrencyContext";
 
 type Method = "stripe" | "hra-coin";
 
@@ -60,6 +61,7 @@ interface BookingDetails {
 export default function PaymentPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { formatPrice, convertPrice, currencyCode, currencyInfo } = useCurrency();
 
   const [method, setMethod] = useState<Method>("stripe");
   const [stripeUrl, setStripeUrl] = useState<string>("");
@@ -294,7 +296,7 @@ export default function PaymentPage() {
                       >
                         <span className="text-gray-600">{fare.label}</span>
                         <span className="font-medium">
-                          {booking.currency} {fare.amount.toFixed(2)}
+                          {formatPrice(fare.amount, booking.currency)}
                         </span>
                       </div>
                     ))}
@@ -305,7 +307,7 @@ export default function PaymentPage() {
                       >
                         <span className="text-gray-500">{tax.name}</span>
                         <span className="text-gray-600">
-                          {booking.currency} {tax.amount.toFixed(2)}
+                          {formatPrice(tax.amount, booking.currency)}
                         </span>
                       </div>
                     ))}
@@ -313,7 +315,7 @@ export default function PaymentPage() {
                       <div className="flex justify-between items-center font-semibold text-lg">
                         <span>Total Amount</span>
                         <span className="text-blue-600">
-                          {booking.currency} {booking.totalPrice.toFixed(2)}
+                          {formatPrice(booking.totalPrice, booking.currency)}
                         </span>
                       </div>
                     </div>

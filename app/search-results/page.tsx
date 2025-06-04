@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import FiltersSidebar from "@/components/common/FiltersSidebar";
 import Pagination from "@/components/common/Pagination";
 import { ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
-import numeral from "numeral";
+import { useCurrency } from "@/context/CurrencyContext";
 
 interface FlightSegment {
   DepartureAirportLocationCode: string;
@@ -147,6 +147,8 @@ export default function SearchResultsPage() {
   const [hasInboundList, setHasInboundList] = useState(false);
   const [isOneWayRequest, setIsOneWayRequest] = useState(false);
   // ────────────────────────────────────────────────────────────────
+
+  const { formatPrice } = useCurrency();
 
   // 1) Load raw payload & extract FareItineraries
   useEffect(() => {
@@ -329,8 +331,9 @@ export default function SearchResultsPage() {
     s === "0" ? 0 : s === "1" ? 1 : 2;
   const odoTotalStops = (fi: FareItinerary) =>
     fi.OriginDestinationOptions[0].TotalStops;
-  const formatMoney = (amt: string, cur: string) =>
-    `${numeral(amt).format("0,0.00")} ${cur}`;
+  const formatMoney = (amt: string, cur: string) => {
+    return formatPrice(amt, cur);
+  };
   const formatDateTime = (iso: string, locationCode: string = '') => {
     // Create a date object from the ISO string
     const date = new Date(iso);

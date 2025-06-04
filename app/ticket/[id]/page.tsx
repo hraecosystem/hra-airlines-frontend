@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { Spinner } from "@/components/ui/Spinner";
 import styles from './ticket.module.css';
+import { useCurrency } from "@/context/CurrencyContext";
 
 type Passenger = {
   title: string;
@@ -56,6 +57,7 @@ export default function TicketPage() {
   const router = useRouter();
   const { id }  = useParams();
   const { user, loading: authLoading } = useAuth();
+  const { formatPrice } = useCurrency();
 
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
@@ -420,7 +422,7 @@ a.download = `HRA-Airlines-Ticket-${ticketNumber}.pdf`;
                     <div className="flex justify-between items-center">
                       <span className="font-semibold text-gray-900 text-sm sm:text-lg">Total Amount</span>
                       <span className="text-xl sm:text-2xl font-bold text-blue-600">
-                        {ticket.totalPrice.toFixed(2)} {ticket.currency}
+                        {formatPrice(ticket.totalPrice, ticket.currency)}
                       </span>
                     </div>
                     <div className="mt-2 sm:mt-3 text-xs sm:text-sm text-gray-600">

@@ -10,6 +10,7 @@ import AutoCompleteInput from "./AutoCompleteInput";
 import api from "@/lib/api";
 import { toYMD } from "@/utils/date";
 import { Plane, Search, Loader2, Calendar, Users } from "lucide-react";
+import { useCurrency } from "@/context/CurrencyContext";
 
 type JourneyType = "OneWay" | "Return" | "Circle";
 type CabinClass = "Economy" | "PremiumEconomy" | "Business" | "First";
@@ -93,6 +94,7 @@ const globalStyles = `
 
 export default function FlightSearchWidget() {
   const router = useRouter();
+  const { currencyCode } = useCurrency();
 
   const [tripType, setTripType] = useState<JourneyType>("OneWay");
   const [segments, setSegments] = useState<Segment[]>([
@@ -149,11 +151,10 @@ export default function FlightSearchWidget() {
     localStorage.removeItem("bookingId");
 
     // Clear previous selection before saving new search
-localStorage.removeItem("selectedFareRT");
-localStorage.removeItem("fareSourceCode");
-localStorage.removeItem("fareSourceCodeInbound");
+    localStorage.removeItem("selectedFareRT");
+    localStorage.removeItem("fareSourceCode");
+    localStorage.removeItem("fareSourceCodeInbound");
 
-        
     // Basic passenger validation
     if (infants > adults)
       return setError("Each infant must be accompanied by an adult.");
@@ -197,7 +198,7 @@ localStorage.removeItem("fareSourceCodeInbound");
 
     // Payload
     const payload = {
-      requiredCurrency: "USD",
+      requiredCurrency: currencyCode,
       journeyType: tripType,
       OriginDestinationInfo,
       class: cabinClass,
@@ -209,48 +210,48 @@ localStorage.removeItem("fareSourceCodeInbound");
     setLoading(true);
     try {
       const resp = await api.post("/flights/search", payload);
-            /* ────────────────────────────────────────────────────────────
-               A)  No-result case  ➜  show a friendly message
-               ──────────────────────────────────────────────────────────── */
-            if (
-              // our backend returns HTTP-404 OR 200 + status:"error"
-              resp.status === 404                                  ||
-              (resp.data.status === "error" &&
-               resp.data.message?.ErrorCode === "FLERSEA022")      ||
-              Array.isArray(resp.data.data) && resp.data.data.length === 0
-            ) {
-              setError("No flights were found for that route / date.");
-              return;
-            }
-      
-            /* ────────────────────────────────────────────────────────────
-               B)  Normal success – cache & navigate
-               ──────────────────────────────────────────────────────────── */
-            localStorage.setItem("searchResults", JSON.stringify(resp.data.data));
-            localStorage.setItem("searchTimestamp", Date.now().toString());
-            router.push("/search-results");
+      /* ────────────────────────────────────────────────────────────
+         A)  No-result case  ➜  show a friendly message
+         ──────────────────────────────────────────────────────────── */
+      if (
+        // our backend returns HTTP-404 OR 200 + status:"error"
+        resp.status === 404                                  ||
+        (resp.data.status === "error" &&
+         resp.data.message?.ErrorCode === "FLERSEA022")      ||
+        Array.isArray(resp.data.data) && resp.data.data.length === 0
+      ) {
+        setError("No flights were found for that route / date.");
+        return;
+      }
+
+      /* ────────────────────────────────────────────────────────────
+         B)  Normal success – cache & navigate
+         ──────────────────────────────────────────────────────────── */
+      localStorage.setItem("searchResults", JSON.stringify(resp.data.data));
+      localStorage.setItem("searchTimestamp", Date.now().toString());
+      router.push("/search-results");
     } catch (err: any) {
-            console.error("Flight search error:", err);
-      
-           /* network / 5xx outage */
-            if (err.response?.status === 503) {
-              setError(
-                "Our flight availability service is temporarily unavailable. " +
-                "Please try again in a few minutes."
-              );
-              return;
-            }
-      
-            /* any other backend-supplied message (string OR object) */
-            const raw = err.response?.data?.message;
-            if (typeof raw === "string") {
-              setError(raw);
-            } else if (raw?.ErrorMessage) {
-              setError(raw.ErrorMessage);
-            } else {
-              setError("Unable to search flights. Please check your entries and try again.");
-            }
-            }  finally {
+      console.error("Flight search error:", err);
+
+      /* network / 5xx outage */
+      if (err.response?.status === 503) {
+        setError(
+          "Our flight availability service is temporarily unavailable. " +
+          "Please try again in a few minutes."
+        );
+        return;
+      }
+
+      /* any other backend-supplied message (string OR object) */
+      const raw = err.response?.data?.message;
+      if (typeof raw === "string") {
+        setError(raw);
+      } else if (raw?.ErrorMessage) {
+        setError(raw.ErrorMessage);
+      } else {
+        setError("Unable to search flights. Please check your entries and try again.");
+      }
+    } finally {
       setLoading(false);
     }
   };
