@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Key, RefreshCw } from "lucide-react";
+
 import api from "@/lib/api";
 
 const LOCKOUT_SECONDS = 5 * 60; // 5 minutes
@@ -76,8 +76,7 @@ export default function VerifyOtpPage() {
     try {
       await api.post("/auth/verify-otp", {
         email,
-        otpCode: otp.join(""),
-      });
+        otpCode: otp.join("") });
       // success: clear storage and go to login
       localStorage.removeItem("hra_user_email");
       localStorage.removeItem("hra_user_id");

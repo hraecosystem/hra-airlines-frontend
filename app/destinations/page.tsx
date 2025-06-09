@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, MapPin, Calendar, Plane, Star } from "lucide-react";
+import { Search, Plane, Star } from "lucide-react";
 
 const destinations = [
   {
@@ -145,8 +145,7 @@ export default function DestinationsPage() {
                   <Link
                     href={{
                       pathname: "/",
-                      query: { destination: dest.code },
-                    }}
+                      query: { destination: dest.code } }}
                     className="block focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-400"
                   >
                     <div className="relative h-56">

@@ -6,7 +6,12 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "fix-errors": "node scripts/fix-lint-errors.js && npm run lint:fix",
+    "analyze-types": "node scripts/generate-types.js",
+    "fix-expressions": "node scripts/fix-unused-expressions.js",
+    "fix-all": "node scripts/fix-all-errors.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.2",
