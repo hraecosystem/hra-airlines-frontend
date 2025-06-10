@@ -5,7 +5,7 @@ import Head from "next/head";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Calendar, Clock, Tag, ArrowRight } from "lucide-react";
+import { Calendar, Tag, ArrowRight } from "lucide-react";
 import { useState } from "react";
 
 interface Offer {

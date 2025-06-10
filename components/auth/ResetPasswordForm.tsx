@@ -114,7 +114,7 @@ export default function ResetPasswordForm() {
               value={otpCode}
               onChange={(e) => setOtpCode(e.target.value)}
               disabled={loading}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 transition-all duration-200 hover:border-blue-300"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 transition-all duration-200 hover:border-blue-300 text-gray-900"
             />
             <Key className="absolute left-3 top-3 text-gray-400 group-hover:text-blue-500 transition-colors" size={20} />
           </div>

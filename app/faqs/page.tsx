@@ -3,7 +3,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Search, Plane, Ticket, CreditCard, Clock, Shield, HelpCircle } from "lucide-react";
+import { ChevronDown, Search, Plane, Ticket, Shield, HelpCircle } from "lucide-react";
 
 const faqCategories = [
   {

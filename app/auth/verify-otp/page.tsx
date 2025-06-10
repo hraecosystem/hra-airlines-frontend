@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Key, RefreshCw } from "lucide-react";
+
 import api from "@/lib/api";
 
 const LOCKOUT_SECONDS = 5 * 60; // 5 minutes
@@ -76,8 +76,7 @@ export default function VerifyOtpPage() {
     try {
       await api.post("/auth/verify-otp", {
         email,
-        otpCode: otp.join(""),
-      });
+        otpCode: otp.join("") });
       // success: clear storage and go to login
       localStorage.removeItem("hra_user_email");
       localStorage.removeItem("hra_user_id");
@@ -137,7 +136,7 @@ export default function VerifyOtpPage() {
               value={digit}
               onChange={(e) => handleChange(i, e.target.value)}
               disabled={loading || !!lockoutUntil}
-              className={`w-12 h-12 text-xl text-center border rounded-lg ${
+              className={`w-12 h-12 text-xl text-center border rounded-lg text-gray-900 ${
                 lockoutUntil ? "bg-gray-100 cursor-not-allowed" : "focus:ring-2 focus:ring-pink-200 border-gray-300"
               }`}
               aria-label={`Digit ${i + 1}`}

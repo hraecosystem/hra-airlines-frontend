@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Metadata } from "next";
-import { Plane, Globe2, Headset, Shield, Users, Award, Clock, Star } from "lucide-react";
+import { Plane, Globe2, Headset, Shield, Users, Award, Star } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "About Us | HRA Airlines",

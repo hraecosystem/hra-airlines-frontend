@@ -190,6 +190,41 @@ html, body {
   overflow-x: hidden;
 }
 
+/* ---------------- Correction pour les champs de type date ---------------- */
+input[type="date"],
+.date-input-text-fix {
+  color: rgb(17, 24, 39) !important;
+  -webkit-text-fill-color: rgb(17, 24, 39) !important;
+}
+
+/* Correction pour les composants React-Select */
+.select__control,
+.select__menu,
+.select__option,
+.select__single-value,
+.select__input {
+  color: rgb(17, 24, 39) !important;
+  -webkit-text-fill-color: rgb(17, 24, 39) !important;
+}
+
+/* Pour les navigateurs Webkit qui peuvent avoir des problèmes spécifiques */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  input[type="date"],
+  .date-input-text-fix {
+    color: rgb(17, 24, 39) !important;
+    -webkit-text-fill-color: rgb(17, 24, 39) !important;
+  }
+}
+
+/* Firefox specific fixes */
+@-moz-document url-prefix() {
+  input[type="date"],
+  .date-input-text-fix {
+    color: rgb(17, 24, 39) !important;
+    -webkit-text-fill-color: rgb(17, 24, 39) !important;
+  }
+}
+
 /* ---------------- 5. Accessible Focus Styles ---------------- */
 :focus {
   outline: none;

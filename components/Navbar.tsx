@@ -4,7 +4,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import styles from './Navbar.module.css';
 import {
   Menu,
   X,
@@ -23,6 +22,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
+import CurrencySelector from "./ui/CurrencySelector";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -115,6 +115,9 @@ export default function Navbar() {
               </Link>
             ))}
 
+            {/* Currency Selector */}
+            <CurrencySelector />
+
             {user ? (
               <div className="relative" ref={dropdownRef}>
                 <button
@@ -205,6 +208,11 @@ export default function Navbar() {
                   {label}
                 </Link>
               ))}
+
+              {/* Currency Selector for Mobile */}
+              <div className="w-full flex justify-center py-2">
+                <CurrencySelector />
+              </div>
 
               {user ? (
                 <>

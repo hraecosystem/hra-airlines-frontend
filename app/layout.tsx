@@ -6,6 +6,7 @@ import Script from "next/script";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/context/AuthContext";
+import { CurrencyProvider } from "@/context/CurrencyContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -111,24 +112,26 @@ export default function RootLayout({
         </noscript>
 
         <AuthProvider>
-          {/* Skip link for accessibility */}
-          <a
-            href="#main-content"
-            className="sr-only focus:not-sr-only p-2 bg-blue-600 text-white fixed top-2 left-2 rounded"
-          >
-            Skip to content
-          </a>
+          <CurrencyProvider>
+            {/* Skip link for accessibility */}
+            <a
+              href="#main-content"
+              className="sr-only focus:not-sr-only p-2 bg-blue-600 text-white fixed top-2 left-2 rounded"
+            >
+              Skip to content
+            </a>
 
-          {/* Site header */}
-          <Navbar />
+            {/* Site header */}
+            <Navbar />
 
-          {/* Main content */}
-          <main id="main-content" className="pt-16 min-h-screen">
-            {children}
-          </main>
+            {/* Main content */}
+            <main id="main-content" className="pt-16 min-h-screen">
+              {children}
+            </main>
 
-          {/* Site footer */}
-          <Footer />
+            {/* Site footer */}
+            <Footer />
+          </CurrencyProvider>
         </AuthProvider>
       </body>
     </html>
