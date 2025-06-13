@@ -258,7 +258,19 @@ export default function FlightSearchWidget() {
 
   // Shared input classes
   const inputClass =
-    "w-full pl-10 pr-4 py-2.5 border border-gray-200 bg-white text-gray-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all duration-200 hover:border-blue-300 text-sm";
+    "w-full pl-10 pr-4 py-2.5 border border-gray-200 bg-white text-gray-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all duration-200 hover:border-blue-300 text-sm appearance-none [-webkit-appearance:none] [-moz-appearance:none] [appearance:none]";
+
+  // Shared icon classes for better iOS compatibility
+  const iconClass = "absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none select-none";
+
+  // Container class for form fields
+  const fieldContainerClass = "relative flex flex-col";
+
+  // Container class for input with icon (for origin/destination)
+  const inputWithIconClass = "relative flex items-center w-full";
+
+  // Container class for other inputs with icon
+  const inputWithIconCenteredClass = "relative flex items-center justify-center w-full";
 
   return (
     <motion.form
@@ -266,7 +278,7 @@ export default function FlightSearchWidget() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="mx-auto max-w-3xl space-y-6 rounded-2xl bg-white/95 backdrop-blur-sm p-6 shadow-2xl border border-gray-100"
+      className="mx-auto max-w-3xl space-y-6 rounded-2xl bg-white/95 backdrop-blur-sm p-6 shadow-2xl border border-gray-100 [-webkit-backdrop-filter:blur(8px)]"
       aria-busy={loading}
     >
       <h2 className="text-center text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent mb-6">
@@ -295,15 +307,15 @@ export default function FlightSearchWidget() {
 
       {/* Trip & Cabin */}
       <div className="grid grid-cols-2 gap-6">
-        <div className="relative">
+        <div className={fieldContainerClass}>
           <label
             htmlFor="tripType"
             className="block text-sm font-medium text-gray-700 mb-2"
           >
             Trip Type
           </label>
-          <div className="relative">
-            <Plane className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <div className={inputWithIconCenteredClass}>
+            <Plane className={iconClass} />
             <select
               id="tripType"
               value={tripType}
@@ -321,15 +333,15 @@ export default function FlightSearchWidget() {
             </select>
           </div>
         </div>
-        <div className="relative">
+        <div className={fieldContainerClass}>
           <label
             htmlFor="cabinClass"
             className="block text-sm font-medium text-gray-700 mb-2"
           >
             Cabin Class
           </label>
-          <div className="relative">
-            <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <div className={inputWithIconCenteredClass}>
+            <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
             <select
@@ -351,7 +363,7 @@ export default function FlightSearchWidget() {
 
       {/* Flight Legs */}
       {tripType === "Circle" ? (
-        <div className="h-[180px] overflow-y-auto pr-2 space-y-3">
+        <div className="h-[180px] overflow-y-auto pr-2 space-y-3 [-webkit-overflow-scrolling:touch]">
           {segments.map((s, i) => (
             <div
               key={i}
@@ -359,38 +371,46 @@ export default function FlightSearchWidget() {
             >
               <div className="sm:col-span-2">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="relative">
-                    <AutoCompleteInput
-                      label={`Trip ${i + 1} Origin`}
-                      value={s.origin}
-                      onChange={(v) => updateLeg(i, "origin", v)}
-                      placeholder="From"
-                      inputClassName={inputClass}
-                    />
-                    <svg className="absolute left-3 top-[38px] text-gray-400 w-5 h-5" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
-                      <path d="M120-120v-80h720v80H120Zm70-200L40-570l96-26 112 94 140-37-207-276 116-31 299 251 170-46q32-9 60.5 7.5T864-585q9 32-7.5 60.5T808-487L190-320Z"/>
-                    </svg>
+                  <div className={fieldContainerClass}>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {`Trip ${i + 1} Origin`}
+                    </label>
+                    <div className={inputWithIconClass}>
+                      <svg className={iconClass} xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                        <path d="M120-120v-80h720v80H120Zm70-200L40-570l96-26 112 94 140-37-207-276 116-31 299 251 170-46q32-9 60.5 7.5T864-585q9 32-7.5 60.5T808-487L190-320Z"/>
+                      </svg>
+                      <AutoCompleteInput
+                        value={s.origin}
+                        onChange={(v) => updateLeg(i, "origin", v)}
+                        placeholder="From"
+                        inputClassName={inputClass}
+                      />
+                    </div>
                   </div>
-                  <div className="relative">
-                    <AutoCompleteInput
-                      label={`Trip ${i + 1} Destination`}
-                      value={s.destination}
-                      onChange={(v) => updateLeg(i, "destination", v)}
-                      placeholder="To"
-                      inputClassName={inputClass}
-                    />
-                    <svg className="absolute left-3 top-[38px] text-gray-400 w-5 h-5" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
-                      <path d="M120-120v-80h720v80H120Zm622-202L120-499v-291l96 27 48 139 138 39-35-343 115 34 128 369 172 49q25 8 41.5 29t16.5 48q0 35-28.5 61.5T742-322Z"/>
-                    </svg>
+                  <div className={fieldContainerClass}>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {`Trip ${i + 1} Destination`}
+                    </label>
+                    <div className={inputWithIconClass}>
+                      <svg className={iconClass} xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                        <path d="M120-120v-80h720v80H120Zm622-202L120-499v-291l96 27 48 139 138 39-35-343 115 34 128 369 172 49q25 8 41.5 29t16.5 48q0 35-28.5 61.5T742-322Z"/>
+                      </svg>
+                      <AutoCompleteInput
+                        value={s.destination}
+                        onChange={(v) => updateLeg(i, "destination", v)}
+                        placeholder="To"
+                        inputClassName={inputClass}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="relative">
+              <div className={fieldContainerClass}>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Departure Date
                 </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <div className="relative flex items-center">
+                  <Calendar className={iconClass} />
                   <DatePicker
                     selected={s.date}
                     onChange={(date) => updateLeg(i, "date", date)}
@@ -433,36 +453,44 @@ export default function FlightSearchWidget() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-          <div className="relative">
-            <AutoCompleteInput
-              label="From"
-              value={segments[0].origin}
-              onChange={(v) => updateLeg(0, "origin", v)}
-              placeholder="Origin"
-              inputClassName={inputClass}
-            />
-            <svg className="absolute left-3 top-[38px] text-gray-400 w-5 h-5" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
-              <path d="M120-120v-80h720v80H120Zm70-200L40-570l96-26 112 94 140-37-207-276 116-31 299 251 170-46q32-9 60.5 7.5T864-585q9 32-7.5 60.5T808-487L190-320Z"/>
-            </svg>
+          <div className={fieldContainerClass}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              From
+            </label>
+            <div className={inputWithIconCenteredClass}>
+              <svg className={iconClass} xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                <path d="M120-120v-80h720v80H120Zm70-200L40-570l96-26 112 94 140-37-207-276 116-31 299 251 170-46q32-9 60.5 7.5T864-585q9 32-7.5 60.5T808-487L190-320Z"/>
+              </svg>
+              <AutoCompleteInput
+                value={segments[0].origin}
+                onChange={(v) => updateLeg(0, "origin", v)}
+                placeholder="Origin"
+                inputClassName={inputClass}
+              />
+            </div>
           </div>
-          <div className="relative">
-            <AutoCompleteInput
-              label="To"
-              value={segments[0].destination}
-              onChange={(v) => updateLeg(0, "destination", v)}
-              placeholder="Destination"
-              inputClassName={inputClass}
-            />
-            <svg className="absolute left-3 top-[38px] text-gray-400 w-5 h-5" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
-              <path d="M120-120v-80h720v80H120Zm622-202L120-499v-291l96 27 48 139 138 39-35-343 115 34 128 369 172 49q25 8 41.5 29t16.5 48q0 35-28.5 61.5T742-322Z"/>
-            </svg>
+          <div className={fieldContainerClass}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              To
+            </label>
+            <div className={inputWithIconCenteredClass}>
+              <svg className={iconClass} xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                <path d="M120-120v-80h720v80H120Zm622-202L120-499v-291l96 27 48 139 138 39-35-343 115 34 128 369 172 49q25 8 41.5 29t16.5 48q0 35-28.5 61.5T742-322Z"/>
+              </svg>
+              <AutoCompleteInput
+                value={segments[0].destination}
+                onChange={(v) => updateLeg(0, "destination", v)}
+                placeholder="Destination"
+                inputClassName={inputClass}
+              />
+            </div>
           </div>
-          <div className="relative">
+          <div className={fieldContainerClass}>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Departure Date
             </label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <div className={inputWithIconCenteredClass}>
+              <Calendar className={iconClass} />
               <DatePicker
                 selected={segments[0].date}
                 onChange={(date) => updateLeg(0, "date", date)}
@@ -481,12 +509,12 @@ export default function FlightSearchWidget() {
 
       {/* Return Date */}
       {tripType === "Return" && (
-        <div className="relative">
+        <div className={fieldContainerClass}>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Return Date
           </label>
-          <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <div className={inputWithIconCenteredClass}>
+            <Calendar className={iconClass} />
             <DatePicker
               selected={returnDate}
               onChange={setReturnDate}
@@ -504,12 +532,12 @@ export default function FlightSearchWidget() {
 
       {/* Passengers */}
       <div className="grid grid-cols-3 gap-6">
-        <div className="relative">
+        <div className={fieldContainerClass}>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Adults
           </label>
-          <div className="relative">
-            <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <div className={inputWithIconCenteredClass}>
+            <Users className={iconClass} />
             <select
               value={adults}
               onChange={(e) => setAdults(Number(e.target.value))}
@@ -523,12 +551,12 @@ export default function FlightSearchWidget() {
             </select>
           </div>
         </div>
-        <div className="relative">
+        <div className={fieldContainerClass}>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Children
           </label>
-          <div className="relative">
-            <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <div className={inputWithIconCenteredClass}>
+            <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
               <circle cx="12" cy="7" r="4" />
             </svg>
@@ -545,12 +573,12 @@ export default function FlightSearchWidget() {
             </select>
           </div>
         </div>
-        <div className="relative">
+        <div className={fieldContainerClass}>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Infants
           </label>
-          <div className="relative">
-            <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <div className={inputWithIconCenteredClass}>
+            <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
               <circle cx="12" cy="7" r="4" />
             </svg>

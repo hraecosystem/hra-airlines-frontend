@@ -8,6 +8,7 @@ import Select from "react-select";
 import countryList from "react-select-country-list";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import FareRulesModal from "@/components/FareRulesModal";
 
 type CountryOption = { label: /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
 string; value: string };
@@ -1025,6 +1026,7 @@ mongoBookingId;
             </motion.button>
           </main>
           {showRulesModal && (
+<<<<<<< Updated upstream
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg max-w-2xl w-full p-6 shadow-xl">
                 <h2 className="text-xl font-bold mb-4 text-gray-800">
@@ -1125,6 +1127,28 @@ mongoBookingId;
                 </div>
               </div>
             </div>
+=======
+            <FareRulesModal
+              isOpen={showRulesModal}
+              onClose={() => setShowRulesModal(false)}
+              onAccept={async () => {
+                setShowRulesModal(false);
+                if (
+                  (fare?.AirItineraryFareInfo?.FareType ??
+                    fare?.Outbound?.AirItineraryFareInfo?.FareType) ===
+                  "WebFare"
+                ) {
+                  // LCC – pay first, seats are created after Stripe webhook
+                  await startLccCheckout();
+                } else {
+                  // GDS – current flow
+                  confirmBooking();
+                }
+              }}
+              fareRules={fareRules}
+              isLoading={submitting}
+            />
+>>>>>>> Stashed changes
           )}
         </motion.div>
       </div>

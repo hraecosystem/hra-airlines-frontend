@@ -7,7 +7,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import FiltersSidebar from "@/components/common/FiltersSidebar";
 import Pagination from "@/components/common/Pagination";
 import { ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
+<<<<<<< Updated upstream
 import { useCurrency } from "@/context/CurrencyContext";
+=======
+import numeral from "numeral";
+import AirportLogo from "@/components/AirportLogo";
+>>>>>>> Stashed changes
 
 interface FlightSegment {
   DepartureAirportLocationCode: string;
@@ -641,11 +646,7 @@ export default function SearchResultsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center">
-                          <span className="text-blue-600 font-semibold">
-                            {firstSeg.DepartureAirportLocationCode}
-                          </span>
-                        </div>
+                        <AirportLogo code={firstSeg.DepartureAirportLocationCode} size="md" />
                         <div className="flex-1 flex items-center gap-2">
                           <div className="flex flex-col justify-center">
                             <div className="text-sm text-gray-500">
@@ -669,17 +670,12 @@ export default function SearchResultsPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
-                          <span className="text-green-600 font-semibold">
-                            {
-                              fi.OriginDestinationOptions[0]
-                                .OriginDestinationOption[
-                                fi.OriginDestinationOptions[0]
-                                  .OriginDestinationOption.length - 1
-                              ].FlightSegment.ArrivalAirportLocationCode
-                            }
-                          </span>
-                        </div>
+                        <AirportLogo 
+                          code={fi.OriginDestinationOptions[0].OriginDestinationOption[
+                            fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1
+                          ].FlightSegment.ArrivalAirportLocationCode} 
+                          size="md"
+                        />
                         <div className="flex-1 flex items-center gap-2">
                           <div className="flex flex-col justify-center">
                             <div className="text-sm text-gray-500">Arrival</div>
@@ -767,11 +763,7 @@ export default function SearchResultsPage() {
                     </div>
                     <div className="relative flex justify-between items-center">
                       <div className="flex flex-col items-center">
-                        <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-2">
-                          <span className="text-blue-600 font-semibold text-lg">
-                            {firstSeg.DepartureAirportLocationCode}
-                          </span>
-                        </div>
+                        <AirportLogo code={firstSeg.DepartureAirportLocationCode} size="lg" className="mb-2" />
                         <div className="text-sm text-gray-900">
                           {formatDateTime(firstSeg.DepartureDateTime, firstSeg.DepartureAirportLocationCode)}
                         </div>
@@ -782,17 +774,13 @@ export default function SearchResultsPage() {
                         </div>
                       </div>
                       <div className="flex flex-col items-center">
-                        <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-2">
-                          <span className="text-green-600 font-semibold text-lg">
-                            {
-                              fi.OriginDestinationOptions[0]
-                                .OriginDestinationOption[
-                                fi.OriginDestinationOptions[0]
-                                  .OriginDestinationOption.length - 1
-                              ].FlightSegment.ArrivalAirportLocationCode
-                            }
-                          </span>
-                        </div>
+                        <AirportLogo 
+                          code={fi.OriginDestinationOptions[0].OriginDestinationOption[
+                            fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1
+                          ].FlightSegment.ArrivalAirportLocationCode} 
+                          size="lg"
+                          className="mb-2"
+                        />
                         <div className="text-sm text-gray-900">
                           {formatDateTime(
                             fi.OriginDestinationOptions[0]
@@ -955,18 +943,13 @@ export default function SearchResultsPage() {
                                               </span>
                                             </div>
                                             <div className="flex justify-between items-center text-sm text-gray-600">
-                                              <div>
-                                                {s.DepartureAirportLocationCode}{" "}
-                                                → {s.ArrivalAirportLocationCode}
+                                              <div className="flex items-center gap-2">
+                                                <AirportLogo code={s.DepartureAirportLocationCode} size="sm" />
+                                                <span>→</span>
+                                                <AirportLogo code={s.ArrivalAirportLocationCode} size="sm" />
                                               </div>
                                               <div>
-                                                {formatDateTime(
-                                                  s.DepartureDateTime
-                                                )}{" "}
-                                                –{" "}
-                                                {formatDateTime(
-                                                  s.ArrivalDateTime
-                                                )}
+                                                {formatDateTime(s.DepartureDateTime)} – {formatDateTime(s.ArrivalDateTime)}
                                               </div>
                                             </div>
                                             <div className="text-sm text-gray-600">
