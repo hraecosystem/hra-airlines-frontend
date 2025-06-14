@@ -966,107 +966,6 @@ export default function BookingPage() {
             </motion.button>
           </main>
           {showRulesModal && (
-<<<<<<< Updated upstream
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg max-w-2xl w-full p-6 shadow-xl">
-                <h2 className="text-xl font-bold mb-4 text-gray-800">
-                  Fare Rules & Conditions
-                </h2>
-
-                {/* FARE RULES SECTION */}
-                <h3 className="text-lg font-semibold mb-2">Fare Rules</h3>
-                {fareRules?.FareRules?.length ? (
-                  <ul className="space-y-4 max-h-40 overflow-y-auto text-sm text-gray-700">
-                    {fareRules.FareRules.map((ruleObj: any, idx: number) => {
-                      const r = ruleObj.FareRule || {};
-                      return (
-                        <li key={idx} className="border-b pb-3">
-                          <div>
-                            <strong>Airline:</strong> {r.Airline || "—"}
-                          </div>
-                          <div>
-                            <strong>Route:</strong> {r.CityPair || "—"}
-                          </div>
-                          <div>
-                            <strong>Category:</strong> {r.Category || "—"}
-                          </div>
-                          <div>
-                            <strong>Rules:</strong>{" "}
-                            {r.Rules?.trim()
-                              ? r.Rules.trim()
-                              : "No rules provided by airline."}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <p className="text-gray-600 text-sm">
-                    No fare rules available.
-                  </p>
-                )}
-
-                {/* BAGGAGE SECTION */}
-                <h3 className="mt-6 text-lg font-semibold mb-2">
-                  Baggage Allowance
-                </h3>
-                {fareRules?.BaggageInfos?.length ? (
-                  <ul className="space-y-2 text-sm text-gray-700">
-                    {fareRules.BaggageInfos.map((b: any, idx: number) => {
-                      const info = b.BaggageInfo || {};
-                      return (
-                        <li key={idx}>
-                          <div>
-                            <strong>Flight:</strong> {info.FlightNo || "—"}
-                          </div>
-                          <div>
-                            <strong>Route:</strong> {info.Departure || "—"} →{" "}
-                            {info.Arrival || "—"}
-                          </div>
-                          <div>
-                            <strong>Allowance:</strong> {info.Baggage || "—"}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <p className="text-gray-600 text-sm">
-                    No baggage info available.
-                  </p>
-                )}
-
-                {/* ACTION BUTTONS */}
-                <div className="mt-6 flex justify-end gap-4">
-                  <button
-                    onClick={() => setShowRulesModal(false)}
-                    className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition"
-                  >
-                    Go Back
-                  </button>
-                  <button
-                    onClick={async () => {
-                      setShowRulesModal(false);
-                      if (
-                        (fare?.AirItineraryFareInfo?.FareType ??
-                          fare?.Outbound?.AirItineraryFareInfo?.FareType) ===
-                        "WebFare"
-                      ) {
-                        // LCC – pay first, seats are created after Stripe webhook
-                        await startLccCheckout();
-                      } else {
-                        // GDS – current flow
-                        confirmBooking();
-                      }
-                    }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-                  >
-                    Accept & Book
-                  </button>
-                </div>
-              </div>
-            </div>
-=======
             <FareRulesModal
               isOpen={showRulesModal}
               onClose={() => setShowRulesModal(false)}
@@ -1087,7 +986,6 @@ export default function BookingPage() {
               fareRules={fareRules}
               isLoading={submitting}
             />
->>>>>>> Stashed changes
           )}
         </motion.div>
       </div>

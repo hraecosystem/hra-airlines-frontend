@@ -7,16 +7,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import FiltersSidebar from "@/components/common/FiltersSidebar";
 import Pagination from "@/components/common/Pagination";
 import { ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
-<<<<<<< Updated upstream
 import { useCurrency } from "@/context/CurrencyContext";
-<<<<<<< Updated upstream
-=======
 import numeral from "numeral";
 import AirportLogo from "@/components/AirportLogo";
->>>>>>> Stashed changes
-=======
 import api from "@/lib/api";
->>>>>>> Stashed changes
 
 interface FlightSegment {
   DepartureAirport: {
