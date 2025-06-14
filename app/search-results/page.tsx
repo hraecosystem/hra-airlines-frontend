@@ -2,40 +2,51 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import FiltersSidebar from "@/components/common/FiltersSidebar";
 import Pagination from "@/components/common/Pagination";
 import { ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
 <<<<<<< Updated upstream
 import { useCurrency } from "@/context/CurrencyContext";
+<<<<<<< Updated upstream
 =======
 import numeral from "numeral";
 import AirportLogo from "@/components/AirportLogo";
 >>>>>>> Stashed changes
+=======
+import api from "@/lib/api";
+>>>>>>> Stashed changes
 
 interface FlightSegment {
-  DepartureAirportLocationCode: string;
-  ArrivalAirportLocationCode: string;
+  DepartureAirport: {
+    LocationCode: string;
+    Terminal?: string;
+  };
+  ArrivalAirport: {
+    LocationCode: string;
+    Terminal?: string;
+  };
   DepartureDateTime: string;
   ArrivalDateTime: string;
-  MarketingAirlineCode: string;
-  MarketingAirlineName?: string;
   FlightNumber: string;
-  Equipment?: { AirEquipType: string };
-  JourneyDuration: number;
-  CabinClassCode: string;
-  CabinClassText?: string;
-  // ← add these two
-  MealCode?: string;
-  MarriageGroup?: string;
-
-  Eticket: boolean;
   OperatingAirline: {
     Code: string;
-    Name: string;
-    Equipment?: string;
-    FlightNumber?: string;
+    FlightNumber: string;
+  };
+  Equipment?: {
+    AirEquipType: string;
+  };
+  MarketingAirline?: {
+    Code: string;
+  };
+  StopQuantity: number;
+  ResBookDesigCode: string;
+  BookingClassAvail: string;
+  CabinClass: string;
+  BaggageAllowance?: {
+    Weight: number;
+    Unit: string;
   };
 }
 
