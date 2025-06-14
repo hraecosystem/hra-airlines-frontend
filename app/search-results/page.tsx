@@ -276,15 +276,12 @@ export default function SearchResultsPage() {
     let tmp = [...allItins];
 
     // airline filter
-    if (filters.airline) {
-      tmp = tmp.filter((fi) =>
-        fi.OriginDestinationOptions.some((odo) =>
-          odo.OriginDestinationOption.some(
-            (seg) => seg.FlightSegment.MarketingAirlineCode === filters.airline
-          )
+    const matchesAirline = filters.airline === "all" || 
+      fi.OriginDestinationOptions.some((odo) =>
+        odo.OriginDestinationOption.some(
+          (seg) => seg.FlightSegment.MarketingAirline?.Code === filters.airline
         )
       );
-    }
 
     // stops filter
     if (filters.stops !== "all") {
