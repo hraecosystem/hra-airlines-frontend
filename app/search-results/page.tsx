@@ -28,20 +28,25 @@ interface FlightSegment {
     Code: string;
     FlightNumber: string;
   };
-  Equipment?: {
-    AirEquipType: string;
-  };
   MarketingAirline?: {
     Code: string;
+    Name?: string;
+  };
+  Equipment?: {
+    AirEquipType: string;
   };
   StopQuantity: number;
   ResBookDesigCode: string;
   BookingClassAvail: string;
   CabinClass: string;
+  CabinClassText?: string;
+  JourneyDuration?: number;
   BaggageAllowance?: {
     Weight: number;
     Unit: string;
   };
+  MealCode?: string;
+  MarriageGroup?: string;
 }
 
 interface OriginDestinationOption {
@@ -276,12 +281,15 @@ export default function SearchResultsPage() {
     let tmp = [...allItins];
 
     // airline filter
-    const matchesAirline = filters.airline === "all" || 
-      fi.OriginDestinationOptions.some((odo) =>
-        odo.OriginDestinationOption.some(
-          (seg) => seg.FlightSegment.MarketingAirline?.Code === filters.airline
+    if (filters.airline !== "all") {
+      tmp = tmp.filter((fi) =>
+        fi.OriginDestinationOptions.some((odo) =>
+          odo.OriginDestinationOption.some(
+            (seg) => seg.FlightSegment.MarketingAirline?.Code === filters.airline
+          )
         )
       );
+    }
 
     // stops filter
     if (filters.stops !== "all") {
@@ -539,9 +547,9 @@ export default function SearchResultsPage() {
     new Set(
       allItins.flatMap((fi) =>
         fi.OriginDestinationOptions.flatMap((odo) =>
-          odo.OriginDestinationOption.map(
-            (s) => s.FlightSegment.MarketingAirlineCode
-          )
+          odo.OriginDestinationOption
+            .map((s) => s.FlightSegment.MarketingAirline?.Code)
+            .filter((code): code is string => code !== undefined)
         )
       )
     )
@@ -604,22 +612,18 @@ export default function SearchResultsPage() {
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 relative">
                         <img
-                          src={`https://flightaware.com/images/airline_logos/90p/${firstSeg.MarketingAirlineCode}.png`}
-                          alt={
-                            firstSeg.MarketingAirlineName ||
-                            firstSeg.MarketingAirlineCode
-                          }
+                          src={`https://flightaware.com/images/airline_logos/90p/${firstSeg.MarketingAirline?.Code}.png`}
+                          alt={firstSeg.MarketingAirline?.Name || firstSeg.MarketingAirline?.Code || "Airline"}
                           className="w-full h-full object-contain"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.src = `https://www.gstatic.com/flights/airline_logos/70px/${firstSeg.MarketingAirlineCode}.png`;
+                            target.src = `https://www.gstatic.com/flights/airline_logos/70px/${firstSeg.MarketingAirline?.Code}.png`;
                           }}
                         />
                       </div>
                       <div>
                         <h3 className="text-xl font-semibold text-gray-900">
-                          {firstSeg.MarketingAirlineName ||
-                            firstSeg.MarketingAirlineCode}{" "}
+                          {firstSeg.MarketingAirline?.Name || firstSeg.MarketingAirline?.Code}{" "}
                           #{firstSeg.FlightNumber}
                         </h3>
                         <p className="text-sm text-gray-500">
@@ -648,14 +652,14 @@ export default function SearchResultsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
-                        <AirportLogo code={firstSeg.DepartureAirportLocationCode} size="md" />
+                        <AirportLogo code={firstSeg.DepartureAirport.LocationCode} size="md" />
                         <div className="flex-1 flex items-center gap-2">
                           <div className="flex flex-col justify-center">
                             <div className="text-sm text-gray-500">
                               Departure
                             </div>
                             <div className="font-medium text-gray-900">
-                              {formatDateTime(firstSeg.DepartureDateTime, firstSeg.DepartureAirportLocationCode)}
+                              {formatDateTime(firstSeg.DepartureDateTime, firstSeg.DepartureAirport.LocationCode)}
                             </div>
                           </div>
                           <div className="w-6 h-6 text-gray-600 flex items-center">
@@ -675,7 +679,7 @@ export default function SearchResultsPage() {
                         <AirportLogo 
                           code={fi.OriginDestinationOptions[0].OriginDestinationOption[
                             fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1
-                          ].FlightSegment.ArrivalAirportLocationCode} 
+                          ].FlightSegment.ArrivalAirport.LocationCode} 
                           size="md"
                         />
                         <div className="flex-1 flex items-center gap-2">
@@ -692,7 +696,7 @@ export default function SearchResultsPage() {
                                   .OriginDestinationOption[
                                   fi.OriginDestinationOptions[0]
                                     .OriginDestinationOption.length - 1
-                                ].FlightSegment.ArrivalAirportLocationCode
+                                ].FlightSegment.ArrivalAirport.LocationCode
                               )}
                             </div>
                           </div>
@@ -743,7 +747,7 @@ export default function SearchResultsPage() {
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-yellow-50 rounded-full flex items-center justify-center">
                           <span className="text-yellow-600 font-semibold">
-                            {firstSeg.CabinClassCode}
+                            {firstSeg.CabinClass}
                           </span>
                         </div>
                         <div className="flex-1">
@@ -751,7 +755,7 @@ export default function SearchResultsPage() {
                             Cabin Class
                           </div>
                           <div className="font-medium text-gray-900">
-                            {firstSeg.CabinClassText || firstSeg.CabinClassCode}
+                            {firstSeg.CabinClassText || firstSeg.CabinClass}
                           </div>
                         </div>
                       </div>
@@ -765,9 +769,9 @@ export default function SearchResultsPage() {
                     </div>
                     <div className="relative flex justify-between items-center">
                       <div className="flex flex-col items-center">
-                        <AirportLogo code={firstSeg.DepartureAirportLocationCode} size="lg" className="mb-2" />
+                        <AirportLogo code={firstSeg.DepartureAirport.LocationCode} size="lg" className="mb-2" />
                         <div className="text-sm text-gray-900">
-                          {formatDateTime(firstSeg.DepartureDateTime, firstSeg.DepartureAirportLocationCode)}
+                          {formatDateTime(firstSeg.DepartureDateTime, firstSeg.DepartureAirport.LocationCode)}
                         </div>
                       </div>
                       <div className="flex-1 flex items-center justify-center">
@@ -779,7 +783,7 @@ export default function SearchResultsPage() {
                         <AirportLogo 
                           code={fi.OriginDestinationOptions[0].OriginDestinationOption[
                             fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1
-                          ].FlightSegment.ArrivalAirportLocationCode} 
+                          ].FlightSegment.ArrivalAirport.LocationCode} 
                           size="lg"
                           className="mb-2"
                         />
@@ -794,7 +798,7 @@ export default function SearchResultsPage() {
                               .OriginDestinationOption[
                               fi.OriginDestinationOptions[0]
                                 .OriginDestinationOption.length - 1
-                            ].FlightSegment.ArrivalAirportLocationCode
+                            ].FlightSegment.ArrivalAirport.LocationCode
                           )}
                         </div>
                       </div>
@@ -920,24 +924,19 @@ export default function SearchResultsPage() {
                                         >
                                           <div className="w-12 h-12 relative">
                                             <img
-                                              src={`https://flightaware.com/images/airline_logos/90p/${s.MarketingAirlineCode}.png`}
-                                              alt={
-                                                s.MarketingAirlineName ||
-                                                s.MarketingAirlineCode
-                                              }
+                                              src={`https://flightaware.com/images/airline_logos/90p/${s.MarketingAirline?.Code}.png`}
+                                              alt={s.MarketingAirline?.Name || s.MarketingAirline?.Code || "Airline"}
                                               className="w-full h-full object-contain"
                                               onError={(e) => {
-                                                const target =
-                                                  e.target as HTMLImageElement;
-                                                target.src = `https://www.gstatic.com/flights/airline_logos/70px/${s.MarketingAirlineCode}.png`;
+                                                const target = e.target as HTMLImageElement;
+                                                target.src = `https://www.gstatic.com/flights/airline_logos/70px/${s.MarketingAirline?.Code}.png`;
                                               }}
                                             />
                                           </div>
                                           <div className="flex-1">
                                             <div className="flex justify-between items-center mb-1">
                                               <span className="font-medium">
-                                                {s.MarketingAirlineName ||
-                                                  s.MarketingAirlineCode}{" "}
+                                                {s.MarketingAirline?.Name || s.MarketingAirline?.Code}{" "}
                                                 {s.FlightNumber}
                                               </span>
                                               <span className="text-sm text-gray-500">
@@ -946,9 +945,9 @@ export default function SearchResultsPage() {
                                             </div>
                                             <div className="flex justify-between items-center text-sm text-gray-600">
                                               <div className="flex items-center gap-2">
-                                                <AirportLogo code={s.DepartureAirportLocationCode} size="sm" />
+                                                <AirportLogo code={s.DepartureAirport.LocationCode} size="sm" />
                                                 <span>→</span>
-                                                <AirportLogo code={s.ArrivalAirportLocationCode} size="sm" />
+                                                <AirportLogo code={s.ArrivalAirport.LocationCode} size="sm" />
                                               </div>
                                               <div>
                                                 {formatDateTime(s.DepartureDateTime)} – {formatDateTime(s.ArrivalDateTime)}
