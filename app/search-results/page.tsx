@@ -28,23 +28,26 @@ interface FlightSegment {
     Code: string;
     FlightNumber: string;
   };
-  MarketingAirline?: {
-    Code: string;
-    Name?: string;
-  };
   Equipment?: {
     AirEquipType: string;
+  };
+  MarketingAirline: {
+    Code: string;
+    Name?: string;
   };
   StopQuantity: number;
   ResBookDesigCode: string;
   BookingClassAvail: string;
   CabinClass: string;
+  CabinClassCode?: string;
   CabinClassText?: string;
-  JourneyDuration?: number;
   BaggageAllowance?: {
     Weight: number;
     Unit: string;
   };
+  JourneyDuration?: string | number;
+  DepartureAirportLocationCode?: string;
+  ArrivalAirportLocationCode?: string;
   MealCode?: string;
   MarriageGroup?: string;
 }
@@ -169,85 +172,100 @@ export default function SearchResultsPage() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem("searchResults");
-      if (!raw) {
-        console.error("No search results found in localStorage");
+      if (!raw)
         throw new Error("No search results found. Please search again.");
-      }
-
       const obj = JSON.parse(raw);
-      console.log("RAW search object ➡️", obj);
 
-      // Normalisation des données
-      const normalise = (raw: any): FI[] => {
-        if (!raw) return [];
-        
-        // Si c'est un tableau, traiter chaque élément
-        if (Array.isArray(raw)) {
-          return raw.map(item => {
-            const fareItinerary = item.FareItinerary || item;
-            if (!fareItinerary) return null;
-            return fareItinerary;
-          }).filter(Boolean) as FI[];
-        }
-        
-        // Si c'est un objet unique
-        const fareItinerary = raw.FareItinerary || raw;
-        return fareItinerary ? [fareItinerary] : [];
-      };
+      console.log("RAW search object ➡️", obj); // 🟡 NEW
 
-      // Extraction des vols aller et retour
-      let outbound = normalise(obj.AirSearchResponse?.AirSearchResult?.FareItineraries);
-      let inbound = normalise(obj.AirSearchResponse?.AirSearchResultInbound?.FareItineraries);
+      /* 1️⃣ grab the search-level SessionId once */
+      const sid =
+        obj.AirSearchResponse?.session_id ?? // ♦ correct path
+        obj.AirSearchResponse?.AirSearchResult?.SessionId ?? // (fallback)
+        obj.session_id ?? // (old fallback)
+        "";
+      setMasterSid(sid);
 
-      console.log("Outbound flights:", outbound.length);
-      console.log("Inbound flights:", inbound.length);
-
-      // Si pas de vols trouvés, essayer d'autres chemins de données
-      if (outbound.length === 0 && inbound.length === 0) {
-        const allFlights = normalise(
-          obj.AirSearchResponse?.AirSearchResult?.FareItineraries ||
-          obj.AirSearchResult?.FareItineraries ||
-          obj.FareItineraries
-        );
-
-        console.log("All flights found:", allFlights.length);
-
-        // Séparation des vols par direction
-        const isOutbound = (d?: string) => !!d && /out|o\b/i.test(d);
-        const isInbound = (d?: string) => !!d && /in|ret|r\b/i.test(d);
-
-        outbound = allFlights.filter(fi => isOutbound(fi.DirectionInd));
-        inbound = allFlights.filter(fi => isInbound(fi.DirectionInd));
-
-        // Si toujours pas de vols, utiliser tous les vols comme outbound
-        if (outbound.length === 0 && inbound.length === 0) {
-          outbound = allFlights;
-        }
-      }
-
-      // Mise à jour des états
-      const hasInbound = inbound.length > 0;
-      setHasInboundList(hasInbound);
-      setIsOneWayRequest(!hasInbound);
-      setStep(0);
-
-      // Sauvegarde de l'ID de session
-      const sid = obj.AirSearchResponse?.session_id || 
-                  obj.AirSearchResponse?.AirSearchResult?.SessionId || 
-                  obj.session_id || "";
       if (sid) {
-        setMasterSid(sid);
         localStorage.setItem("flightSessionId", sid);
       }
 
-      // Mise à jour des vols
-      setAllItins(outbound);
-      setInboundItins(inbound);
-      setFiltered(outbound);
+      // ➊ ───────── explicit containers first ──────────────
+      const normalise = (raw: any): FI[] =>
+        raw
+          ? Array.isArray(raw)
+            ? raw.map((w: any) => w.FareItinerary ?? w)
+            : [raw.FareItinerary ?? raw]
+          : [];
 
+      let outbound = normalise(
+        obj.AirSearchResponse?.AirSearchResult?.FareItineraries
+      );
+      let inbound = normalise(
+        obj.AirSearchResponse?.AirSearchResultInbound?.FareItineraries
+      );
+
+      if (outbound.length === 0 && inbound.length === 0) {
+        /* ------------------------------------------------------------------ *
+         *  ONE list → split by DirectionInd
+         * ------------------------------------------------------------------ */
+        const rawFi =
+          obj.AirSearchResponse?.AirSearchResult?.FareItineraries ??
+          obj.AirSearchResult?.FareItineraries; // very old schema
+
+        /* 🔷 Indian-domestic round-trip: inbound list sits in its
+         *     own sibling node AirSearchResultInbound                      */
+        const rawInDomestic =
+          obj.AirSearchResponse?.AirSearchResultInbound?.FareItineraries ??
+          obj.AirSearchResultInbound?.FareItineraries; // very old GDS
+
+        const listInboundDom: FI[] = rawInDomestic
+          ? Array.isArray(rawInDomestic)
+            ? rawInDomestic.map((w: any) => w.FareItinerary ?? w)
+            : [rawInDomestic.FareItinerary ?? rawInDomestic]
+          : [];
+
+        const allFi = normalise(
+          obj.AirSearchResponse?.AirSearchResult?.FareItineraries ??
+            obj.AirSearchResult?.FareItineraries
+        );
+
+        const isOut = (d?: string) => !!d && /out|o\b/i.test(d); // "Outbound", "O"
+        const isIn = (d?: string) => !!d && /in|ret|r\b/i.test(d); // "Inbound", "Return", "R"
+
+        const out = allFi.filter((fi) => isOut(fi.DirectionInd));
+        const inn = [
+          ...allFi.filter((fi) => isIn(fi.DirectionInd)), // ➊ tagged "Return/Inbound"
+          ...listInboundDom, // ➋ separate domestic list
+        ];
+
+        outbound = allFi.filter((fi) => isOut(fi.DirectionInd));
+        inbound = allFi.filter((fi) => isIn(fi.DirectionInd));
+
+        if (outbound.length === 0 && inbound.length === 0) {
+          outbound = allFi;
+        }
+      }
+      // ➌ ───────── helper flags based on final lists ───────
+      const inbPresent = inbound.length > 0;
+      setHasInboundList(inbPresent);
+
+      const searchTripTypeRaw =
+        obj.AirSearchResponse?.search_params?.tripType ??
+        obj.AirSearchResponse?.SearchInput?.TripType ??
+        outbound[0]?.DirectionInd ??
+        ""; // last resort
+
+      const oneWay = !inbPresent; // a trip is one-way iff no inbound list
+      setIsOneWayRequest(oneWay);
+
+      if (oneWay || !inbPresent) setStep(0);
+
+      setAllItins(outbound);
+      setInboundItins(inbound); // <- keep inbound aside till step 1
+      setFiltered(outbound);
     } catch (e: any) {
-      console.error("Error loading search results:", e);
-      setErrorMsg(e.message || "An error occurred while loading search results");
+      setErrorMsg(e.message);
     } finally {
       setLoading(false);
     }
@@ -263,30 +281,22 @@ export default function SearchResultsPage() {
 
   // Re-calculate whenever filters _or the list currently displayed_ changes
   useEffect(() => {
-    if (!allItins.length) return;
-
     let tmp = [...allItins];
 
     // airline filter
-    if (filters.airline && filters.airline !== "all") {
-      tmp = tmp.filter((fi) =>
-        fi.OriginDestinationOptions.some((odo) =>
-          odo.OriginDestinationOption.some(
-            (seg) => seg.FlightSegment.MarketingAirline?.Code === filters.airline
-          )
+    const airlineFilter = (fi: FareItinerary) =>
+      !filters.airline ||
+      fi.OriginDestinationOptions.some((odo) =>
+        odo.OriginDestinationOption.some(
+          (seg) => seg.FlightSegment.MarketingAirline.Code === filters.airline
         )
       );
-    }
+
+    tmp = tmp.filter(airlineFilter);
 
     // stops filter
     if (filters.stops !== "all") {
-      const stopCount = parseStops(filters.stops);
-      tmp = tmp.filter((fi) => {
-        const totalStops = fi.OriginDestinationOptions.reduce((total, odo) => 
-          total + (odo.TotalStops || 0), 0
-        );
-        return totalStops === stopCount;
-      });
+      tmp = tmp.filter((fi) => odoTotalStops(fi) === parseStops(filters.stops));
     }
 
     // baggage
@@ -330,7 +340,6 @@ export default function SearchResultsPage() {
       return filters.sortBy === "price-asc" ? pa - pb : pb - pa;
     });
 
-    console.log("Filtered flights:", tmp.length);
     setCurrentPage(1);
     setFiltered(tmp);
   }, [filters, allItins]);
@@ -362,40 +371,50 @@ export default function SearchResultsPage() {
   };
 
   // Helper to calculate flight duration considering time zones
-  const calculateFlightDuration = (segment: FlightSegment) => {
-    // Use the JourneyDuration field directly from the API if available
-    if (segment.JourneyDuration) {
-      const hours = Math.floor(segment.JourneyDuration / 60);
-      const minutes = segment.JourneyDuration % 60;
+  const calculateFlightDuration = (segment: FlightSegment): { hours: number; minutes: number } => {
+    if (typeof segment.JourneyDuration === 'string') {
+      const [hours, minutes] = segment.JourneyDuration.split(':').map(Number);
       return { hours, minutes };
     }
     
-    // Fallback calculation - but this doesn't account for time zones correctly
     const departure = new Date(segment.DepartureDateTime);
     const arrival = new Date(segment.ArrivalDateTime);
-    const totalMinutes = Math.round((arrival.getTime() - departure.getTime()) / (1000 * 60));
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
+    const diffMs = arrival.getTime() - departure.getTime();
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
     return { hours, minutes };
   };
 
-  // Helper to calculate total journey duration with all segments
-  const calculateTotalJourneyDuration = (segments: Array<FlightSegment>) => {
-    // First check if we can use the JourneyDuration fields
-    const totalMinutes = segments.reduce((total, segment) => total + (segment.JourneyDuration || 0), 0);
-    
-    if (totalMinutes > 0) {
-      const hours = Math.floor(totalMinutes / 60);
-      const minutes = totalMinutes % 60;
-      return { hours, minutes, totalMinutes };
-    }
-    
-    // Fallback - calculate from first departure to last arrival (less accurate with time zones)
+  // Helper function to calculate duration from departure/arrival times
+  const calculateTotalDurationFromTimes = (segments: Array<FlightSegment>): string => {
     const firstDeparture = new Date(segments[0].DepartureDateTime);
     const lastArrival = new Date(segments[segments.length - 1].ArrivalDateTime);
     const minutes = Math.round((lastArrival.getTime() - firstDeparture.getTime()) / (1000 * 60));
     const hours = Math.floor(minutes / 60);
-    return { hours, minutes: minutes % 60, totalMinutes: minutes };
+    return `${hours}h ${minutes % 60}m`;
+  };
+
+  const calculateTotalJourneyDuration = (segments: Array<FlightSegment>) => {
+    // First check if we can use the JourneyDuration fields
+    const totalMinutes = segments.reduce((total, segment) => {
+      if (typeof segment.JourneyDuration === 'number') {
+        return total + segment.JourneyDuration;
+      }
+      if (typeof segment.JourneyDuration === 'string') {
+        const [hours, minutes] = segment.JourneyDuration.split(':').map(Number);
+        return total + (hours * 60 + minutes);
+      }
+      return total;
+    }, 0);
+    
+    if (totalMinutes > 0) {
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      return `${hours}h ${minutes}m`;
+    }
+    
+    // Fallback to calculating from departure/arrival times
+    return calculateTotalDurationFromTimes(segments);
   };
 
   const handleSelectOutbound = (fi: FareItinerary) => {
@@ -541,9 +560,9 @@ export default function SearchResultsPage() {
     new Set(
       allItins.flatMap((fi) =>
         fi.OriginDestinationOptions.flatMap((odo) =>
-          odo.OriginDestinationOption
-            .map((s) => s.FlightSegment.MarketingAirline?.Code)
-            .filter((code): code is string => code !== undefined)
+          odo.OriginDestinationOption.map(
+            (s) => s.FlightSegment.MarketingAirline.Code
+          )
         )
       )
     )
@@ -606,18 +625,18 @@ export default function SearchResultsPage() {
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 relative">
                         <img
-                          src={`https://flightaware.com/images/airline_logos/90p/${firstSeg.MarketingAirline?.Code}.png`}
-                          alt={firstSeg.MarketingAirline?.Name || firstSeg.MarketingAirline?.Code || "Airline"}
+                          src={`/airlines/${firstSeg.MarketingAirline.Code.toLowerCase()}.png`}
+                          alt={
+                            firstSeg.MarketingAirline.Name ||
+                            firstSeg.MarketingAirline.Code
+                          }
                           className="w-full h-full object-contain"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = `https://www.gstatic.com/flights/airline_logos/70px/${firstSeg.MarketingAirline?.Code}.png`;
-                          }}
                         />
                       </div>
                       <div>
                         <h3 className="text-xl font-semibold text-gray-900">
-                          {firstSeg.MarketingAirline?.Name || firstSeg.MarketingAirline?.Code}{" "}
+                          {firstSeg.MarketingAirline.Name ||
+                            firstSeg.MarketingAirline.Code}{" "}
                           #{firstSeg.FlightNumber}
                         </h3>
                         <p className="text-sm text-gray-500">
@@ -646,14 +665,17 @@ export default function SearchResultsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
-                        <AirportLogo code={firstSeg.DepartureAirport.LocationCode} size="md" />
+                        <AirportLogo 
+                          code={firstSeg.DepartureAirport.LocationCode || firstSeg.DepartureAirportLocationCode || ''} 
+                          size="md" 
+                        />
                         <div className="flex-1 flex items-center gap-2">
                           <div className="flex flex-col justify-center">
                             <div className="text-sm text-gray-500">
                               Departure
                             </div>
                             <div className="font-medium text-gray-900">
-                              {formatDateTime(firstSeg.DepartureDateTime, firstSeg.DepartureAirport.LocationCode)}
+                              {formatDateTime(firstSeg.DepartureDateTime)}
                             </div>
                           </div>
                           <div className="w-6 h-6 text-gray-600 flex items-center">
@@ -673,7 +695,10 @@ export default function SearchResultsPage() {
                         <AirportLogo 
                           code={fi.OriginDestinationOptions[0].OriginDestinationOption[
                             fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1
-                          ].FlightSegment.ArrivalAirport.LocationCode} 
+                          ].FlightSegment.ArrivalAirport.LocationCode || 
+                          fi.OriginDestinationOptions[0].OriginDestinationOption[
+                            fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1
+                          ].FlightSegment.ArrivalAirportLocationCode || ''} 
                           size="md"
                         />
                         <div className="flex-1 flex items-center gap-2">
@@ -690,7 +715,7 @@ export default function SearchResultsPage() {
                                   .OriginDestinationOption[
                                   fi.OriginDestinationOptions[0]
                                     .OriginDestinationOption.length - 1
-                                ].FlightSegment.ArrivalAirport.LocationCode
+                                ].FlightSegment.ArrivalAirportLocationCode
                               )}
                             </div>
                           </div>
@@ -713,13 +738,10 @@ export default function SearchResultsPage() {
                         <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center">
                           <span className="text-purple-600 font-semibold text-sm">
                             {(() => {
-                              // Récupérer tous les segments de vol
                               const segments = fi.OriginDestinationOptions[0].OriginDestinationOption.map(
                                 odo => odo.FlightSegment
                               );
-                              // Calculer la durée totale avec notre nouvelle fonction
-                              const { hours, minutes } = calculateTotalJourneyDuration(segments);
-                              return `${hours}h${minutes}m`;
+                              return calculateTotalJourneyDuration(segments);
                             })()}
                           </span>
                         </div>
@@ -727,13 +749,10 @@ export default function SearchResultsPage() {
                           <div className="text-sm text-gray-500">Duration</div>
                           <div className="font-medium text-gray-900">
                             {(() => {
-                              // Récupérer tous les segments de vol
                               const segments = fi.OriginDestinationOptions[0].OriginDestinationOption.map(
                                 odo => odo.FlightSegment
                               );
-                              // Calculer la durée totale avec notre nouvelle fonction
-                              const { hours, minutes } = calculateTotalJourneyDuration(segments);
-                              return `${hours}h ${minutes}m total (including stops)`;
+                              return calculateTotalJourneyDuration(segments) + " total (including stops)";
                             })()}
                           </div>
                         </div>
@@ -741,7 +760,7 @@ export default function SearchResultsPage() {
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-yellow-50 rounded-full flex items-center justify-center">
                           <span className="text-yellow-600 font-semibold">
-                            {firstSeg.CabinClass}
+                            {firstSeg.CabinClassText || firstSeg.CabinClassCode || firstSeg.CabinClass}
                           </span>
                         </div>
                         <div className="flex-1">
@@ -749,7 +768,7 @@ export default function SearchResultsPage() {
                             Cabin Class
                           </div>
                           <div className="font-medium text-gray-900">
-                            {firstSeg.CabinClassText || firstSeg.CabinClass}
+                            {firstSeg.CabinClassText || firstSeg.CabinClassCode || firstSeg.CabinClass}
                           </div>
                         </div>
                       </div>
@@ -763,9 +782,9 @@ export default function SearchResultsPage() {
                     </div>
                     <div className="relative flex justify-between items-center">
                       <div className="flex flex-col items-center">
-                        <AirportLogo code={firstSeg.DepartureAirport.LocationCode} size="lg" className="mb-2" />
+                        <AirportLogo code={firstSeg.DepartureAirport.LocationCode || firstSeg.DepartureAirportLocationCode || ''} size="lg" className="mb-2" />
                         <div className="text-sm text-gray-900">
-                          {formatDateTime(firstSeg.DepartureDateTime, firstSeg.DepartureAirport.LocationCode)}
+                          {formatDateTime(firstSeg.DepartureDateTime)}
                         </div>
                       </div>
                       <div className="flex-1 flex items-center justify-center">
@@ -777,7 +796,10 @@ export default function SearchResultsPage() {
                         <AirportLogo 
                           code={fi.OriginDestinationOptions[0].OriginDestinationOption[
                             fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1
-                          ].FlightSegment.ArrivalAirport.LocationCode} 
+                          ].FlightSegment.ArrivalAirport.LocationCode || 
+                          fi.OriginDestinationOptions[0].OriginDestinationOption[
+                            fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1
+                          ].FlightSegment.ArrivalAirportLocationCode || ''} 
                           size="lg"
                           className="mb-2"
                         />
@@ -792,7 +814,7 @@ export default function SearchResultsPage() {
                               .OriginDestinationOption[
                               fi.OriginDestinationOptions[0]
                                 .OriginDestinationOption.length - 1
-                            ].FlightSegment.ArrivalAirport.LocationCode
+                            ].FlightSegment.ArrivalAirportLocationCode
                           )}
                         </div>
                       </div>
@@ -911,6 +933,7 @@ export default function SearchResultsPage() {
                                   {odo.OriginDestinationOption.map(
                                     (segObj, si) => {
                                       const s = segObj.FlightSegment;
+                                      const duration = calculateFlightDuration(s);
                                       return (
                                         <div
                                           key={si}
@@ -918,19 +941,19 @@ export default function SearchResultsPage() {
                                         >
                                           <div className="w-12 h-12 relative">
                                             <img
-                                              src={`https://flightaware.com/images/airline_logos/90p/${s.MarketingAirline?.Code}.png`}
-                                              alt={s.MarketingAirline?.Name || s.MarketingAirline?.Code || "Airline"}
+                                              src={`/airlines/${s.MarketingAirline.Code.toLowerCase()}.png`}
+                                              alt={
+                                                s.MarketingAirline.Name ||
+                                                s.MarketingAirline.Code
+                                              }
                                               className="w-full h-full object-contain"
-                                              onError={(e) => {
-                                                const target = e.target as HTMLImageElement;
-                                                target.src = `https://www.gstatic.com/flights/airline_logos/70px/${s.MarketingAirline?.Code}.png`;
-                                              }}
                                             />
                                           </div>
                                           <div className="flex-1">
                                             <div className="flex justify-between items-center mb-1">
                                               <span className="font-medium">
-                                                {s.MarketingAirline?.Name || s.MarketingAirline?.Code}{" "}
+                                                {s.MarketingAirline.Name ||
+                                                  s.MarketingAirline.Code}{" "}
                                                 {s.FlightNumber}
                                               </span>
                                               <span className="text-sm text-gray-500">
@@ -939,9 +962,15 @@ export default function SearchResultsPage() {
                                             </div>
                                             <div className="flex justify-between items-center text-sm text-gray-600">
                                               <div className="flex items-center gap-2">
-                                                <AirportLogo code={s.DepartureAirport.LocationCode} size="sm" />
+                                                <AirportLogo 
+                                                  code={s.DepartureAirport.LocationCode || s.DepartureAirportLocationCode || ''} 
+                                                  size="sm" 
+                                                />
                                                 <span>→</span>
-                                                <AirportLogo code={s.ArrivalAirport.LocationCode} size="sm" />
+                                                <AirportLogo 
+                                                  code={s.ArrivalAirport.LocationCode || s.ArrivalAirportLocationCode || ''} 
+                                                  size="sm" 
+                                                />
                                               </div>
                                               <div>
                                                 {formatDateTime(s.DepartureDateTime)} – {formatDateTime(s.ArrivalDateTime)}
@@ -951,10 +980,7 @@ export default function SearchResultsPage() {
                                               <span className="font-medium">
                                                 Duration:
                                               </span>{" "}
-                                              {(() => {
-                                                const { hours, minutes } = calculateFlightDuration(s);
-                                                return `${hours}h ${minutes}m`;
-                                              })()}
+                                              {`${duration.hours}h ${duration.minutes}m`}
                                             </div>
                                           </div>
                                           {/* ─── Booking / Seats / Meal / Marriage info ─── */}
