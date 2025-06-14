@@ -169,100 +169,85 @@ export default function SearchResultsPage() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem("searchResults");
-      if (!raw)
+      if (!raw) {
+        console.error("No search results found in localStorage");
         throw new Error("No search results found. Please search again.");
+      }
+
       const obj = JSON.parse(raw);
+      console.log("RAW search object ➡️", obj);
 
-      console.log("RAW search object ➡️", obj); // 🟡 NEW
+      // Normalisation des données
+      const normalise = (raw: any): FI[] => {
+        if (!raw) return [];
+        
+        // Si c'est un tableau, traiter chaque élément
+        if (Array.isArray(raw)) {
+          return raw.map(item => {
+            const fareItinerary = item.FareItinerary || item;
+            if (!fareItinerary) return null;
+            return fareItinerary;
+          }).filter(Boolean) as FI[];
+        }
+        
+        // Si c'est un objet unique
+        const fareItinerary = raw.FareItinerary || raw;
+        return fareItinerary ? [fareItinerary] : [];
+      };
 
-      /* 1️⃣ grab the search-level SessionId once */
-      const sid =
-        obj.AirSearchResponse?.session_id ?? // ♦ correct path
-        obj.AirSearchResponse?.AirSearchResult?.SessionId ?? // (fallback)
-        obj.session_id ?? // (old fallback)
-        "";
-      setMasterSid(sid);
+      // Extraction des vols aller et retour
+      let outbound = normalise(obj.AirSearchResponse?.AirSearchResult?.FareItineraries);
+      let inbound = normalise(obj.AirSearchResponse?.AirSearchResultInbound?.FareItineraries);
 
+      console.log("Outbound flights:", outbound.length);
+      console.log("Inbound flights:", inbound.length);
+
+      // Si pas de vols trouvés, essayer d'autres chemins de données
+      if (outbound.length === 0 && inbound.length === 0) {
+        const allFlights = normalise(
+          obj.AirSearchResponse?.AirSearchResult?.FareItineraries ||
+          obj.AirSearchResult?.FareItineraries ||
+          obj.FareItineraries
+        );
+
+        console.log("All flights found:", allFlights.length);
+
+        // Séparation des vols par direction
+        const isOutbound = (d?: string) => !!d && /out|o\b/i.test(d);
+        const isInbound = (d?: string) => !!d && /in|ret|r\b/i.test(d);
+
+        outbound = allFlights.filter(fi => isOutbound(fi.DirectionInd));
+        inbound = allFlights.filter(fi => isInbound(fi.DirectionInd));
+
+        // Si toujours pas de vols, utiliser tous les vols comme outbound
+        if (outbound.length === 0 && inbound.length === 0) {
+          outbound = allFlights;
+        }
+      }
+
+      // Mise à jour des états
+      const hasInbound = inbound.length > 0;
+      setHasInboundList(hasInbound);
+      setIsOneWayRequest(!hasInbound);
+      setStep(0);
+
+      // Sauvegarde de l'ID de session
+      const sid = obj.AirSearchResponse?.session_id || 
+                  obj.AirSearchResponse?.AirSearchResult?.SessionId || 
+                  obj.session_id || "";
       if (sid) {
+        setMasterSid(sid);
         localStorage.setItem("flightSessionId", sid);
       }
 
-      // ➊ ───────── explicit containers first ──────────────
-      const normalise = (raw: any): FI[] =>
-        raw
-          ? Array.isArray(raw)
-            ? raw.map((w: any) => w.FareItinerary ?? w)
-            : [raw.FareItinerary ?? raw]
-          : [];
-
-      let outbound = normalise(
-        obj.AirSearchResponse?.AirSearchResult?.FareItineraries
-      );
-      let inbound = normalise(
-        obj.AirSearchResponse?.AirSearchResultInbound?.FareItineraries
-      );
-
-      if (outbound.length === 0 && inbound.length === 0) {
-        /* ------------------------------------------------------------------ *
-         *  ONE list → split by DirectionInd
-         * ------------------------------------------------------------------ */
-        const rawFi =
-          obj.AirSearchResponse?.AirSearchResult?.FareItineraries ??
-          obj.AirSearchResult?.FareItineraries; // very old schema
-
-        /* 🔷 Indian-domestic round-trip: inbound list sits in its
-         *     own sibling node AirSearchResultInbound                      */
-        const rawInDomestic =
-          obj.AirSearchResponse?.AirSearchResultInbound?.FareItineraries ??
-          obj.AirSearchResultInbound?.FareItineraries; // very old GDS
-
-        const listInboundDom: FI[] = rawInDomestic
-          ? Array.isArray(rawInDomestic)
-            ? rawInDomestic.map((w: any) => w.FareItinerary ?? w)
-            : [rawInDomestic.FareItinerary ?? rawInDomestic]
-          : [];
-
-        const allFi = normalise(
-          obj.AirSearchResponse?.AirSearchResult?.FareItineraries ??
-            obj.AirSearchResult?.FareItineraries
-        );
-
-        const isOut = (d?: string) => !!d && /out|o\b/i.test(d); // "Outbound", "O"
-        const isIn = (d?: string) => !!d && /in|ret|r\b/i.test(d); // "Inbound", "Return", "R"
-
-        const out = allFi.filter((fi) => isOut(fi.DirectionInd));
-        const inn = [
-          ...allFi.filter((fi) => isIn(fi.DirectionInd)), // ➊ tagged "Return/Inbound"
-          ...listInboundDom, // ➋ separate domestic list
-        ];
-
-        outbound = allFi.filter((fi) => isOut(fi.DirectionInd));
-        inbound = allFi.filter((fi) => isIn(fi.DirectionInd));
-
-        if (outbound.length === 0 && inbound.length === 0) {
-          outbound = allFi;
-        }
-      }
-      // ➌ ───────── helper flags based on final lists ───────
-      const inbPresent = inbound.length > 0;
-      setHasInboundList(inbPresent);
-
-      const searchTripTypeRaw =
-        obj.AirSearchResponse?.search_params?.tripType ??
-        obj.AirSearchResponse?.SearchInput?.TripType ??
-        outbound[0]?.DirectionInd ??
-        ""; // last resort
-
-      const oneWay = !inbPresent; // a trip is one-way iff no inbound list
-      setIsOneWayRequest(oneWay);
-
-      if (oneWay || !inbPresent) setStep(0);
-
+      // Mise à jour des vols
       setAllItins(outbound);
-      setInboundItins(inbound); // <- keep inbound aside till step 1
+      setInboundItins(inbound);
       setFiltered(outbound);
+
     } catch (e: any) {
-      setErrorMsg(e.message);
+      console.error("Error loading search results:", e);
+      setErrorMsg(e.message || "An error occurred while loading search results");
     } finally {
       setLoading(false);
     }
@@ -278,10 +263,12 @@ export default function SearchResultsPage() {
 
   // Re-calculate whenever filters _or the list currently displayed_ changes
   useEffect(() => {
+    if (!allItins.length) return;
+
     let tmp = [...allItins];
 
     // airline filter
-    if (filters.airline !== "all") {
+    if (filters.airline && filters.airline !== "all") {
       tmp = tmp.filter((fi) =>
         fi.OriginDestinationOptions.some((odo) =>
           odo.OriginDestinationOption.some(
@@ -293,7 +280,13 @@ export default function SearchResultsPage() {
 
     // stops filter
     if (filters.stops !== "all") {
-      tmp = tmp.filter((fi) => odoTotalStops(fi) === parseStops(filters.stops));
+      const stopCount = parseStops(filters.stops);
+      tmp = tmp.filter((fi) => {
+        const totalStops = fi.OriginDestinationOptions.reduce((total, odo) => 
+          total + (odo.TotalStops || 0), 0
+        );
+        return totalStops === stopCount;
+      });
     }
 
     // baggage
@@ -337,6 +330,7 @@ export default function SearchResultsPage() {
       return filters.sortBy === "price-asc" ? pa - pb : pb - pa;
     });
 
+    console.log("Filtered flights:", tmp.length);
     setCurrentPage(1);
     setFiltered(tmp);
   }, [filters, allItins]);
