@@ -38,15 +38,16 @@ export default function Footer() {
         <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(68,68,68,.2)_50%,transparent_75%,transparent_100%)] bg-[length:20px_20px]" />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        {/* Main Footer Content */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12">
           {/* Logo and Description */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center md:text-left"
+            className="lg:col-span-4 flex flex-col items-center sm:items-start"
           >
             <Link href="/" className="inline-block mb-6 transform hover:scale-105 transition-transform duration-300">
               <Image
@@ -54,10 +55,10 @@ export default function Footer() {
                 alt="HRA Airlines"
                 width={180}
                 height={45}
-                className="h-12 w-auto brightness-0 invert hover:brightness-100 transition-all duration-300"
+                className="h-10 sm:h-12 w-auto brightness-0 invert hover:brightness-100 transition-all duration-300"
               />
             </Link>
-            <p className="text-gray-400 text-sm leading-relaxed max-w-md">
+            <p className="text-gray-400 text-sm leading-relaxed max-w-md text-center sm:text-left">
               HRA Airlines is committed to providing exceptional air travel
               experiences with safety, comfort, and reliability.
             </p>
@@ -69,7 +70,7 @@ export default function Footer() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="grid grid-cols-2 gap-6"
+            className="lg:col-span-4 grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 justify-items-center sm:justify-items-start"
           >
             {navLinks.map(({ label, href, icon: Icon, external }, index) => (
               <Link
@@ -77,10 +78,10 @@ export default function Footer() {
                 href={href}
                 target={external ? "_blank" : undefined}
                 rel={external ? "noopener noreferrer" : undefined}
-                className="group flex items-center text-gray-300 hover:text-white transition-all duration-300"
+                className="group flex items-center text-gray-300 hover:text-white transition-all duration-300 text-sm sm:text-base w-fit"
               >
                 <div className="relative flex items-center">
-                  <Icon className="w-4 h-4 mr-3 text-blue-400 group-hover:text-blue-300 transition-colors duration-300" />
+                  <Icon className="w-4 h-4 mr-2 sm:mr-3 text-blue-400 group-hover:text-blue-300 transition-colors duration-300" />
                   <span className="relative">
                     {label}
                     <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300" />
@@ -96,13 +97,13 @@ export default function Footer() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="text-center md:text-left"
+            className="lg:col-span-4 flex flex-col items-center sm:items-start"
           >
             <h3 className="text-lg font-semibold mb-6 text-white relative inline-block">
               Follow Us
               <span className="absolute -bottom-2 left-0 w-12 h-0.5 bg-blue-400" />
             </h3>
-            <div className="flex justify-center md:justify-start space-x-6">
+            <div className="flex justify-center sm:justify-start space-x-4 sm:space-x-6">
               {[
                 { icon: Facebook, href: "https://facebook.com" },
                 { icon: Twitter, href: "https://twitter.com" },
@@ -124,7 +125,7 @@ export default function Footer() {
                     <path d="M14 13H7" />
                   </svg>
                 ), href: "https://tiktok.com" },
-              ].map(({ icon: Icon, href }, index) => (
+              ].map(({ icon: Icon, href }) => (
                 <Link
                   key={href}
                   href={href}
@@ -148,12 +149,20 @@ export default function Footer() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.6 }}
-          className="mt-16 pt-8 border-t border-gray-800/50"
+          className="mt-12 sm:mt-16 pt-6 sm:pt-8 border-t border-gray-800/50"
         >
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-sm text-gray-400">
+          <div className="flex flex-col sm:flex-row justify-center sm:justify-between items-center space-y-4 sm:space-y-0">
+            <p className="text-sm text-gray-400 text-center">
               © {currentYear} HRA Airlines. All rights reserved.
             </p>
+            <div className="flex space-x-6 text-sm text-gray-400">
+              <Link href="/privacy" className="hover:text-white transition-colors">
+                Privacy Policy
+              </Link>
+              <Link href="/terms" className="hover:text-white transition-colors">
+                Terms of Service
+              </Link>
+            </div>
           </div>
         </motion.div>
       </div>

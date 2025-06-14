@@ -25,7 +25,7 @@ const countries = [
     popular: true
   },
   {
-    name: "Arabie Saoudite",
+    name: "Saudi Arabia",
     code: "SA",
     image: "https://images.unsplash.com/photo-1473580044384-7ba9967e16a0?auto=format&fit=crop&w=800&q=80",
     description: "Discover the blend of tradition and modernity in this rapidly transforming kingdom.",
@@ -33,7 +33,7 @@ const countries = [
     popular: true
   },
   {
-    name: "Maroc",
+    name: "Morocco",
     code: "MA",
     image: "https://images.unsplash.com/photo-1564507004663-b6dfb3c824d5?auto=format&fit=crop&w=800&q=80",
     description: "Explore vibrant souks, ancient medinas, and breathtaking landscapes.",
@@ -49,7 +49,7 @@ const countries = [
     popular: true
   },
   {
-    name: "Grèce",
+    name: "Greece",
     code: "GR",
     image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80",
     description: "Ancient history, stunning islands, and Mediterranean beauty.",
@@ -75,13 +75,22 @@ const countries = [
 ];
 
 const hotels = [
-  // Grèce
+  // Greece - Santorini
+  {
+    name: "Villa Manos Santorini",
+    country: "GR",
+    location: "Santorini",
+    image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80",
+    description: "A luxury villa with panoramic views of the caldera, offering a unique experience in Santorini.",
+    stars: 5,
+    price: "€200"
+  },
   {
     name: "Apanemo Hotel & Suites",
     country: "GR",
     location: "Santorini",
     image: "https://images.unsplash.com/photo-1515488764276-beab7607c1e6?auto=format&fit=crop&w=800&q=80",
-    description: "Elegant suites with stunning caldera views in the iconic island of Santorini.",
+    description: "Elegant suites with breathtaking views of the caldera on the iconic island of Santorini.",
     stars: 5,
     price: "€150"
   }
@@ -144,6 +153,66 @@ export default function DestinationsPage() {
         </div>
       </section>
 
+      {/* Featured Hotels Section */}
+      <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+            Exclusive Offers
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {hotels.map((hotel, idx) => (
+              <motion.div
+                key={hotel.name}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: idx * 0.2 }}
+                className="group relative bg-white rounded-2xl shadow-xl overflow-hidden"
+              >
+                <div className="relative h-72">
+                  <Image
+                    src={hotel.image}
+                    alt={hotel.name}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    priority
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-full text-sm font-bold animate-pulse">
+                    New Offer
+                  </div>
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <h3 className="text-2xl font-bold text-white mb-2">{hotel.name}</h3>
+                    <div className="flex items-center text-white/90 mb-2">
+                      <MapPin className="w-4 h-4 mr-1" />
+                      {hotel.location}, {countries.find(c => c.code === hotel.country)?.name}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {[...Array(hotel.stars)].map((_, i) => (
+                        <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <p className="text-gray-600 mb-4">{hotel.description}</p>
+                  <div className="flex items-center justify-end">
+                    <Link
+                      href="https://hra-experience.com"
+                      target="_blank"
+                      className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+                    >
+                      <Building className="w-4 h-4 mr-2" />
+                      Book Now
+                    </Link>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Search Section */}
       <section className="py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
@@ -164,7 +233,7 @@ export default function DestinationsPage() {
           {!showHotels && (
             <>
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Select a Country
+                Popular Destinations
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <AnimatePresence mode="wait">
@@ -230,7 +299,7 @@ export default function DestinationsPage() {
                   onClick={handleBackToCountries}
                   className="flex items-center text-blue-600 hover:text-blue-800 font-medium"
                 >
-                  ← Back to Countries
+                  ← Back to Destinations
                 </button>
               </div>
               
@@ -284,7 +353,7 @@ export default function DestinationsPage() {
                             className="inline-flex items-center justify-center w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
                           >
                             <Building className="w-4 h-4 mr-2" />
-                            Book this Hotel
+                            Book Now
                           </Link>
                         </div>
                       </motion.div>

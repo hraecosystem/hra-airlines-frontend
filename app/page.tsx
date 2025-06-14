@@ -4,7 +4,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Plane, Globe2, Shield, Headset, ArrowRight, Star, Users, Award } from "lucide-react";
+import { Plane, Globe2, Shield, Headset, ArrowRight, Star, Users, Award, MapPin } from "lucide-react";
 import FlightSearchWidget from "@/components/FlightSearchWidget";
 
 export default function HomePage() {
@@ -102,39 +102,38 @@ export default function HomePage() {
               Popular Destinations
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Discover our most sought-after destinations with exclusive HRA Airlines card discounts
+              Discover our most sought-after destinations with exclusive HRA Airlines offers
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {[
               {
-                image: "https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=800&q=80",
-                title: "Paris",
-                description: "The City of Light awaits",
-                basePrice: 299,
-                cardPrice: 254,
+                image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80",
+                title: "Villa Manos Santorini",
+                location: "Santorini, Greece",
+                description: "A luxury villa with panoramic views of the caldera",
+                basePrice: 200,
+                cardPrice: 170,
+                stars: 5,
+                badge: "New Offer"
               },
               {
-                image: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=80",
-                title: "London",
-                description: "Experience British charm",
-                basePrice: 349,
-                cardPrice: 297,
-              },
-              {
-                image: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=800&q=80",
-                title: "New York",
-                description: "The city that never sleeps",
-                basePrice: 499,
-                cardPrice: 424,
-              },
+                image: "https://images.unsplash.com/photo-1515488764276-beab7607c1e6?auto=format&fit=crop&w=800&q=80",
+                title: "Apanemo Hotel & Suites",
+                location: "Santorini, Greece",
+                description: "Elegant suites with breathtaking views of the caldera",
+                basePrice: 150,
+                cardPrice: 127,
+                stars: 5,
+                badge: "New Offer"
+              }
             ].map((destination, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="group relative h-96 rounded-xl overflow-hidden bg-white shadow-lg hover:shadow-xl transition-all duration-300"
+                className="group relative h-[500px] rounded-xl overflow-hidden bg-white shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 <Image
                   src={destination.image}
@@ -143,24 +142,27 @@ export default function HomePage() {
                   className="object-cover transition-transform duration-500 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                  <h3 className="text-2xl font-bold mb-2">{destination.title}</h3>
-                  <p className="text-blue-100 mb-4">{destination.description}</p>
-                  
-                  {/* Price Section */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-bold">${destination.cardPrice}</span>
-                      <span className="text-sm text-gray-300 line-through">${destination.basePrice}</span>
-                    </div>
-                    <span className="bg-blue-500 text-white text-xs font-medium px-2 py-1 rounded-full">
-                      -15% with HRA Card
-                    </span>
+                <div className="absolute top-4 right-4">
+                  <span className="bg-red-500 text-white text-sm font-medium px-4 py-2 rounded-full animate-pulse">
+                    {destination.badge}
+                  </span>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
+                  <div className="flex items-center gap-1 mb-2">
+                    {[...Array(destination.stars)].map((_, i) => (
+                      <Star key={i} className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                    ))}
                   </div>
-
+                  <h3 className="text-3xl font-bold mb-2">{destination.title}</h3>
+                  <div className="flex items-center text-blue-100 mb-2">
+                    <MapPin className="w-4 h-4 mr-1" />
+                    {destination.location}
+                  </div>
+                  <p className="text-blue-100 mb-6">{destination.description}</p>
+                  
                   <Link
-                    href={`/search?dest=${destination.title}`}
-                    className="inline-flex items-center text-white hover:text-blue-200 transition"
+                    href="/destinations"
+                    className="inline-flex items-center justify-center w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
                   >
                     Book Now <ArrowRight className="w-4 h-4 ml-2" />
                   </Link>

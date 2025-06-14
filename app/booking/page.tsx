@@ -8,30 +8,21 @@ import Select from "react-select";
 import countryList from "react-select-country-list";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import FareRulesModal from "@/components/FareRulesModal";
 
-type CountryOption = { label: /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-string; value: string };
+type CountryOption = { label: string; value: string };
 
 interface Passenger {
   type: "ADT" | "CHD" | "INF";
-  title: /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-string;
-  firstName: /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-string;
-  lastName: /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-string;
-  dob: /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-string;
-  nationality: CountryOption | /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-null;
-  passportNo: /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-string;
-  passportIssueCountry: CountryOption | /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-null;
-  passportIssueDate: /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-string;
-  passportExpiryDate: /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-string;
+  title: string;
+  firstName: string;
+  lastName: string;
+  dob: string;
+  nationality: CountryOption | null;
+  passportNo: string;
+  passportIssueCountry: CountryOption | null;
+  passportIssueDate: string;
+  passportExpiryDate: string;
 }
 
 function makePassenger(
@@ -144,8 +135,7 @@ export default function BookingPage() {
           throw new Error("No flight selected.");
 
         // parsed = either { Outbound, Inbound } OR a single FareItinerary
-        const parsed =/* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
- fareRT ? JSON.parse(fareRT) : JSON.parse(rawFare!);
+        const parsed = fareRT ? JSON.parse(fareRT) : JSON.parse(rawFare!);
         setFare(parsed); // ← IMPORTANT: keep the entire object
 
         setSessionId(rawSession);
@@ -165,12 +155,9 @@ export default function BookingPage() {
 
         // support both single-leg and RT shapes
 
-        const fareInfo =
-          parsed.AirItineraryFareInfo ?? parsed.Outbound?./* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-AirItineraryFareInfo;
+        const fareInfo = parsed.AirItineraryFareInfo ?? parsed.Outbound?.AirItineraryFareInfo;
 
-        const breakdown: any[] =/* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
- Array.isArray(fareInfo?.FareBreakdown)
+        const breakdown: any[] = Array.isArray(fareInfo?.FareBreakdown)
           ? fareInfo.FareBreakdown
           : fareInfo?.FareBreakdown
           ? [fareInfo.FareBreakdown]
@@ -218,30 +205,21 @@ AirItineraryFareInfo;
     try {
       const odoOptions =
         fare?.OriginDestinationOptions ??
-        fare?.Outbound?./* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-OriginDestinationOptions;
+        fare?.Outbound?.OriginDestinationOptions;
 
-      const firstOption =
-        Array.isArray(odoOptions) && odoOptions.length > 0
-          ? odoOptions[0]
-          : /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-null;
+      const firstOption = Array.isArray(odoOptions) && odoOptions.length > 0
+        ? odoOptions[0]
+        : null;
 
-      const segments = firstOption?./* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-OriginDestinationOption;
+      const segments = firstOption?.OriginDestinationOption;
 
-      const firstSegment =
-        Array.isArray(segments) && segments.length > 0
-          ? segments[0]?.FlightSegment
-          : segments?./* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-FlightSegment;
+      const firstSegment = Array.isArray(segments) && segments.length > 0
+        ? segments[0]?.FlightSegment
+        : segments?.FlightSegment;
 
-      const departureTime =
-        typeof firstSegment?.DepartureDateTime === "string"
-          ? firstSegment.DepartureDateTime
-          : /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-null;/* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-
+      const departureTime = typeof firstSegment?.DepartureDateTime === "string"
+        ? firstSegment.DepartureDateTime
+        : null;
 
       return departureTime ? new Date(departureTime) : new Date(NaN);
     } catch (err) {
@@ -300,10 +278,8 @@ null;/* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
               i + 1
             } (Adult) must be older than 12 years at departure.`
           );
-          errs[base + "dob"] = /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-true;
-          ok = /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-false;
+          errs[base + "dob"] = true;
+          ok = false;
         }
         if (p.type === "CHD" && (ageAtDeparture <= 2 || ageAtDeparture > 12)) {
           setError(
@@ -311,10 +287,8 @@ false;
               i + 1
             } (Child) must be between 2–12 years at departure.`
           );
-          errs[base + "dob"] = /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-true;
-          ok = /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-false;
+          errs[base + "dob"] = true;
+          ok = false;
         }
         if (p.type === "INF" && (ageAtDeparture <= 0 || ageAtDeparture > 2)) {
           setError(
@@ -322,10 +296,8 @@ false;
               i + 1
             } (Infant) must be between 0–2 years at departure.`
           );
-          errs[base + "dob"] = /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-true;
-          ok = /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-false;
+          errs[base + "dob"] = true;
+          ok = false;
         }
       }
 
@@ -339,33 +311,25 @@ false;
         if (!p.passportIssueCountry)
           (errs[base + "passportIssueCountry"] = true), (ok = false);
         if (!p.passportIssueDate || isNaN(+issueDate)) {
-          errs[base + "passportIssueDate"] = /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-true;
-          ok = /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-false;
+          errs[base + "passportIssueDate"] = true;
+          ok = false;
         } else if (issueDate > departureDate) {
           setError(
             `Passenger ${i + 1}: Passport issue date cannot be after departure.`
           );
-          errs[base + "passportIssueDate"] = /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-true;
-          ok = /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-false;
+          errs[base + "passportIssueDate"] = true;
+          ok = false;
         }
 
         if (!p.passportExpiryDate || isNaN(+expiryDate)) {
-          errs[base + "passportExpiryDate"] = /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-true;
-          ok = /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-false;
+          errs[base + "passportExpiryDate"] = true;
+          ok = false;
         } else if (expiryDate < departureDate) {
           setError(
             `Passenger ${i + 1}: Passport must be valid on the departure date.`
           );
-          errs[base + "passportExpiryDate"] = /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-true;
-          ok = /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-false;
+          errs[base + "passportExpiryDate"] = true;
+          ok = false;
         }
       }
     });
@@ -399,14 +363,11 @@ false;
     const inboundFareSource = localStorage.getItem("fareSourceCodeInbound");
 
     // ➊ pick outbound vs combined shape
-    const outboundItin = (fare as any).Outbound ?? /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-fare;
-    const inboundItin = (fare as any)./* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-Inbound;
+    const outboundItin = (fare as any).Outbound ?? fare;
+    const inboundItin = (fare as any).Inbound;
 
     // ➋ merge both legs in one FareItinerary object
-    const mergedItin =/* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
- inboundItin
+    const mergedItin = inboundItin
       ? {
           ...outboundItin,
           OriginDestinationOptions: [
@@ -414,9 +375,7 @@ Inbound;
             ...inboundItin.OriginDestinationOptions,
           ],
         }
-      : /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-outboundItin;/* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-
+      : outboundItin;
 
     return {
       flight_session_id: sessionId,
@@ -434,7 +393,6 @@ outboundItin;/* eslint-disable-next-line @typescript-eslint/no-unused-expression
         fareType: (
           fare?.AirItineraryFareInfo || fare?.Outbound?.AirItineraryFareInfo
         )?.FareType,
-        // Public | Private | WebFare
       },
       paxInfo: {
         customerEmail: email.trim(),
@@ -504,17 +462,14 @@ outboundItin;/* eslint-disable-next-line @typescript-eslint/no-unused-expression
         fare_source_code: fareSource,
       });
 
-      const isValidOut =
-        revOut.data?.data?.IsValid ?? revOut.data?.data?.Success ?? /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-false;
+      const isValidOut = revOut.data?.data?.IsValid ?? revOut.data?.data?.Success ?? false;
 
       if (!isValidOut) {
         alert(" Fare expired. Please search again.");
         return router.push("/search-results");
       }
 
-      let revalItin = revOut.data?.data?.FareItineraries?./* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-FareItinerary;
+      let revalItin = revOut.data?.data?.FareItineraries?.FareItinerary;
 
       if (rawFareRT && rawFareSourceInbound) {
         const revIn = await api.post("/flights/revalidate", {
@@ -522,17 +477,14 @@ FareItinerary;
           fare_source_code: rawFareSourceInbound,
         });
 
-        const isValidIn =
-          revIn.data?.data?.IsValid ?? revIn.data?.data?.Success ?? /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-false;
+        const isValidIn = revIn.data?.data?.IsValid ?? revIn.data?.data?.Success ?? false;
 
         if (!isValidIn) {
           alert(" Fare expired. Please search again.");
           return router.push("/search-results");
         }
 
-        const revalInItin = revIn.data?.data?.FareItineraries?./* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-FareItinerary;
+        const revalInItin = revIn.data?.data?.FareItineraries?.FareItinerary;
         revalItin = {
           Outbound: revalItin,
           Inbound: revalInItin,
@@ -552,18 +504,14 @@ FareItinerary;
       });
 
       // UNWRAP both layers
-      const payload = resp.data?./* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-data;
+      const payload = resp.data?.data;
       const rulesData = payload?.FareRules1_1Response?.FareRules1_1Result || {};
 
       // set state
       setFareRules(rulesData);
       setShowRulesModal(true);
     } catch (e: any) {
-      // const msg = e.response?.data?.error?.ErrorMessage || /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-e.message;
-      // setError(msg);
-     const msg = extractMessage(e);
+      const msg = extractMessage(e);
       setError(msg);
       if (msg.toLowerCase().includes("passport")) {
         setNeedsPassport(true);
@@ -575,11 +523,8 @@ e.message;
 
   const confirmBooking = async () => {
     setSubmitting(true); // ← start the spinner/disable
-    const activeFare =/* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
- fare?.AirItineraryFareInfo ? fare : fare?./* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-Outbound;
-    const tf = activeFare?.AirItineraryFareInfo?.ItinTotalFares?./* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-TotalFare;
+    const activeFare = fare?.AirItineraryFareInfo ? fare : fare?.Outbound;
+    const tf = activeFare?.AirItineraryFareInfo?.ItinTotalFares?.TotalFare;
 
     try {
       const adults = passengers.filter((p) => p.type === "ADT");
@@ -589,8 +534,7 @@ TotalFare;
       const fareSourceInbound =
         localStorage.getItem("fareSourceCodeInbound") || "";
 
-      const payload =/* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
- {
+      const payload = {
         flight_session_id: sessionId,
         fare_source_code: fareSource,
         fare_source_code_inbound: fareSourceInbound || undefined,
@@ -616,8 +560,7 @@ TotalFare;
       };
 
       const resp = await api.post("/flights/book", payload);
-      const id = resp.data?.data?.bookingId ?? resp.data?./* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-mongoBookingId;
+      const id = resp.data?.data?.bookingId ?? resp.data?.mongoBookingId;
       if (id) {
         localStorage.setItem("bookingId", id);
         localStorage.removeItem("selectedFare");
@@ -628,9 +571,7 @@ mongoBookingId;
         throw new Error("Booking failed.");
       }
     } catch (err: any) {
-      // setError(err.message || "Booking failed.");
-     setError(extractMessage(err));
-
+      setError(extractMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -1025,106 +966,26 @@ mongoBookingId;
             </motion.button>
           </main>
           {showRulesModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg max-w-2xl w-full p-6 shadow-xl">
-                <h2 className="text-xl font-bold mb-4 text-gray-800">
-                  Fare Rules & Conditions
-                </h2>
-
-                {/* FARE RULES SECTION */}
-                <h3 className="text-lg font-semibold mb-2">Fare Rules</h3>
-                {fareRules?.FareRules?.length ? (
-                  <ul className="space-y-4 max-h-40 overflow-y-auto text-sm text-gray-700">
-                    {fareRules.FareRules.map((ruleObj: any, idx: number) => {
-                      const r = ruleObj.FareRule || {};
-                      return (
-                        <li key={idx} className=/* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
-"border-b pb-3">
-                          <div>
-                            <strong>Airline:</strong> {r.Airline || "—"}
-                          </div>
-                          <div>
-                            <strong>Route:</strong> {r.CityPair || "—"}
-                          </div>
-                          <div>
-                            <strong>Category:</strong> {r.Category || "—"}
-                          </div>
-                          <div>
-                            <strong>Rules:</strong>{" "}
-                            {r.Rules?.trim()
-                              ? r.Rules.trim()
-                              : "No rules provided by airline."}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <p className="text-gray-600 text-sm">
-                    No fare rules available.
-                  </p>
-                )}
-
-                {/* BAGGAGE SECTION */}
-                <h3 className="mt-6 text-lg font-semibold mb-2">
-                  Baggage Allowance
-                </h3>
-                {fareRules?.BaggageInfos?.length ? (
-                  <ul className="space-y-2 text-sm text-gray-700">
-                    {fareRules.BaggageInfos.map((b: any, idx: number) => {
-                      const info = b.BaggageInfo || {};
-                      return (
-                        <li key={idx}>
-                          <div>
-                            <strong>Flight:</strong> {info.FlightNo || "—"}
-                          </div>
-                          <div>
-                            <strong>Route:</strong> {info.Departure || "—"} →{" "}
-                            {info.Arrival || "—"}
-                          </div>
-                          <div>
-                            <strong>Allowance:</strong> {info.Baggage || "—"}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <p className="text-gray-600 text-sm">
-                    No baggage info available.
-                  </p>
-                )}
-
-                {/* ACTION BUTTONS */}
-                <div className="mt-6 flex justify-end gap-4">
-                  <button
-                    onClick={() => setShowRulesModal(false)}
-                    className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition"
-                  >
-                    Go Back
-                  </button>
-                  <button
-                    onClick={async () => {
-                      setShowRulesModal(false);
-                      if (
-                        (fare?.AirItineraryFareInfo?.FareType ??
-                          fare?.Outbound?.AirItineraryFareInfo?.FareType) ===
-                        "WebFare"
-                      ) {
-                        // LCC – pay first, seats are created after Stripe webhook
-                        await startLccCheckout();
-                      } else {
-                        // GDS – current flow
-                        confirmBooking();
-                      }
-                    }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-                  >
-                    Accept & Book
-                  </button>
-                </div>
-              </div>
-            </div>
+            <FareRulesModal
+              isOpen={showRulesModal}
+              onClose={() => setShowRulesModal(false)}
+              onAccept={async () => {
+                setShowRulesModal(false);
+                if (
+                  (fare?.AirItineraryFareInfo?.FareType ??
+                    fare?.Outbound?.AirItineraryFareInfo?.FareType) ===
+                  "WebFare"
+                ) {
+                  // LCC – pay first, seats are created after Stripe webhook
+                  await startLccCheckout();
+                } else {
+                  // GDS – current flow
+                  confirmBooking();
+                }
+              }}
+              fareRules={fareRules}
+              isLoading={submitting}
+            />
           )}
         </motion.div>
       </div>
