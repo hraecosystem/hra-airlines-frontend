@@ -2,54 +2,37 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import FiltersSidebar from "@/components/common/FiltersSidebar";
 import Pagination from "@/components/common/Pagination";
 import { ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
-import { useCurrency } from "@/context/CurrencyContext";
 import numeral from "numeral";
 import AirportLogo from "@/components/AirportLogo";
-import api from "@/lib/api";
 
 interface FlightSegment {
-  DepartureAirport: {
-    LocationCode: string;
-    Terminal?: string;
-  };
-  ArrivalAirport: {
-    LocationCode: string;
-    Terminal?: string;
-  };
+  DepartureAirportLocationCode: string;
+  ArrivalAirportLocationCode: string;
   DepartureDateTime: string;
   ArrivalDateTime: string;
+  MarketingAirlineCode: string;
+  MarketingAirlineName?: string;
   FlightNumber: string;
-  OperatingAirline: {
-    Code: string;
-    FlightNumber: string;
-  };
-  Equipment?: {
-    AirEquipType: string;
-  };
-  MarketingAirline: {
-    Code: string;
-    Name?: string;
-  };
-  StopQuantity: number;
-  ResBookDesigCode: string;
-  BookingClassAvail: string;
-  CabinClass: string;
-  CabinClassCode?: string;
+  Equipment?: { AirEquipType: string };
+  JourneyDuration: number;
+  CabinClassCode: string;
   CabinClassText?: string;
-  BaggageAllowance?: {
-    Weight: number;
-    Unit: string;
-  };
-  JourneyDuration?: string | number;
-  DepartureAirportLocationCode?: string;
-  ArrivalAirportLocationCode?: string;
+  // ← add these two
   MealCode?: string;
   MarriageGroup?: string;
+
+  Eticket: boolean;
+  OperatingAirline: {
+    Code: string;
+    Name: string;
+    Equipment?: string;
+    FlightNumber?: string;
+  };
 }
 
 interface OriginDestinationOption {
@@ -165,8 +148,6 @@ export default function SearchResultsPage() {
   const [hasInboundList, setHasInboundList] = useState(false);
   const [isOneWayRequest, setIsOneWayRequest] = useState(false);
   // ────────────────────────────────────────────────────────────────
-
-  const { formatPrice } = useCurrency();
 
   // 1) Load raw payload & extract FareItineraries
   useEffect(() => {
@@ -284,15 +265,15 @@ export default function SearchResultsPage() {
     let tmp = [...allItins];
 
     // airline filter
-    const airlineFilter = (fi: FareItinerary) =>
-      !filters.airline ||
-      fi.OriginDestinationOptions.some((odo) =>
-        odo.OriginDestinationOption.some(
-          (seg) => seg.FlightSegment.MarketingAirline.Code === filters.airline
+    if (filters.airline) {
+      tmp = tmp.filter((fi) =>
+        fi.OriginDestinationOptions.some((odo) =>
+          odo.OriginDestinationOption.some(
+            (seg) => seg.FlightSegment.MarketingAirlineCode === filters.airline
+          )
         )
       );
-
-    tmp = tmp.filter(airlineFilter);
+    }
 
     // stops filter
     if (filters.stops !== "all") {
@@ -349,14 +330,13 @@ export default function SearchResultsPage() {
     s === "0" ? 0 : s === "1" ? 1 : 2;
   const odoTotalStops = (fi: FareItinerary) =>
     fi.OriginDestinationOptions[0].TotalStops;
-  const formatMoney = (amt: string, cur: string) => {
-    return formatPrice(amt, cur);
-  };
+  const formatMoney = (amt: string, cur: string) =>
+    `${numeral(amt).format("0,0.00")} ${cur}`;
   const formatDateTime = (iso: string, locationCode: string = '') => {
-    // Create a date object from the ISO string
+    // Créer un objet date à partir de l'ISO string
     const date = new Date(iso);
     
-    // Format the date according to locale settings, including the timezone
+    // Formater la date selon les paramètres locaux, en incluant le fuseau horaire
     return (
       <span className="text-gray-900 !important">
         {date.toLocaleString('en-US', {
@@ -368,53 +348,6 @@ export default function SearchResultsPage() {
         <span className="text-xs ml-1 text-gray-600">(Local Time)</span>
       </span>
     );
-  };
-
-  // Helper to calculate flight duration considering time zones
-  const calculateFlightDuration = (segment: FlightSegment): { hours: number; minutes: number } => {
-    if (typeof segment.JourneyDuration === 'string') {
-      const [hours, minutes] = segment.JourneyDuration.split(':').map(Number);
-      return { hours, minutes };
-    }
-    
-    const departure = new Date(segment.DepartureDateTime);
-    const arrival = new Date(segment.ArrivalDateTime);
-    const diffMs = arrival.getTime() - departure.getTime();
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    return { hours, minutes };
-  };
-
-  // Helper function to calculate duration from departure/arrival times
-  const calculateTotalDurationFromTimes = (segments: Array<FlightSegment>): string => {
-    const firstDeparture = new Date(segments[0].DepartureDateTime);
-    const lastArrival = new Date(segments[segments.length - 1].ArrivalDateTime);
-    const minutes = Math.round((lastArrival.getTime() - firstDeparture.getTime()) / (1000 * 60));
-    const hours = Math.floor(minutes / 60);
-    return `${hours}h ${minutes % 60}m`;
-  };
-
-  const calculateTotalJourneyDuration = (segments: Array<FlightSegment>) => {
-    // First check if we can use the JourneyDuration fields
-    const totalMinutes = segments.reduce((total, segment) => {
-      if (typeof segment.JourneyDuration === 'number') {
-        return total + segment.JourneyDuration;
-      }
-      if (typeof segment.JourneyDuration === 'string') {
-        const [hours, minutes] = segment.JourneyDuration.split(':').map(Number);
-        return total + (hours * 60 + minutes);
-      }
-      return total;
-    }, 0);
-    
-    if (totalMinutes > 0) {
-      const hours = Math.floor(totalMinutes / 60);
-      const minutes = totalMinutes % 60;
-      return `${hours}h ${minutes}m`;
-    }
-    
-    // Fallback to calculating from departure/arrival times
-    return calculateTotalDurationFromTimes(segments);
   };
 
   const handleSelectOutbound = (fi: FareItinerary) => {
@@ -561,7 +494,7 @@ export default function SearchResultsPage() {
       allItins.flatMap((fi) =>
         fi.OriginDestinationOptions.flatMap((odo) =>
           odo.OriginDestinationOption.map(
-            (s) => s.FlightSegment.MarketingAirline.Code
+            (s) => s.FlightSegment.MarketingAirlineCode
           )
         )
       )
@@ -625,18 +558,22 @@ export default function SearchResultsPage() {
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 relative">
                         <img
-                          src={`/airlines/${firstSeg.MarketingAirline.Code.toLowerCase()}.png`}
+                          src={`https://flightaware.com/images/airline_logos/90p/${firstSeg.MarketingAirlineCode}.png`}
                           alt={
-                            firstSeg.MarketingAirline.Name ||
-                            firstSeg.MarketingAirline.Code
+                            firstSeg.MarketingAirlineName ||
+                            firstSeg.MarketingAirlineCode
                           }
                           className="w-full h-full object-contain"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = `https://www.gstatic.com/flights/airline_logos/70px/${firstSeg.MarketingAirlineCode}.png`;
+                          }}
                         />
                       </div>
                       <div>
                         <h3 className="text-xl font-semibold text-gray-900">
-                          {firstSeg.MarketingAirline.Name ||
-                            firstSeg.MarketingAirline.Code}{" "}
+                          {firstSeg.MarketingAirlineName ||
+                            firstSeg.MarketingAirlineCode}{" "}
                           #{firstSeg.FlightNumber}
                         </h3>
                         <p className="text-sm text-gray-500">
@@ -665,17 +602,14 @@ export default function SearchResultsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
-                        <AirportLogo 
-                          code={firstSeg.DepartureAirport.LocationCode || firstSeg.DepartureAirportLocationCode || ''} 
-                          size="md" 
-                        />
+                        <AirportLogo code={firstSeg.DepartureAirportLocationCode} size="md" />
                         <div className="flex-1 flex items-center gap-2">
                           <div className="flex flex-col justify-center">
                             <div className="text-sm text-gray-500">
                               Departure
                             </div>
                             <div className="font-medium text-gray-900">
-                              {formatDateTime(firstSeg.DepartureDateTime)}
+                              {formatDateTime(firstSeg.DepartureDateTime, firstSeg.DepartureAirportLocationCode)}
                             </div>
                           </div>
                           <div className="w-6 h-6 text-gray-600 flex items-center">
@@ -695,10 +629,7 @@ export default function SearchResultsPage() {
                         <AirportLogo 
                           code={fi.OriginDestinationOptions[0].OriginDestinationOption[
                             fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1
-                          ].FlightSegment.ArrivalAirport.LocationCode || 
-                          fi.OriginDestinationOptions[0].OriginDestinationOption[
-                            fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1
-                          ].FlightSegment.ArrivalAirportLocationCode || ''} 
+                          ].FlightSegment.ArrivalAirportLocationCode} 
                           size="md"
                         />
                         <div className="flex-1 flex items-center gap-2">
@@ -738,10 +669,23 @@ export default function SearchResultsPage() {
                         <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center">
                           <span className="text-purple-600 font-semibold text-sm">
                             {(() => {
-                              const segments = fi.OriginDestinationOptions[0].OriginDestinationOption.map(
-                                odo => odo.FlightSegment
+                              const firstDeparture = new Date(
+                                firstSeg.DepartureDateTime
                               );
-                              return calculateTotalJourneyDuration(segments);
+                              const lastArrival = new Date(
+                                fi.OriginDestinationOptions[0].OriginDestinationOption[
+                                  fi.OriginDestinationOptions[0]
+                                    .OriginDestinationOption.length - 1
+                                ].FlightSegment.ArrivalDateTime
+                              );
+                              const totalMinutes = Math.round(
+                                (lastArrival.getTime() -
+                                  firstDeparture.getTime()) /
+                                  (1000 * 60)
+                              );
+                              const hours = Math.floor(totalMinutes / 60);
+                              const minutes = totalMinutes % 60;
+                              return `${hours}h${minutes}m`;
                             })()}
                           </span>
                         </div>
@@ -749,10 +693,23 @@ export default function SearchResultsPage() {
                           <div className="text-sm text-gray-500">Duration</div>
                           <div className="font-medium text-gray-900">
                             {(() => {
-                              const segments = fi.OriginDestinationOptions[0].OriginDestinationOption.map(
-                                odo => odo.FlightSegment
+                              const firstDeparture = new Date(
+                                firstSeg.DepartureDateTime
                               );
-                              return calculateTotalJourneyDuration(segments) + " total (including stops)";
+                              const lastArrival = new Date(
+                                fi.OriginDestinationOptions[0].OriginDestinationOption[
+                                  fi.OriginDestinationOptions[0]
+                                    .OriginDestinationOption.length - 1
+                                ].FlightSegment.ArrivalDateTime
+                              );
+                              const totalMinutes = Math.round(
+                                (lastArrival.getTime() -
+                                  firstDeparture.getTime()) /
+                                  (1000 * 60)
+                              );
+                              const hours = Math.floor(totalMinutes / 60);
+                              const minutes = totalMinutes % 60;
+                              return `${hours}h ${minutes}m total (including stops)`;
                             })()}
                           </div>
                         </div>
@@ -760,7 +717,7 @@ export default function SearchResultsPage() {
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-yellow-50 rounded-full flex items-center justify-center">
                           <span className="text-yellow-600 font-semibold">
-                            {firstSeg.CabinClassText || firstSeg.CabinClassCode || firstSeg.CabinClass}
+                            {firstSeg.CabinClassCode}
                           </span>
                         </div>
                         <div className="flex-1">
@@ -768,7 +725,7 @@ export default function SearchResultsPage() {
                             Cabin Class
                           </div>
                           <div className="font-medium text-gray-900">
-                            {firstSeg.CabinClassText || firstSeg.CabinClassCode || firstSeg.CabinClass}
+                            {firstSeg.CabinClassText || firstSeg.CabinClassCode}
                           </div>
                         </div>
                       </div>
@@ -782,9 +739,9 @@ export default function SearchResultsPage() {
                     </div>
                     <div className="relative flex justify-between items-center">
                       <div className="flex flex-col items-center">
-                        <AirportLogo code={firstSeg.DepartureAirport.LocationCode || firstSeg.DepartureAirportLocationCode || ''} size="lg" className="mb-2" />
+                        <AirportLogo code={firstSeg.DepartureAirportLocationCode} size="lg" className="mb-2" />
                         <div className="text-sm text-gray-900">
-                          {formatDateTime(firstSeg.DepartureDateTime)}
+                          {formatDateTime(firstSeg.DepartureDateTime, firstSeg.DepartureAirportLocationCode)}
                         </div>
                       </div>
                       <div className="flex-1 flex items-center justify-center">
@@ -796,10 +753,7 @@ export default function SearchResultsPage() {
                         <AirportLogo 
                           code={fi.OriginDestinationOptions[0].OriginDestinationOption[
                             fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1
-                          ].FlightSegment.ArrivalAirport.LocationCode || 
-                          fi.OriginDestinationOptions[0].OriginDestinationOption[
-                            fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1
-                          ].FlightSegment.ArrivalAirportLocationCode || ''} 
+                          ].FlightSegment.ArrivalAirportLocationCode} 
                           size="lg"
                           className="mb-2"
                         />
@@ -933,7 +887,6 @@ export default function SearchResultsPage() {
                                   {odo.OriginDestinationOption.map(
                                     (segObj, si) => {
                                       const s = segObj.FlightSegment;
-                                      const duration = calculateFlightDuration(s);
                                       return (
                                         <div
                                           key={si}
@@ -941,19 +894,24 @@ export default function SearchResultsPage() {
                                         >
                                           <div className="w-12 h-12 relative">
                                             <img
-                                              src={`/airlines/${s.MarketingAirline.Code.toLowerCase()}.png`}
+                                              src={`https://flightaware.com/images/airline_logos/90p/${s.MarketingAirlineCode}.png`}
                                               alt={
-                                                s.MarketingAirline.Name ||
-                                                s.MarketingAirline.Code
+                                                s.MarketingAirlineName ||
+                                                s.MarketingAirlineCode
                                               }
                                               className="w-full h-full object-contain"
+                                              onError={(e) => {
+                                                const target =
+                                                  e.target as HTMLImageElement;
+                                                target.src = `https://www.gstatic.com/flights/airline_logos/70px/${s.MarketingAirlineCode}.png`;
+                                              }}
                                             />
                                           </div>
                                           <div className="flex-1">
                                             <div className="flex justify-between items-center mb-1">
                                               <span className="font-medium">
-                                                {s.MarketingAirline.Name ||
-                                                  s.MarketingAirline.Code}{" "}
+                                                {s.MarketingAirlineName ||
+                                                  s.MarketingAirlineCode}{" "}
                                                 {s.FlightNumber}
                                               </span>
                                               <span className="text-sm text-gray-500">
@@ -962,25 +920,13 @@ export default function SearchResultsPage() {
                                             </div>
                                             <div className="flex justify-between items-center text-sm text-gray-600">
                                               <div className="flex items-center gap-2">
-                                                <AirportLogo 
-                                                  code={s.DepartureAirport.LocationCode || s.DepartureAirportLocationCode || ''} 
-                                                  size="sm" 
-                                                />
+                                                <AirportLogo code={s.DepartureAirportLocationCode} size="sm" />
                                                 <span>→</span>
-                                                <AirportLogo 
-                                                  code={s.ArrivalAirport.LocationCode || s.ArrivalAirportLocationCode || ''} 
-                                                  size="sm" 
-                                                />
+                                                <AirportLogo code={s.ArrivalAirportLocationCode} size="sm" />
                                               </div>
                                               <div>
                                                 {formatDateTime(s.DepartureDateTime)} – {formatDateTime(s.ArrivalDateTime)}
                                               </div>
-                                            </div>
-                                            <div className="text-sm text-gray-600">
-                                              <span className="font-medium">
-                                                Duration:
-                                              </span>{" "}
-                                              {`${duration.hours}h ${duration.minutes}m`}
                                             </div>
                                           </div>
                                           {/* ─── Booking / Seats / Meal / Marriage info ─── */}
