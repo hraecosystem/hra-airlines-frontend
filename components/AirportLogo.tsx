@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 
 interface AirportLogoProps {
@@ -10,6 +10,8 @@ interface AirportLogoProps {
 }
 
 export default function AirportLogo({ code, size = "md", className = "" }: AirportLogoProps) {
+  const [imageError, setImageError] = useState(false);
+
   const sizeClasses = {
     sm: "w-8 h-8",
     md: "w-12 h-12",
@@ -23,10 +25,21 @@ export default function AirportLogo({ code, size = "md", className = "" }: Airpo
   };
 
   const textColors = {
-    sm: "text-blue-600 text-sm",
-    md: "text-blue-600",
-    lg: "text-blue-600 text-lg"
+    sm: "text-blue-600 text-xs font-semibold",
+    md: "text-blue-600 text-sm font-semibold",
+    lg: "text-blue-600 text-base font-semibold"
   };
+
+  // Si l'image a échoué ou si on n'a pas de code, afficher directement le fallback
+  if (imageError || !code) {
+    return (
+      <div className={`${sizeClasses[size]} ${bgColors[size]} rounded-full flex items-center justify-center ${className}`}>
+        <span className={textColors[size]}>
+          {code || "N/A"}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className={`relative ${sizeClasses[size]} ${bgColors[size]} rounded-full flex items-center justify-center ${className}`}>
@@ -36,17 +49,8 @@ export default function AirportLogo({ code, size = "md", className = "" }: Airpo
         width={size === "sm" ? 32 : size === "md" ? 48 : 64}
         height={size === "sm" ? 32 : size === "md" ? 48 : 64}
         className="w-full h-full object-contain"
-        onError={(e) => {
-          // Si l'image n'existe pas, on affiche le code de l'aéroport
-          const target = e.target as HTMLImageElement;
-          target.style.display = "none";
-          const parent = target.parentElement;
-          if (parent) {
-            const fallback = document.createElement("span");
-            fallback.className = `${textColors[size]} font-semibold`;
-            fallback.textContent = code;
-            parent.appendChild(fallback);
-          }
+        onError={() => {
+          setImageError(true);
         }}
       />
     </div>
