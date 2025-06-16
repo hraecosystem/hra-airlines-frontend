@@ -80,7 +80,13 @@ const hotels = [
     name: "Villa Manos Santorini",
     country: "GR",
     location: "Santorini",
-    image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80",
+    image: "/images/hotels/hotel1.jpeg",
+    images: [
+      "/images/hotels/hotel1.jpeg",
+      "/images/hotels/hotel1.1.jpeg",
+      "/images/hotels/hotel1.2.jpeg",
+      "/images/hotels/hotel1.3.jpeg"
+    ],
     description: "A luxury villa with panoramic views of the caldera, offering a unique experience in Santorini.",
     stars: 5,
     price: "€200"
@@ -89,7 +95,17 @@ const hotels = [
     name: "Apanemo Hotel & Suites",
     country: "GR",
     location: "Santorini",
-    image: "https://images.unsplash.com/photo-1515488764276-beab7607c1e6?auto=format&fit=crop&w=800&q=80",
+    image: "/images/hotels/hotel2.jpeg",
+    images: [
+      "/images/hotels/hotel2.jpeg",
+      "/images/hotels/hotel2.1.jpeg",
+      "/images/hotels/hotel2.2.jpeg",
+      "/images/hotels/hotel2.3.jpeg",
+      "/images/hotels/hotel2.4.jpeg",
+      "/images/hotels/hotel2.5.jpeg",
+      "/images/hotels/hotel2.6.jpeg",
+      "/images/hotels/hotel2.7.jpeg"
+    ],
     description: "Elegant suites with breathtaking views of the caldera on the iconic island of Santorini.",
     stars: 5,
     price: "€150"
