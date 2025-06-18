@@ -1,11 +1,11 @@
 // app/destinations/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Plane, Star, Home, Building, MapPin } from "lucide-react";
+import { Search, Plane, Star, Home, Building, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 
 const countries = [
   {
@@ -80,12 +80,12 @@ const hotels = [
     name: "Villa Manos Santorini",
     country: "GR",
     location: "Santorini",
-    image: "/images/hotels/hotel1.jpeg",
+    image: "/hotel1.jpeg", // Main image for Villa Manos Santorini
     images: [
-      "/images/hotels/hotel1.jpeg",
-      "/images/hotels/hotel1.1.jpeg",
-      "/images/hotels/hotel1.2.jpeg",
-      "/images/hotels/hotel1.3.jpeg"
+      "/hotel1.jpeg",
+      "/hotel1.1.jpeg",
+      "/hotel1.2.jpeg",
+      "/hotel1.3.jpeg"
     ],
     description: "A luxury villa with panoramic views of the caldera, offering a unique experience in Santorini.",
     stars: 5,
@@ -95,16 +95,16 @@ const hotels = [
     name: "Apanemo Hotel & Suites",
     country: "GR",
     location: "Santorini",
-    image: "/images/hotels/hotel2.jpeg",
+    image: "/hotel2.jpeg", // Main image for Apanemo Hotel & Suites
     images: [
-      "/images/hotels/hotel2.jpeg",
-      "/images/hotels/hotel2.1.jpeg",
-      "/images/hotels/hotel2.2.jpeg",
-      "/images/hotels/hotel2.3.jpeg",
-      "/images/hotels/hotel2.4.jpeg",
-      "/images/hotels/hotel2.5.jpeg",
-      "/images/hotels/hotel2.6.jpeg",
-      "/images/hotels/hotel2.7.jpeg"
+      "/hotel2.jpeg",
+      "/hotel2.1.jpeg",
+      "/hotel2.2.jpeg",
+      "/hotel2.3.jpeg",
+      "/hotel2.4.jpeg",
+      "/hotel2.5.jpeg",
+      "/hotel2.6.jpeg",
+      "/hotel2.7.jpeg"
     ],
     description: "Elegant suites with breathtaking views of the caldera on the iconic island of Santorini.",
     stars: 5,
@@ -116,6 +116,44 @@ export default function DestinationsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCountry, setSelectedCountry] = useState("");
   const [showHotels, setShowHotels] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState({
+    hotel1: 0,
+    hotel2: 0
+  });
+  
+  // Debug: Log hotel images to console
+  console.log("Hotel images:", hotels.map(h => ({ name: h.name, image: h.image })));
+  
+  // Auto-slide effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex(prev => ({
+        hotel1: (prev.hotel1 + 1) % hotels[0].images.length,
+        hotel2: (prev.hotel2 + 1) % hotels[1].images.length
+      }));
+    }, 4000); // Change image every 4 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const nextImage = (hotelIndex: number) => {
+    setCurrentImageIndex(prev => ({
+      ...prev,
+      [hotelIndex === 0 ? 'hotel1' : 'hotel2']: (prev[hotelIndex === 0 ? 'hotel1' : 'hotel2'] + 1) % hotels[hotelIndex].images.length
+    }));
+  };
+
+  const prevImage = (hotelIndex: number) => {
+    setCurrentImageIndex(prev => {
+      const key = hotelIndex === 0 ? 'hotel1' : 'hotel2';
+      const currentIndex = prev[key];
+      const maxIndex = hotels[hotelIndex].images.length - 1;
+      return {
+        ...prev,
+        [key]: currentIndex === 0 ? maxIndex : currentIndex - 1
+      };
+    });
+  };
   
   // Filter countries based on search query
   const filteredCountries = countries.filter(country => 
@@ -186,13 +224,72 @@ export default function DestinationsPage() {
               >
                 <div className="relative h-72">
                   <Image
-                    src={hotel.image}
+                    src={hotel.images[idx === 0 ? currentImageIndex.hotel1 : currentImageIndex.hotel2]}
                     alt={hotel.name}
                     fill
                     sizes="(max-width: 768px) 100vw, 50vw"
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                     priority
+                    onError={(e) => {
+                      console.error(`Failed to load image: ${hotel.image}`);
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const parent = target.parentElement;
+                      if (parent) {
+                        const fallback = document.createElement('div');
+                        fallback.className = 'w-full h-full bg-gray-200 flex items-center justify-center';
+                        fallback.innerHTML = `<span class="text-gray-500">Image non trouvée: ${hotel.image}</span>`;
+                        parent.appendChild(fallback);
+                      }
+                    }}
                   />
+                  
+                  {/* Navigation Controls */}
+                  <div className="absolute inset-0 flex items-center justify-between p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        prevImage(idx);
+                      }}
+                      className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                    >
+                      <ChevronLeft className="w-6 h-6" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        nextImage(idx);
+                      }}
+                      className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                    </button>
+                  </div>
+
+                  {/* Image Indicators */}
+                  <div className="absolute top-4 left-4 flex gap-2">
+                    {hotel.images.map((_, imgIndex) => (
+                      <button
+                        key={imgIndex}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setCurrentImageIndex(prev => ({
+                            ...prev,
+                            [idx === 0 ? 'hotel1' : 'hotel2']: imgIndex
+                          }));
+                        }}
+                        className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                          (idx === 0 ? currentImageIndex.hotel1 : currentImageIndex.hotel2) === imgIndex
+                            ? 'bg-white scale-125'
+                            : 'bg-white/50 hover:bg-white/75'
+                        }`}
+                      />
+                    ))}
+                  </div>
+
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-full text-sm font-bold animate-pulse">
                     New Offer

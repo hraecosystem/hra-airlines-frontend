@@ -1,13 +1,63 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Plane, Globe2, Shield, Headset, ArrowRight, Star, Users, Award, MapPin } from "lucide-react";
+import { Plane, Globe2, Shield, Headset, ArrowRight, Star, Users, Award, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 import FlightSearchWidget from "@/components/FlightSearchWidget";
 
 export default function HomePage() {
+  const [currentImageIndex, setCurrentImageIndex] = useState({
+    hotel1: 0,
+    hotel2: 0
+  });
+
+  const hotelImages = {
+    hotel1: [
+      "/hotel1.jpeg",
+      "/hotel1.1.jpeg",
+      "/hotel1.2.jpeg",
+      "/hotel1.3.jpeg"
+    ],
+    hotel2: [
+      "/hotel2.jpeg",
+      "/hotel2.1.jpeg",
+      "/hotel2.2.jpeg",
+      "/hotel2.3.jpeg",
+      "/hotel2.4.jpeg",
+      "/hotel2.5.jpeg",
+      "/hotel2.6.jpeg",
+      "/hotel2.7.jpeg"
+    ]
+  };
+
+  // Auto-slide effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex(prev => ({
+        hotel1: (prev.hotel1 + 1) % hotelImages.hotel1.length,
+        hotel2: (prev.hotel2 + 1) % hotelImages.hotel2.length
+      }));
+    }, 4000); // Change image every 4 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const nextImage = (hotelKey: 'hotel1' | 'hotel2') => {
+    setCurrentImageIndex(prev => ({
+      ...prev,
+      [hotelKey]: (prev[hotelKey] + 1) % hotelImages[hotelKey].length
+    }));
+  };
+
+  const prevImage = (hotelKey: 'hotel1' | 'hotel2') => {
+    setCurrentImageIndex(prev => ({
+      ...prev,
+      [hotelKey]: prev[hotelKey] === 0 ? hotelImages[hotelKey].length - 1 : prev[hotelKey] - 1
+    }));
+  };
+
   return (
     <main className="min-h-screen">
       {/* Hero Section */}
@@ -108,7 +158,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {[
               {
-                image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80",
+                image: hotelImages.hotel1[currentImageIndex.hotel1],
                 title: "Villa Manos Santorini",
                 location: "Santorini, Greece",
                 description: "A luxury villa with panoramic views of the caldera",
@@ -118,7 +168,7 @@ export default function HomePage() {
                 badge: "New Offer"
               },
               {
-                image: "https://images.unsplash.com/photo-1515488764276-beab7607c1e6?auto=format&fit=crop&w=800&q=80",
+                image: hotelImages.hotel2[currentImageIndex.hotel2],
                 title: "Apanemo Hotel & Suites",
                 location: "Santorini, Greece",
                 description: "Elegant suites with breathtaking views of the caldera",
@@ -142,6 +192,53 @@ export default function HomePage() {
                   className="object-cover transition-transform duration-500 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
+                
+                {/* Navigation Controls */}
+                <div className="absolute inset-0 flex items-center justify-between p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      prevImage(index === 0 ? 'hotel1' : 'hotel2');
+                    }}
+                    className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      nextImage(index === 0 ? 'hotel1' : 'hotel2');
+                    }}
+                    className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {/* Image Indicators */}
+                <div className="absolute top-4 left-4 flex gap-2">
+                  {(index === 0 ? hotelImages.hotel1 : hotelImages.hotel2).map((_, imgIndex) => (
+                    <button
+                      key={imgIndex}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setCurrentImageIndex(prev => ({
+                          ...prev,
+                          [index === 0 ? 'hotel1' : 'hotel2']: imgIndex
+                        }));
+                      }}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        (index === 0 ? currentImageIndex.hotel1 : currentImageIndex.hotel2) === imgIndex
+                          ? 'bg-white scale-125'
+                          : 'bg-white/50 hover:bg-white/75'
+                      }`}
+                    />
+                  ))}
+                </div>
+
                 <div className="absolute top-4 right-4">
                   <span className="bg-red-500 text-white text-sm font-medium px-4 py-2 rounded-full animate-pulse">
                     {destination.badge}
