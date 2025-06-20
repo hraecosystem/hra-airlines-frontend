@@ -527,6 +527,8 @@ export default function BookingPage() {
     const tf = activeFare?.AirItineraryFareInfo?.ItinTotalFares?.TotalFare;
 
     try {
+      console.log("Starting booking confirmation...");
+      
       const adults = passengers.filter((p) => p.type === "ADT");
       const childs = passengers.filter((p) => p.type === "CHD");
       const infs = passengers.filter((p) => p.type === "INF");
@@ -559,19 +561,30 @@ export default function BookingPage() {
         fareItinerary: fare,
       };
 
+      console.log("Sending booking request with payload:", payload);
+
       const resp = await api.post("/flights/book", payload);
+      console.log("Booking response:", resp.data);
+      
       const id = resp.data?.data?.bookingId ?? resp.data?.mongoBookingId;
       if (id) {
+        console.log("Booking successful, ID:", id);
         localStorage.setItem("bookingId", id);
         localStorage.removeItem("selectedFare");
         localStorage.removeItem("flightSessionId");
         localStorage.removeItem("fareSourceCode");
+        
+        console.log("Redirecting to payment page...");
         router.push("/payment");
       } else {
-        throw new Error("Booking failed.");
+        console.error("No booking ID in response:", resp.data);
+        throw new Error("Booking failed - no booking ID received.");
       }
     } catch (err: any) {
-      setError(extractMessage(err));
+      console.error("Booking error:", err);
+      const errorMessage = extractMessage(err);
+      console.error("Extracted error message:", errorMessage);
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -985,6 +998,14 @@ export default function BookingPage() {
               }}
               fareRules={fareRules}
               isLoading={submitting}
+              fareBreakdown={(() => {
+                const info = fare?.AirItineraryFareInfo ?? fare?.Outbound?.AirItineraryFareInfo;
+                return Array.isArray(info?.FareBreakdown)
+                  ? info.FareBreakdown
+                  : info?.FareBreakdown
+                  ? [info.FareBreakdown]
+                  : [];
+              })()}
             />
           )}
         </motion.div>

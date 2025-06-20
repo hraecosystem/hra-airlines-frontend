@@ -10,6 +10,7 @@ interface FareRulesModalProps {
   onAccept: () => void;
   fareRules: any;
   isLoading?: boolean;
+  fareBreakdown?: any[];
 }
 
 export default function FareRulesModal({
@@ -18,6 +19,7 @@ export default function FareRulesModal({
   onAccept,
   fareRules,
   isLoading = false,
+  fareBreakdown = [],
 }: FareRulesModalProps) {
   const [activeTab, setActiveTab] = React.useState<"rules" | "baggage">("rules");
   const [expandedRules, setExpandedRules] = React.useState<number[]>([]);
@@ -29,6 +31,9 @@ export default function FareRulesModal({
         : [...prev, index]
     );
   };
+
+  const hasRealBaggage = fareBreakdown && fareBreakdown.length > 0 && (fareBreakdown[0].Baggage?.length || fareBreakdown[0].CabinBaggage?.length);
+  const hasRealPenalties = fareBreakdown && fareBreakdown.length > 0 && fareBreakdown[0].PenaltyDetails?.length;
 
   if (!isOpen) return null;
 
@@ -151,6 +156,27 @@ export default function FareRulesModal({
                     <p className="text-gray-600">No fare rules available.</p>
                   </div>
                 )}
+                {hasRealPenalties && (
+                  <div className="mt-6">
+                    <h4 className="font-semibold text-gray-900 mb-2">Conditions de remboursement & changement (données réelles)</h4>
+                    {fareBreakdown.map((br, idx) => (
+                      <div key={idx} className="mb-2 text-sm text-gray-700">
+                        <span className="font-semibold">{br.PassengerTypeQuantity.Code} :</span>
+                        {br.PenaltyDetails?.length ? (
+                          <ul className="ml-4 list-disc">
+                            {br.PenaltyDetails.map((pen, i) => (
+                              <li key={i}>
+                                <span className="font-semibold">Remboursement :</span> {pen.RefundAllowed ? `Oui (${pen.RefundPenaltyAmount} ${pen.Currency})` : 'Non'} | <span className="font-semibold">Changement :</span> {pen.ChangeAllowed ? `Oui (${pen.ChangePenaltyAmount} ${pen.Currency})` : 'Non'}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span>Conditions non communiquées</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
@@ -186,6 +212,16 @@ export default function FareRulesModal({
                   <div className="text-center py-8">
                     <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-600">No baggage information available.</p>
+                  </div>
+                )}
+                {hasRealBaggage && (
+                  <div className="mb-6">
+                    <h4 className="font-semibold text-gray-900 mb-2">Bagages inclus (données réelles)</h4>
+                    {fareBreakdown.map((br, idx) => (
+                      <div key={idx} className="mb-2 text-sm text-gray-700">
+                        <span className="font-semibold">{br.PassengerTypeQuantity.Code} :</span> {br.Baggage?.join(', ') || '—'} | Cabine : {br.CabinBaggage?.join(', ') || '—'}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

@@ -83,24 +83,34 @@ export default function PaymentPage() {
     const load = async () => {
       setLoading(true);
       try {
+        console.log("Loading payment page...");
         const bookingId = localStorage.getItem("bookingId");
+        console.log("Booking ID from localStorage:", bookingId);
+        
         if (!bookingId) {
+          console.error("No booking ID found in localStorage");
           router.replace("/dashboard/bookings");
           return;
         }
 
+        console.log("Fetching booking details for ID:", bookingId);
         const res = await api.get<{
           status: string;
           data: BookingDetails;
         }>(`/ticket/${bookingId}`);
 
+        console.log("Booking details response:", res.data);
+
         // unwrap:
         if (res.data.status !== "success" || !res.data.data) {
-          throw new Error();
+          console.error("Invalid booking response:", res.data);
+          throw new Error("Invalid booking response");
         }
 
         setBooking(res.data.data);
-      } catch {
+        console.log("Booking details set successfully");
+      } catch (error) {
+        console.error("Error loading booking details:", error);
         setError("Failed to load booking details. Please try again.");
       } finally {
         setLoading(false);

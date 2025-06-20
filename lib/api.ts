@@ -11,7 +11,7 @@ import axios, {
 └────────────────────────────────────────────┘*/
 const baseURL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-  "http://localhost:5000/api/v1";
+  "http://localhost:3001/api/v1";
 
 const api: AxiosInstance = axios.create({
   baseURL,

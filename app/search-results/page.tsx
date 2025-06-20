@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import FiltersSidebar from "@/components/common/FiltersSidebar";
 import Pagination from "@/components/common/Pagination";
-import { ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
+import { ChevronDown, ChevronUp, ArrowRight, Plane } from "lucide-react";
 import numeral from "numeral";
 import AirportLogo from "@/components/AirportLogo";
+import { DateTime } from "luxon";
 
 interface FlightSegment {
   DepartureAirportLocationCode: string;
@@ -350,6 +351,15 @@ export default function SearchResultsPage() {
     );
   };
 
+  const getFlightDuration = (departureISO: string, arrivalISO: string) => {
+    const dep = DateTime.fromISO(departureISO, { setZone: true });
+    const arr = DateTime.fromISO(arrivalISO, { setZone: true });
+    const diff = arr.diff(dep, ["hours", "minutes"]).toObject();
+    const hours = Math.floor(diff.hours || 0);
+    const minutes = Math.round(diff.minutes || 0);
+    return `${hours}h${minutes}m`;
+  };
+
   const handleSelectOutbound = (fi: FareItinerary) => {
     /* ──────────────────────────────────────────────────────────────
      *  Clean the fare before persisting:
@@ -668,49 +678,13 @@ export default function SearchResultsPage() {
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center">
                           <span className="text-purple-600 font-semibold text-sm">
-                            {(() => {
-                              const firstDeparture = new Date(
-                                firstSeg.DepartureDateTime
-                              );
-                              const lastArrival = new Date(
-                                fi.OriginDestinationOptions[0].OriginDestinationOption[
-                                  fi.OriginDestinationOptions[0]
-                                    .OriginDestinationOption.length - 1
-                                ].FlightSegment.ArrivalDateTime
-                              );
-                              const totalMinutes = Math.round(
-                                (lastArrival.getTime() -
-                                  firstDeparture.getTime()) /
-                                  (1000 * 60)
-                              );
-                              const hours = Math.floor(totalMinutes / 60);
-                              const minutes = totalMinutes % 60;
-                              return `${hours}h${minutes}m`;
-                            })()}
+                            {getFlightDuration(firstSeg.DepartureDateTime, fi.OriginDestinationOptions[0].OriginDestinationOption[fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1].FlightSegment.ArrivalDateTime)}
                           </span>
                         </div>
                         <div className="flex-1">
                           <div className="text-sm text-gray-500">Duration</div>
                           <div className="font-medium text-gray-900">
-                            {(() => {
-                              const firstDeparture = new Date(
-                                firstSeg.DepartureDateTime
-                              );
-                              const lastArrival = new Date(
-                                fi.OriginDestinationOptions[0].OriginDestinationOption[
-                                  fi.OriginDestinationOptions[0]
-                                    .OriginDestinationOption.length - 1
-                                ].FlightSegment.ArrivalDateTime
-                              );
-                              const totalMinutes = Math.round(
-                                (lastArrival.getTime() -
-                                  firstDeparture.getTime()) /
-                                  (1000 * 60)
-                              );
-                              const hours = Math.floor(totalMinutes / 60);
-                              const minutes = totalMinutes % 60;
-                              return `${hours}h ${minutes}m total (including stops)`;
-                            })()}
+                            {getFlightDuration(firstSeg.DepartureDateTime, fi.OriginDestinationOptions[0].OriginDestinationOption[fi.OriginDestinationOptions[0].OriginDestinationOption.length - 1].FlightSegment.ArrivalDateTime)}
                           </div>
                         </div>
                       </div>
@@ -735,7 +709,9 @@ export default function SearchResultsPage() {
                   {/* Flight Route Visualization */}
                   <div className="relative py-8 mb-6">
                     <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-gray-200"></div>
+                      <div className="w-full h-2 flex items-center">
+                        <div className="w-full h-1 bg-gradient-to-r from-blue-200 via-blue-400 to-blue-200 rounded-full animate-pulse" />
+                      </div>
                     </div>
                     <div className="relative flex justify-between items-center">
                       <div className="flex flex-col items-center">
@@ -744,10 +720,18 @@ export default function SearchResultsPage() {
                           {formatDateTime(firstSeg.DepartureDateTime, firstSeg.DepartureAirportLocationCode)}
                         </div>
                       </div>
-                      <div className="flex-1 flex items-center justify-center">
-                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border-2 border-blue-200">
-                          <ArrowRight className="w-6 h-6 text-blue-600" />
+                      <div className="flex-1 flex items-center justify-center relative">
+                        <div className="absolute left-0 right-0 top-1/2 transform -translate-y-1/2 z-0">
+                          {/* Ligne animée déjà présente */}
                         </div>
+                        <motion.div
+                          initial={{ x: -80 }}
+                          animate={{ x: 80 }}
+                          transition={{ repeat: Infinity, repeatType: "reverse", duration: 2, ease: "easeInOut" }}
+                          className="z-10"
+                        >
+                          <Plane className="w-12 h-12 text-blue-600 drop-shadow-lg" style={{ transform: 'rotate(90deg)' }} />
+                        </motion.div>
                       </div>
                       <div className="flex flex-col items-center">
                         <AirportLogo 
@@ -925,7 +909,7 @@ export default function SearchResultsPage() {
                                                 <AirportLogo code={s.ArrivalAirportLocationCode} size="sm" />
                                               </div>
                                               <div>
-                                                {formatDateTime(s.DepartureDateTime)} – {formatDateTime(s.ArrivalDateTime)}
+                                                {getFlightDuration(s.DepartureDateTime, s.ArrivalDateTime)}
                                               </div>
                                             </div>
                                           </div>
